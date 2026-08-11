@@ -50,6 +50,21 @@ export async function parseText(
 }
 
 /**
+ * 조사 기록 차이 요약. 실패하면 화면은 비교 표만 그린다.
+ * 요약은 표를 읽기 쉽게 거드는 것이지 표를 대체하지 않는다. (R4)
+ */
+export async function summarize(
+  propertyIds: string[],
+): Promise<{ ok: boolean; summary?: string }> {
+  const json = await postJson<{ ok: boolean; summary?: string }>('/api/ai/summary', {
+    propertyIds,
+  });
+
+  if (!json?.ok || !json.summary) return { ok: false };
+  return { ok: true, summary: json.summary };
+}
+
+/**
  * 우려사항 → 질문. 서버가 실패해도 템플릿 폴백으로 questions를 채워 보낸다.
  * ok=false는 "AI가 아니라 질문 은행에서 골랐다"는 신호이므로 화면이 출처 배지를 바꾼다.
  */

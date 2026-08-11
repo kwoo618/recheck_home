@@ -1,0 +1,645 @@
+/* ══════════════════════════════════════════════════════════════
+   리:체크 화면 테마
+   docs/recheck-prototype-v4.html 의 :root 변수와 컴포넌트 스타일을 그대로 옮긴 것.
+
+   ★ Tailwind 테마(app/globals.css 의 @theme)에 등록하지 않고 순수 CSS 변수로 둔다.
+     app/ 은 백엔드 세션이 라우트를 작업 중이라 globals.css 충돌 위험이 있다.
+     (D3 병합 후 필요하면 @theme 로 승격)
+
+   ★ 전역 스타일이므로 변수·클래스 전부 rc- 접두사를 붙여 shadcn/ui 토큰과 격리한다.
+     프로토타입의 --paper / .card / .btn 을 그대로 쓰면 shadcn 토큰과 충돌한다.
+
+   ★ 프로토타입 대비 의도적으로 바꾼 것 (CLAUDE.md UI 규약):
+     · 터치 타깃 44px — .btn.small(5px 12px) / .chip(4px 12px) 이 규약 미달이라 키웠다
+     · 모바일 우선 — 프로토타입은 940px 데스크톱 기준이었다. 좁은 화면을 기본값으로 두고
+       넓은 화면을 min-width 로 얹는다
+   ══════════════════════════════════════════════════════════════ */
+
+:root {
+  --rc-paper: #f6f5f1;
+  --rc-surface: #ffffff;
+  --rc-ink: #22252b;
+  --rc-ink-soft: #5a5e66;
+  --rc-ink-faint: #9a9ea6;
+  --rc-line: #e3e1da;
+  --rc-line-strong: #c9c6bc;
+  --rc-teal: #145c54;
+  --rc-teal-soft: #e4efed;
+  --rc-teal-mid: #1d9e75;
+  --rc-amber: #b7791f;
+  --rc-amber-soft: #faf0dc;
+  --rc-red: #b23a3a;
+  --rc-red-soft: #f9e9e9;
+  --rc-blue: #2c5fa8;
+  --rc-blue-soft: #e8eef7;
+  --rc-violet: #4c4699;
+  --rc-violet-soft: #ebeaf7;
+
+  /* 터치 타깃 최소치 — 현장(방문 직후 길가에서)에서 쓰는 화면이라 규약값이다 */
+  --rc-tap: 44px;
+}
+
+/* ── 셸 ─────────────────────────────────────────────────────── */
+.rc-app {
+  min-height: 100dvh;
+  background: var(--rc-paper);
+  color: var(--rc-ink);
+  font-family: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  /*
+    한글은 기본값(break-all에 가까운 auto)에서 음절 단위로 줄바꿈된다.
+    폭이 좁아지면 "대구대 경산캠퍼스" 가 한 글자씩 세로로 쌓인다.
+    keep-all 은 단어 중간을 끊지 않으므로 좁은 컬럼에서도 읽을 수 있는 형태로 접힌다.
+  */
+  word-break: keep-all;
+}
+.rc-wrap {
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 0 16px 80px;
+}
+@media (min-width: 640px) {
+  .rc-wrap { padding: 0 20px 80px; }
+}
+
+.rc-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 0 14px;
+  border-bottom: 1.5px solid var(--rc-ink);
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.rc-logo {
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: var(--rc-ink);
+  text-decoration: none;
+}
+.rc-logo .rc-logo-re { color: var(--rc-teal); }
+.rc-tagline { font-size: 12.5px; color: var(--rc-ink-soft); }
+
+.rc-back {
+  font-size: 13px;
+  color: var(--rc-ink-soft);
+  text-decoration: none;
+  margin-bottom: 10px;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--rc-tap);
+}
+.rc-back:hover { color: var(--rc-ink); }
+
+/* ── 출처 배지 ──────────────────────────────────────────────── */
+.rc-src {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.rc-src-rule { background: var(--rc-teal-soft); color: var(--rc-teal); }
+.rc-src-ai { background: var(--rc-violet-soft); color: var(--rc-violet); }
+.rc-src-user { background: #efeee9; color: var(--rc-ink-soft); }
+/* 템플릿 = AI 실패 시 결정론 폴백. 'AI' 배지를 붙이면 거짓이 되므로 따로 둔다 */
+.rc-src-template {
+  background: var(--rc-surface);
+  color: var(--rc-ink-soft);
+  border: 1px solid var(--rc-line-strong);
+}
+
+/* ── 버튼 ───────────────────────────────────────────────────── */
+.rc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1.5px solid var(--rc-ink);
+  background: var(--rc-surface);
+  color: var(--rc-ink);
+  padding: 9px 18px;
+  min-height: var(--rc-tap);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.15s;
+  font-family: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.rc-btn:hover { background: var(--rc-ink); color: #fff; }
+.rc-btn-primary { background: var(--rc-teal); border-color: var(--rc-teal); color: #fff; }
+.rc-btn-primary:hover { background: #0e453f; color: #fff; }
+.rc-btn-ghost { border-color: var(--rc-line-strong); font-weight: 500; }
+.rc-btn-ghost:hover { background: var(--rc-surface); color: var(--rc-ink); border-color: var(--rc-ink); }
+.rc-btn-danger { border-color: var(--rc-red); color: var(--rc-red); }
+.rc-btn-danger:hover { background: var(--rc-red); color: #fff; }
+/* 프로토타입 .btn.small 은 padding 5px 12px 로 44px 규약 미달이었다 */
+.rc-btn-sm { padding: 7px 14px; font-size: 13px; border-radius: 8px; min-height: var(--rc-tap); }
+.rc-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.rc-btn:disabled:hover { background: var(--rc-surface); color: var(--rc-ink); }
+.rc-btn-primary:disabled:hover { background: var(--rc-teal); color: #fff; }
+
+/* 프로토타입 .chip 은 padding 4px 12px 로 44px 규약 미달이었다 */
+.rc-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--rc-tap);
+  font-size: 12.5px;
+  background: var(--rc-paper);
+  border: 1px solid var(--rc-line-strong);
+  border-radius: 20px;
+  padding: 6px 14px;
+  margin: 3px 4px 0 0;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--rc-ink);
+}
+.rc-chip:hover { border-color: var(--rc-ink); }
+
+/* ── 카드 ───────────────────────────────────────────────────── */
+.rc-card {
+  background: var(--rc-surface);
+  border: 1px solid var(--rc-line);
+  border-radius: 14px;
+  padding: 18px 16px;
+  margin-bottom: 14px;
+}
+@media (min-width: 640px) {
+  .rc-card { padding: 20px 22px; }
+}
+.rc-card-title {
+  font-size: 15.5px;
+  font-weight: 700;
+  margin-bottom: 3px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.rc-card-sub { font-size: 13px; color: var(--rc-ink-soft); margin-bottom: 12px; }
+
+.rc-phase-pill {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  background: var(--rc-ink);
+  color: #fff;
+}
+
+/* ── 홈 ─────────────────────────────────────────────────────── */
+.rc-home-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.rc-home-count { font-size: 12.5px; color: var(--rc-ink-soft); }
+.rc-home-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* 모바일: 지도·목록 탭 전환 (PRD §7.2) / 넓은 화면: 목록 좌 · 지도 우 분할 (§7.1) */
+.rc-home-tabs {
+  display: flex;
+  gap: 0;
+  margin-bottom: 14px;
+  border-bottom: 1.5px solid var(--rc-line-strong);
+}
+.rc-home-tabs button {
+  flex: 1;
+  border: 0;
+  background: none;
+  padding: 10px 16px;
+  min-height: var(--rc-tap);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--rc-ink-faint);
+  border-bottom: 2.5px solid transparent;
+  margin-bottom: -1.5px;
+}
+.rc-home-tabs button.rc-on { color: var(--rc-ink); border-bottom-color: var(--rc-teal); }
+
+.rc-home-body { display: grid; grid-template-columns: 1fr; gap: 16px; }
+/* 모바일에서는 지도가 먼저 (§7.2). DOM 순서도 지도가 앞이다 */
+.rc-home-map { order: -1; }
+/* 카드가 뷰포트가 아니라 "자기가 놓인 컬럼" 폭에 반응하게 한다 */
+.rc-home-list { container-type: inline-size; min-width: 0; }
+
+@media (max-width: 1023px) {
+  .rc-home-body[data-tab='map'] .rc-home-list { display: none; }
+  .rc-home-body[data-tab='list'] .rc-home-map { display: none; }
+}
+@media (min-width: 1024px) {
+  .rc-home-tabs { display: none; }
+  .rc-home-body.rc-has-map { grid-template-columns: minmax(0, 1fr) 340px; }
+  /*
+    목록이 넓은 컬럼(1fr), 지도가 340px 컬럼이다 (PRD §7.1 목록 좌 · 지도 우).
+    ★ order 를 반드시 둘 다 지정할 것. 지도에만 order 를 주면 목록의 기본값(0)과 같아져
+      DOM 순서(지도가 먼저)가 이기고, 지도가 넓은 컬럼을 가져간다.
+      그러면 목록이 340px 로 눌려 카드 텍스트가 한 글자씩 쪼개진다.
+  */
+  .rc-home-list { order: 1; }
+  .rc-home-map { order: 2; position: sticky; top: 12px; align-self: start; }
+}
+
+/* ── 홈: 매물 카드 ──────────────────────────────────────────── */
+.rc-prop-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  transition: border-color 0.15s;
+}
+.rc-prop-card:hover { border-color: var(--rc-ink); }
+.rc-prop-info { flex: 1; min-width: 0; }
+.rc-prop-name {
+  font-size: 16.5px;
+  font-weight: 700;
+  color: var(--rc-ink);
+  text-decoration: none;
+  display: inline-block;
+}
+.rc-prop-name:hover { text-decoration: underline; }
+.rc-prop-meta { font-size: 12.5px; color: var(--rc-ink-soft); margin-top: 1px; }
+.rc-prop-dist { font-size: 12.5px; color: var(--rc-ink-soft); margin-top: 3px; }
+/*
+  좁을 때는 상태·다음 행동을 카드 아래 줄로 내린다.
+  기준은 뷰포트가 아니라 카드가 놓인 컬럼 폭이다 — 넓은 화면이라도 좌우 분할된
+  컬럼 안에서는 좁게 놓일 수 있다. 폭이 모자라면 한 줄에 밀어넣지 말고 쌓는다.
+*/
+.rc-prop-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  flex-wrap: wrap;
+}
+@container (min-width: 560px) {
+  .rc-prop-actions { width: auto; }
+}
+
+.rc-status-tag {
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.rc-st-prep { background: #efeee9; color: var(--rc-ink-soft); }
+.rc-st-ready { background: var(--rc-blue-soft); color: var(--rc-blue); }
+.rc-st-recorded { background: var(--rc-amber-soft); color: var(--rc-amber); }
+.rc-st-confirmed { background: var(--rc-teal-soft); color: var(--rc-teal); }
+.rc-st-excluded { background: var(--rc-red-soft); color: var(--rc-red); }
+
+/* ── 진행률 링 ──────────────────────────────────────────────── */
+.rc-ring { position: relative; width: 52px; height: 52px; flex-shrink: 0; }
+.rc-ring svg { transform: rotate(-90deg); }
+.rc-ring-pct {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+/* ── 빈 상태 ────────────────────────────────────────────────── */
+.rc-empty {
+  text-align: center;
+  padding: 48px 20px;
+  border: 1.5px dashed var(--rc-line-strong);
+  border-radius: 14px;
+  color: var(--rc-ink-soft);
+}
+.rc-empty b { color: var(--rc-ink); font-size: 16.5px; display: block; margin-bottom: 6px; }
+
+/* ── 섹션 제목 ──────────────────────────────────────────────── */
+.rc-h2 { font-size: 19px; font-weight: 800; letter-spacing: -0.2px; }
+.rc-group-label {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--rc-ink-faint);
+  letter-spacing: 0.5px;
+  margin: 18px 0 6px;
+}
+
+/* ── 폼 ─────────────────────────────────────────────────────── */
+.rc-fgrid { display: grid; grid-template-columns: 1fr; gap: 12px 16px; }
+@media (min-width: 640px) {
+  .rc-fgrid { grid-template-columns: 1fr 1fr; }
+}
+.rc-fgrid .rc-full { grid-column: 1 / -1; }
+.rc-fl { display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 4px; }
+.rc-fl .rc-opt { color: var(--rc-ink-faint); font-weight: 400; }
+.rc-input,
+.rc-select,
+.rc-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  min-height: var(--rc-tap);
+  border: 1px solid var(--rc-line-strong);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  background: var(--rc-surface);
+  color: var(--rc-ink);
+}
+.rc-textarea { min-height: 120px; }
+.rc-input:focus,
+.rc-select:focus,
+.rc-textarea:focus {
+  outline: 2px solid var(--rc-teal);
+  outline-offset: 1px;
+  border-color: var(--rc-teal);
+}
+.rc-seg { display: flex; border: 1.5px solid var(--rc-ink); border-radius: 8px; overflow: hidden; width: fit-content; }
+.rc-seg button {
+  border: 0;
+  background: var(--rc-surface);
+  padding: 8px 18px;
+  min-height: var(--rc-tap);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--rc-ink);
+}
+.rc-seg button.rc-on { background: var(--rc-ink); color: #fff; }
+
+.rc-tabs { display: flex; margin-bottom: 18px; border-bottom: 1.5px solid var(--rc-line-strong); overflow-x: auto; }
+.rc-tabs button {
+  border: 0;
+  background: none;
+  padding: 10px 16px;
+  min-height: var(--rc-tap);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--rc-ink-faint);
+  border-bottom: 2.5px solid transparent;
+  margin-bottom: -1.5px;
+  white-space: nowrap;
+}
+.rc-tabs button.rc-on { color: var(--rc-ink); border-bottom-color: var(--rc-teal); }
+
+.rc-row { display: flex; gap: 8px; }
+.rc-row .rc-input { flex: 1; min-width: 0; }
+
+.rc-field-note { font-size: 12.5px; color: var(--rc-ink-soft); margin-top: 6px; line-height: 1.5; }
+.rc-geo-box:not(:empty) { margin-top: 2px; }
+.rc-error {
+  font-size: 13px;
+  color: var(--rc-red);
+  background: var(--rc-red-soft);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-top: 14px;
+}
+.rc-form-actions {
+  margin-top: 18px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* ── 상세 헤더 · 국면 스텝 ──────────────────────────────────── */
+.rc-detail-head { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 16px; }
+.rc-detail-head h1,
+.rc-detail-head h2 { font-size: 20px; font-weight: 800; letter-spacing: -0.3px; }
+.rc-detail-head .rc-meta { font-size: 12.5px; color: var(--rc-ink-soft); }
+.rc-phases { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+.rc-ph {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--rc-line-strong);
+  background: var(--rc-surface);
+  border-radius: 10px;
+  padding: 7px 14px;
+  min-height: var(--rc-tap);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--rc-ink-faint);
+  text-decoration: none;
+}
+.rc-ph .rc-pn { font-size: 10px; font-weight: 800; letter-spacing: 0.5px; }
+.rc-ph.rc-on { border-color: var(--rc-ink); background: var(--rc-ink); color: #fff; }
+.rc-ph.rc-done { color: var(--rc-teal); border-color: var(--rc-teal-soft); background: var(--rc-teal-soft); }
+/* 아직 갈 수 없는 국면 — 왜 잠겼는지 함께 적는다 */
+.rc-ph-locked {
+  border-style: dashed;
+  background: var(--rc-paper);
+  color: var(--rc-ink-faint);
+  cursor: default;
+  flex-wrap: wrap;
+}
+.rc-lock-note { font-size: 11px; font-weight: 500; }
+
+/* ── 체크·질문 아이템 ───────────────────────────────────────── */
+.rc-chk-item {
+  display: flex;
+  gap: 11px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--rc-line);
+  align-items: flex-start;
+  min-height: var(--rc-tap);
+}
+.rc-chk-item:last-child { border-bottom: 0; }
+.rc-chk-item input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  accent-color: var(--rc-teal);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.rc-chk-t { font-weight: 600; font-size: 13.5px; }
+.rc-chk-d { font-size: 12.5px; color: var(--rc-ink-soft); margin-top: 1px; }
+.rc-chk-item.rc-done .rc-chk-t { color: var(--rc-ink-faint); text-decoration: line-through; }
+.rc-rm {
+  margin-left: auto;
+  color: var(--rc-ink-faint);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  background: none;
+  border: 0;
+  flex-shrink: 0;
+  min-width: var(--rc-tap);
+  min-height: var(--rc-tap);
+}
+.rc-rm:hover { color: var(--rc-red); }
+
+.rc-qbank { border: 1px solid var(--rc-line); border-radius: 10px; margin-bottom: 8px; background: var(--rc-surface); }
+.rc-qbank summary {
+  padding: 12px 14px;
+  min-height: var(--rc-tap);
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rc-qbank summary::-webkit-details-marker { display: none; }
+.rc-qbank summary::after { content: "▾"; margin-left: auto; color: var(--rc-ink-faint); transition: 0.15s; }
+.rc-qbank[open] summary::after { transform: rotate(180deg); }
+.rc-qbank-body { padding: 0 14px 10px; }
+.rc-qb-count { font-size: 11px; color: var(--rc-teal); font-weight: 700; }
+
+.rc-q-item { padding: 12px 0; border-bottom: 1px solid var(--rc-line); }
+.rc-q-item:last-child { border-bottom: 0; }
+.rc-q-text { font-weight: 600; font-size: 13.5px; margin-bottom: 6px; display: flex; align-items: flex-start; gap: 6px; flex-wrap: wrap; }
+.rc-q-num { color: var(--rc-teal); font-weight: 800; flex-shrink: 0; }
+.rc-q-actions { display: flex; gap: 8px; font-size: 12px; margin-top: 4px; }
+.rc-q-actions button {
+  background: none;
+  border: 0;
+  color: var(--rc-ink-faint);
+  text-decoration: underline;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  min-height: var(--rc-tap);
+  padding: 0 4px;
+}
+.rc-q-actions button:hover { color: var(--rc-ink); }
+.rc-q-cat { font-weight: 400; color: var(--rc-ink-faint); font-size: 11.5px; }
+.rc-linkish {
+  background: none;
+  border: 0;
+  padding: 0 4px;
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--rc-ink-soft);
+  text-decoration: underline;
+  cursor: pointer;
+  min-height: var(--rc-tap);
+}
+.rc-linkish:hover { color: var(--rc-ink); }
+
+/* ── 방문 기록: 4택 ─────────────────────────────────────────── */
+.rc-res-seg { display: flex; gap: 5px; margin-top: 6px; flex-wrap: wrap; }
+.rc-res-seg button {
+  border: 1px solid var(--rc-line-strong);
+  background: var(--rc-surface);
+  border-radius: 20px;
+  padding: 8px 16px;
+  min-height: var(--rc-tap);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--rc-ink-soft);
+}
+.rc-res-seg button.rc-on-good { background: var(--rc-teal); border-color: var(--rc-teal); color: #fff; }
+.rc-res-seg button.rc-on-ok { background: var(--rc-ink-soft); border-color: var(--rc-ink-soft); color: #fff; }
+.rc-res-seg button.rc-on-bad { background: var(--rc-red); border-color: var(--rc-red); color: #fff; }
+.rc-res-seg button.rc-on-na { background: var(--rc-ink-faint); border-color: var(--rc-ink-faint); color: #fff; }
+
+/* ── 안내 문구 ──────────────────────────────────────────────── */
+.rc-notice {
+  font-size: 12.5px;
+  color: var(--rc-ink-soft);
+  background: var(--rc-paper);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 10px 0;
+}
+.rc-notice-warn { background: var(--rc-amber-soft); color: var(--rc-amber); }
+.rc-notice-info { background: var(--rc-blue-soft); color: var(--rc-blue); }
+
+/* ── 비교 테이블 ────────────────────────────────────────────── */
+.rc-cmp-scroll { overflow-x: auto; }
+.rc-cmp { border-collapse: collapse; width: 100%; min-width: 520px; }
+.rc-cmp th,
+.rc-cmp td { border: 1px solid var(--rc-line); padding: 9px 13px; font-size: 13px; text-align: left; vertical-align: top; }
+.rc-cmp thead th { background: var(--rc-ink); color: #fff; font-size: 13.5px; }
+.rc-cmp .rc-rowlabel { background: var(--rc-paper); font-weight: 600; white-space: nowrap; color: var(--rc-ink-soft); }
+.rc-arr-hi { color: var(--rc-red); font-weight: 800; }
+.rc-arr-lo { color: var(--rc-blue); font-weight: 800; }
+.rc-cmp td.rc-miss { background: var(--rc-amber-soft); color: var(--rc-amber); font-weight: 600; }
+.rc-cmp td.rc-bad-cell { color: var(--rc-red); font-weight: 700; }
+.rc-legend { font-size: 11.5px; color: var(--rc-ink-faint); margin-top: 8px; }
+.rc-ai-summary {
+  background: var(--rc-violet-soft);
+  border-radius: 10px;
+  padding: 14px 16px;
+  font-size: 13.5px;
+  margin-top: 12px;
+  white-space: pre-wrap;
+}
+
+.rc-report-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+@media (min-width: 640px) {
+  .rc-report-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* ── 로딩 ───────────────────────────────────────────────────── */
+.rc-spinner {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border: 2px solid var(--rc-violet-soft);
+  border-top-color: var(--rc-violet);
+  border-radius: 50%;
+  animation: rc-spin 0.7s linear infinite;
+  vertical-align: -2px;
+}
+@keyframes rc-spin { to { transform: rotate(360deg); } }
+
+/* ── 지도 영역 ──────────────────────────────────────────────── */
+.rc-map-note {
+  font-size: 11.5px;
+  color: var(--rc-ink-faint);
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   인쇄
+   프로토타입은 body > .wrap 을 숨기고 문서 밖의 #print-area 를 띄웠다.
+   그 방식은 app/layout.tsx 에 셸 클래스가 있어야 성립하므로,
+   화면 안에서 자립하도록 rc-screen-only / rc-print-only 쌍으로 바꿨다.
+   ══════════════════════════════════════════════════════════════ */
+.rc-print-only { display: none; }
+
+@media print {
+  .rc-screen-only { display: none !important; }
+  .rc-print-only { display: block !important; }
+
+  .rc-app { background: #fff; }
+
+  .rc-print {
+    font-family: "Pretendard", "Apple SD Gothic Neo", sans-serif;
+    color: #000;
+    font-size: 12px;
+    line-height: 1.55;
+  }
+  .rc-print h1 { font-size: 17px; border-bottom: 2px solid #000; padding-bottom: 6px; margin-bottom: 4px; }
+  .rc-print .rc-pmeta { font-size: 11px; color: #444; margin-bottom: 14px; }
+  .rc-print h2 { font-size: 13.5px; margin: 16px 0 6px; background: #eee; padding: 4px 8px; }
+  .rc-print table { border-collapse: collapse; width: 100%; }
+  .rc-print th,
+  .rc-print td { border: 1px solid #999; padding: 5px 8px; font-size: 11.5px; text-align: left; }
+  .rc-print th { background: #f2f2f2; }
+  .rc-print .rc-blank { height: 26px; }
+  .rc-print .rc-foot { margin-top: 14px; font-size: 10px; color: #666; }
+}

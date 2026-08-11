@@ -1,0 +1,34 @@
+/**
+ * 진행률 링 (프로토타입 ringSVG())
+ *
+ * ★ 점수가 아니라 "얼마나 확인했는지"의 집계다. 값은 서버에서 계산해 내려온
+ *   PropertyDTO.progress 를 그대로 그린다. 클라이언트에서 다시 계산하지 않는다.
+ */
+export function ProgressRing({ percent }: { percent: number }) {
+  const pct = Math.max(0, Math.min(100, Math.round(percent)));
+  const r = 21;
+  const circumference = 2 * Math.PI * r;
+  const offset = circumference * (1 - pct / 100);
+  const color =
+    pct === 100 ? 'var(--rc-teal-mid)' : pct >= 50 ? 'var(--rc-amber)' : 'var(--rc-line-strong)';
+
+  return (
+    <div className="rc-ring" role="img" aria-label={`확인 진행률 ${pct}%`}>
+      <svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true">
+        <circle cx="26" cy="26" r={r} fill="none" stroke="var(--rc-line)" strokeWidth="4.5" />
+        <circle
+          cx="26"
+          cy="26"
+          r={r}
+          fill="none"
+          stroke={color}
+          strokeWidth="4.5"
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          strokeDashoffset={offset}
+        />
+      </svg>
+      <div className="rc-ring-pct">{pct}%</div>
+    </div>
+  );
+}

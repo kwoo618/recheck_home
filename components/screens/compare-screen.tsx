@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition, type ReactNode } from 'react';
 import type { FinanceProfile, PropertyStatus, QuestionSource } from '@/db/schema';
-import { DISTANCE_NOTICE, formatDistance, formatDistanceLabel } from '@/lib/geo';
+import { DISTANCE_NOTICE, SCHOOL_ORIGIN, formatDistance, formatDistanceLabel } from '@/lib/geo';
 import type { ActionResult, PropertyDTO } from '@/lib/types';
 import { ScreenShell } from './_parts/screen-shell';
 import { SourceBadge } from './_parts/source-badge';
@@ -87,6 +87,9 @@ export function CompareScreen({
 
   const located = ps.filter((p) => p.distanceFromSchool !== null);
   const unlocated = ps.filter((p) => p.distanceFromSchool === null);
+  // 거래유형이 섞이면 원시 가격은 같은 축의 값이 아니게 된다
+  const dealTypes = new Set(ps.map((p) => p.dealType));
+  const mixedDeal = dealTypes.size > 1;
   const hasRecords = ps.some(
     (p) => p.visitChecks.some((v) => v.result !== '') || p.questions.some((q) => q.answer !== ''),
   );
@@ -155,7 +158,7 @@ export function CompareScreen({
                 ))}
               </tr>
               <tr>
-                <td className="rc-rowlabel">경산캠퍼스 직선거리</td>
+                <td className="rc-rowlabel">{SCHOOL_ORIGIN.name} 직선거리</td>
                 {located.map((p) => (
                   <td key={p.id}>{formatDistance(p.distanceFromSchool)}</td>
                 ))}
@@ -200,9 +203,19 @@ export function CompareScreen({
                   <td key={p.id}>{formatPrice(p)}</td>
                 ))}
               </tr>
-              <NumberRow properties={ps} label="가격 (만원)" pick={(p) => p.price} />
+              {/*
+                거래유형이 섞이면 가격·보증금에 ▲▼를 붙이지 않는다.
+                전세 8,500만과 월세 45만은 같은 축의 값이 아니라서, 화살표를 그리면
+                "전세가 189배 비싸다"로 읽힌다. 그건 사실이 아니다.
+              */}
+              <NumberRow properties={ps} label="가격 (만원)" pick={(p) => p.price} marks={!mixedDeal} />
               {ps.some((p) => p.dealType === '월세') && (
-                <NumberRow properties={ps} label="보증금 (만원)" pick={(p) => p.deposit} />
+                <NumberRow
+                  properties={ps}
+                  label="보증금 (만원)"
+                  pick={(p) => p.deposit}
+                  marks={!mixedDeal}
+                />
               )}
               <NumberRow properties={ps} label="관리비 (만원)" pick={(p) => p.mgmtFee} />
               {ps.some((p) => p.area > 0) && <NumberRow properties={ps} label="면적 (㎡)" pick={(p) => p.area} />}
@@ -245,6 +258,20 @@ export function CompareScreen({
           ▲ 최고값 · ▼ 최저값 — <b>수치의 높고 낮음 표시일 뿐, 우열 판정이 아닙니다.</b> (가격은 낮을수록,
           층수는 취향에 따라 다르게 볼 수 있어요)
         </p>
+
+        {mixedDeal && (
+          <p className="rc-notice rc-notice-info">
+            <b>{[...dealTypes].join('·')}가 섞여 있어 가격·보증금은 직접 비교할 수 없습니다.</b> 전세금과
+            월세는 성격이 다른 금액이라 높낮이를 견주는 것이 의미가 없어서, 두 행에는 ▲▼를 붙이지
+            않았습니다.
+            <br />
+            거래유형이 달라도 견줄 수 있는 축은 아래 <b>③ 금융·현금흐름</b>의{' '}
+            <b>월 주거비</b>(월세 + 관리비 + 월이자)와 <b>초기 필요자금</b>이에요. 자금 조건을 입력하면
+            계산됩니다.
+            {dealTypes.has('매매') && ' 매매는 상환 구조가 달라 이 계산에서 빠집니다.'}
+            {dealTypes.has('월세') && ' 보증금과 월세를 맞바꾸면 어떻게 되는지는 ③의 전환 계산기에서 확인할 수 있어요.'}
+          </p>
+        )}
       </section>
 
       {/* ── ③ 금융 ───────────────────────────────────────────── */}
@@ -392,16 +419,19 @@ function NumberRow({
   label,
   pick,
   unit = '',
+  marks = true,
 }: {
   properties: PropertyDTO[];
   label: string;
   pick: (p: PropertyDTO) => number;
   unit?: string;
+  /** false면 값만 적는다. 서로 다른 축의 값이라 높낮이를 견줄 수 없을 때 쓴다 */
+  marks?: boolean;
 }) {
   const values = properties.map(pick);
   const max = Math.max(...values);
   const min = Math.min(...values);
-  const varied = max !== min;
+  const varied = marks && max !== min;
 
   return (
     <tr>

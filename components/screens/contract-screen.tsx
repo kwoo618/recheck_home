@@ -1,7 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
+import type { PropertyStatus } from '@/db/schema';
 import { CONTRACT_DAY, selectAfterSteps, type RuleContext } from '@/lib/rules';
 import type { ActionResult, PropertyDTO } from '@/lib/types';
 import type { CheckGroup } from '@/lib/actions/checks';
@@ -29,12 +31,19 @@ export type ContractScreenProps = {
     ruleId: string,
     on: boolean,
   ) => Promise<ActionResult<void>>;
+  /**
+   * 확정 취소 (confirmed → recorded). 넘기지 않으면 취소 버튼을 그리지 않는다.
+   * 계약을 확정하면 비교에서 빠지는데, 되돌릴 길이 없으면 잘못 누른 사람이 갇힌다.
+   * 전이 자체는 canTransition 이 허용하는 것이고 검증은 서버가 한다.
+   */
+  onSetStatus?: (propertyId: string, next: PropertyStatus) => Promise<ActionResult<void>>;
 };
 
-export function ContractScreen({ property: p, hrefFor, onToggleCheck }: ContractScreenProps) {
+export function ContractScreen({ property: p, hrefFor, onToggleCheck, onSetStatus }: ContractScreenProps) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState('');
+  const [cancelling, setCancelling] = useState(false);
 
   const ctx: RuleContext = {
     dealType: p.dealType,
@@ -119,7 +128,69 @@ export function ContractScreen({ property: p, hrefFor, onToggleCheck }: Contract
           전입신고와 확정일자는 보증금 보호(대항력·우선변제권)의 핵심이에요. 입주 당일 바로 처리하는
           것을 권장합니다.
         </p>
+
+        {/* 확정하면 비교에서 빠지므로, 잘못 눌렀을 때 되돌아갈 길을 아래쪽에도 둔다 */}
+        <div className="rc-next-step">
+          <Link href={hrefFor('dash')} className="rc-btn rc-btn-ghost">
+            매물 목록
+          </Link>
+          {onSetStatus && p.status === 'confirmed' && (
+            <button
+              type="button"
+              className="rc-btn rc-btn-ghost rc-btn-danger"
+              disabled={pending}
+              onClick={() => setCancelling(true)}
+            >
+              계약 확정 취소
+            </button>
+          )}
+        </div>
       </div>
+
+      {cancelling && onSetStatus && (
+        <div className="rc-modal-backdrop rc-screen-only" onClick={() => setCancelling(false)}>
+          <div
+            className="rc-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="rc-cancel-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="rc-cancel-title" className="rc-card-title">
+              계약 확정을 취소할까요?
+            </h2>
+            <p className="rc-card-sub">
+              기록 완료 상태로 돌아가고 다시 비교 대상이 됩니다. 지금까지 체크한 계약 당일·이후 절차
+              항목은 그대로 남아요.
+            </p>
+            <div className="rc-form-actions">
+              <button
+                type="button"
+                className="rc-btn rc-btn-danger"
+                disabled={pending}
+                onClick={() =>
+                  startTransition(async () => {
+                    const result = await onSetStatus(p.id, 'recorded');
+                    if (!result.ok) {
+                      setCancelling(false);
+                      setError(result.error);
+                      return;
+                    }
+                    setCancelling(false);
+                    router.refresh();
+                    router.push(hrefFor('safety', p.id));
+                  })
+                }
+              >
+                {pending ? '처리하는 중...' : '확정 취소'}
+              </button>
+              <button type="button" className="rc-btn rc-btn-ghost" onClick={() => setCancelling(false)}>
+                돌아가기
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <SafetyPrint property={p} />
     </ScreenShell>

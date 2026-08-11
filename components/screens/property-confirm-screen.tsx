@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 import type { UpdatePropertyInput } from '@/lib/actions/properties';
+import { SCHOOL_ORIGIN } from '@/lib/geo';
 import type { ActionResult, PropertyDTO } from '@/lib/types';
 import { ScreenShell } from './_parts/screen-shell';
 import { PropertyHeader } from './_parts/property-header';
@@ -77,7 +78,7 @@ export function PropertyConfirmScreen({
       return;
     }
     if (!form.address.trim()) {
-      setError('주소를 입력해 주세요. 주소 검색을 쓰면 경산캠퍼스까지 거리도 함께 계산돼요.');
+      setError(`주소를 입력해 주세요. 주소 검색을 쓰면 ${SCHOOL_ORIGIN.name}까지 거리도 함께 계산돼요.`);
       return;
     }
 

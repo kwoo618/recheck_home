@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import type { PropertyStatus, QuestionSource } from '@/db/schema';
@@ -394,6 +395,25 @@ export function SurveySheetScreen({
               질문을 하나 이상 고르거나 &ldquo;따로 걱정되는 건 없어요&rdquo;를 선택하면 완성할 수 있어요.
             </span>
           )}
+        </div>
+
+        {/*
+          조사지가 길어 여기까지 스크롤한 사람이 다음 단계로 가려고 다시 맨 위 국면 스텝까지
+          올라가지 않도록 아래에도 길을 둔다. 방문 기록은 조사지를 완성한 뒤에만 열린다. (R5)
+        */}
+        <div className="rc-next-step">
+          {p.status === 'prep' ? (
+            <span className="rc-field-note">
+              조사지를 완성하면 방문 기록을 쓸 수 있어요. 현장 항목 체크는 다녀온 뒤에 합니다.
+            </span>
+          ) : (
+            <Link href={hrefFor('record', p.id)} className="rc-btn rc-btn-ghost">
+              다녀왔어요 — 방문 기록 입력 →
+            </Link>
+          )}
+          <Link href={hrefFor('dash')} className="rc-btn rc-btn-ghost">
+            매물 목록
+          </Link>
         </div>
       </div>
 

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 import type { CreatePropertyInput } from '@/lib/actions/properties';
+import { SCHOOL_ORIGIN } from '@/lib/geo';
 import type { ActionResult } from '@/lib/types';
 import { ScreenShell } from './_parts/screen-shell';
 import { SourceBadge } from './_parts/source-badge';
@@ -113,7 +114,7 @@ export function PropertyAddScreen({
       return;
     }
     if (!form.address.trim()) {
-      setError('주소를 입력해 주세요. 주소 검색을 쓰면 경산캠퍼스까지 거리도 함께 계산돼요.');
+      setError(`주소를 입력해 주세요. 주소 검색을 쓰면 ${SCHOOL_ORIGIN.name}까지 거리도 함께 계산돼요.`);
       return;
     }
     const created = await create(toCreateInput(form));
@@ -192,8 +193,8 @@ export function PropertyAddScreen({
           <span className="rc-phase-pill">국면 A · 방문 준비</span> 매물 등록
         </h2>
         <p className="rc-card-sub">
-          주소를 검색해 등록하면 대구대 경산캠퍼스까지의 거리가 함께 계산돼요. 매물 설명을 붙여넣어 자동으로
-          읽어올 수도 있어요.
+          주소를 검색해 등록하면 {SCHOOL_ORIGIN.name}까지의 거리가 함께 계산돼요. 매물 설명을 붙여넣어
+          자동으로 읽어올 수도 있어요.
         </p>
 
         <div className="rc-tabs" role="tablist">

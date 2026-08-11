@@ -47,11 +47,13 @@
 - [x] **REST API 키** 발급 → `.env.local`의 `KAKAO_REST_KEY` (서버 전용, 값 입력됨)
   - [x] 실제 동작 확인 (2026-08-11) — 로컬 API 주소 검색 `HTTP 200`,
         응답의 `x`=경도 / `y`=위도 매핑이 코드 가정과 일치함을 실호출로 검증
-- [ ] 플랫폼 > Web 도메인 등록 ← **앱 `1540296`에서 할 것**
-  - [x] `http://localhost:3000` — 등록 완료 (2026-08-11).
-        경로: 앱 `1540296` > 플랫폼 키 > JavaScript 키 > JavaScript SDK 도메인
-  - [ ] Vercel 배포 도메인 `________` ← D3 배포 후 **같은 위치**에 추가
-- [ ] 지도 SDK 활성화 확인 (JS SDK는 도메인 등록이 선행돼야 함)
+- [x] 플랫폼 > Web 도메인 등록 ← 앱 `1540296`
+  - [x] `http://localhost:3000` — 등록 완료 (2026-08-11)
+  - [x] `https://recheck-home.vercel.app` — 등록 완료 (2026-08-11)
+- [x] 지도 SDK 활성화 확인 — **실호출로 검증** (2026-08-11):
+      `sdk.js`를 Referer별로 호출한 결과 등록 도메인 2곳은 `HTTP 200` + 스크립트 반환,
+      미등록 도메인은 `HTTP 401 AccessDeniedError: domain mismatched!`
+      → 도메인 제한이 실제로 작동하며 배포본에서도 SDK가 허용된다
 - [ ] 우편번호(주소 검색) 서비스 사용 방법 확인
 - [x] **지도 SDK 무료 한도 확인** ← PRD "착수 전 확인 필요" 항목
   - 확인한 내용: **지도 SDK 1일 300,000회**
@@ -62,8 +64,10 @@
   좌표 실패 → `latitude` null)이 있어 핵심 검증 흐름은 그대로 동작한다.
 
 ### Gemini API
-- [ ] API 키 발급 → `.env.local`의 `GEMINI_API_KEY` (서버 전용, `NEXT_PUBLIC_` 금지)
-- [x] 사용할 모델명 확정 — 기본 **`gemini-2.5-flash`** / 폴백 **`gemini-2.5-flash-lite`**
+- [x] API 키 발급 → `.env.local` + Vercel 환경변수 (서버 전용, `NEXT_PUBLIC_` 금지)
+      로컬·배포본 양쪽에서 실호출 검증 완료 (2026-08-11)
+- [x] 사용할 모델명 확정 — 기본 **`gemini-3.5-flash`** / 폴백 **`gemini-3.5-flash-lite`**
+      (2.5 계열은 신규 계정에 막혀 있다 — 아래 실측표 참조)
   - 상수 단일 관리 지점: **`lib/ai/models.ts`** (`GEMINI_MODEL` / `GEMINI_FALLBACK_MODEL` / `GEMINI_MODEL_CHAIN`)
   - AI 라우트 3종은 모델명을 문자열로 박지 말고 이 상수를 임포트할 것
 - [ ] **무료 티어 RPM/RPD 한도** — 공식 문서에서 찾지 못함. **D2 저녁 라우트 구현 후 연속 호출로 실측**
@@ -98,12 +102,13 @@
 - [x] Vercel 프로젝트 연결 — `main` 푸시 시 자동 배포 확인 (2026-08-11)
 - [x] **Vercel 함수 리전 `sin1`(싱가포르) 확인** — 응답 헤더 `X-Vercel-Id: icn1::sin1::…`
       (엣지는 서울 `icn1`, 함수 실행은 싱가포르 `sin1` = Neon과 동일 리전)
-- [ ] Vercel 환경변수 등록 (4개: DATABASE_URL / GEMINI_API_KEY / NEXT_PUBLIC_KAKAO_MAP_KEY / KAKAO_REST_KEY)
-  - [x] `DATABASE_URL` — 배포본에서 실제 쿼리 성공 확인 (아래 메모 참조)
-  - [ ] 나머지 3개는 미검증. 해당 기능(지도·AI) 붙일 때 확인
+- [x] Vercel 환경변수 4개 등록 — **전부 배포본 실호출로 검증** (2026-08-11)
+  - [x] `DATABASE_URL` — 매물 조회·저장 정상
+  - [x] `KAKAO_REST_KEY` — `/api/geocode` → `{"ok":true,"lat":35.8968…,"lng":128.8489…}`
+  - [x] `GEMINI_API_KEY` — `/api/ai/questions` → `source:"ai"` 질문 3건 생성
+  - [x] `NEXT_PUBLIC_KAKAO_MAP_KEY` — 클라이언트 청크에 주입, 도메인 허용 확인
 - [x] 첫 배포 성공 — 배포 URL: **https://recheck-home.vercel.app**
-- [ ] 배포 도메인을 카카오 플랫폼에 등록했는지 재확인 ← 자주 빠뜨림
-  - 등록할 값: `https://recheck-home.vercel.app` (앱 `1540296` > 플랫폼 키 > JavaScript 키 > JavaScript SDK 도메인)
+- [x] 배포 도메인을 카카오 플랫폼에 등록했는지 재확인 — 완료 (2026-08-11)
 - 메모: 2026-08-11 임시 `/api/health` 라우트로 배포본 ↔ Neon 연결을 검증했다.
   `{"ok":true,"count":0}` / HTTP 200, 웜 응답 0.26~0.48s. **검증 후 라우트는 삭제함**
   (커밋 `20ed6de`에서 추가, 이후 삭제. 다시 필요하면 해당 커밋에서 복원)

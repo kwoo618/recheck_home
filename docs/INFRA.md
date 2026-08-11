@@ -52,10 +52,11 @@
 - 메모:
 
 ### GitHub / Vercel
-- [ ] 저장소 생성 — `________`
-- [ ] git 기본 브랜치 `main`으로 통일 (`git branch -M main`) ← Vercel 프로덕션 브랜치와 일치 필요
-- [ ] 첫 커밋 완료 (확정 파일 백업 목적)
-- [ ] `.gitignore`에 `.env.local` 포함 확인
+- [x] 저장소 생성 — `kwoo618/recheck_home` (**public**)
+- [x] git 기본 브랜치 `main`으로 통일 — 원격 기본 브랜치 변경 + `master` 삭제 완료 (2026-08-11)
+- [x] 첫 커밋 완료 — D1 커밋 `32e5700` 푸시됨 (49파일)
+- [x] `.gitignore`에 `.env.local` 포함 확인 — 전체 히스토리 감사 결과 `.env.example`만 추적됨. 실제 키 유출 없음
+  - ⚠ 저장소가 **public**이므로 앞으로도 키·URL을 커밋에 넣지 않도록 주의
 - [ ] Vercel 프로젝트 연결
 - [ ] **Vercel 함수 리전을 `sin1`(싱가포르)로 설정** ← Neon과 같은 리전. 기본값 `iad1`이면 DB 왕복이 태평양을 넘음
 - [ ] Vercel 환경변수 등록 (4개: DATABASE_URL / GEMINI_API_KEY / NEXT_PUBLIC_KAKAO_MAP_KEY / KAKAO_REST_KEY)

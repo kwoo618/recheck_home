@@ -8,6 +8,7 @@ import type { ActionResult } from '@/lib/types';
 import { ScreenShell } from './_parts/screen-shell';
 import { SourceBadge } from './_parts/source-badge';
 import {
+  DEAL_TYPES,
   EMPTY_FORM,
   PropertyFields,
   toCreateInput,
@@ -70,16 +71,31 @@ export function PropertyAddScreen({
         router.push(hrefFor('confirm', result.data.id));
       }
       return result;
+    } catch {
+      /*
+       * Server Action 이 값이 아니라 예외로 실패하는 경우(DB 연결 장애 등).
+       * 그대로 두면 에러 바운더리가 떠서 흰 화면이 되고, 등록은 첫 단계라
+       * 사용자가 되돌아올 길이 없다. 실패를 값으로 바꿔 화면 안에서 처리한다. (R4)
+       */
+      return { ok: false, error: '지금 저장할 수 없어요. 잠시 후 다시 시도해 주세요.' };
     } finally {
       setSubmitting(false);
     }
   }
 
-  /** AI가 읽어온 값을 직접 입력 폼에 옮긴다. 저장이 거부돼도 사용자가 처음부터 다시 치지 않도록 */
+  /**
+   * AI가 읽어온 값을 직접 입력 폼에 옮긴다. 읽어낸 것을 버리지 않기 위함이다.
+   *
+   * ★ 좌표는 옮기지 않는다. 주소만 채워두고 좌표는 사용자가 주소를 확인·검색할 때 얻는다.
+   *   못 얻어도 "위치 미지정"으로 등록되므로 흐름이 막히지 않는다. (R4)
+   */
   function fillFormFrom(data: Partial<CreatePropertyInput>) {
     setForm((prev) => ({
       ...prev,
       name: typeof data.name === 'string' ? data.name : prev.name,
+      address: typeof data.address === 'string' ? data.address : prev.address,
+      addressDetail: typeof data.addressDetail === 'string' ? data.addressDetail : prev.addressDetail,
+      link: typeof data.link === 'string' ? data.link : prev.link,
       dealType: data.dealType ?? prev.dealType,
       price: data.price !== undefined ? String(data.price) : prev.price,
       deposit: data.deposit !== undefined ? String(data.deposit) : prev.deposit,
@@ -100,7 +116,8 @@ export function PropertyAddScreen({
       setError('주소를 입력해 주세요. 주소 검색을 쓰면 경산캠퍼스까지 거리도 함께 계산돼요.');
       return;
     }
-    await create(toCreateInput(form));
+    const created = await create(toCreateInput(form));
+    if (!created.ok) setError(created.error);
   }
 
   async function handleParse() {
@@ -111,30 +128,53 @@ export function PropertyAddScreen({
     }
     setParsing(true);
     setParseNote('');
+    setError('');
 
     try {
       const result = onParseText ? await onParseText(text) : { ok: false };
+      const data = result.ok ? result.data : undefined;
 
-      // ① 읽기 실패 — 막다른 길이 아니다. 직접 입력으로 넘긴다
-      if (!result.ok || !result.data?.dealType) {
+      // ① 아무것도 못 읽음 — 빈 폼으로 직접 입력
+      if (!data) {
         setError('자동 인식에 실패했어요. 직접 입력으로 전환합니다.');
         setTab('form');
         return;
       }
 
-      // ② 읽기는 됐지만 저장이 거부된 경우 — AI가 준 값이 서버 검증을 통과하지 못했다.
-      //    같은 화면에 머물면 사용자가 할 수 있는 게 없으므로, 읽어온 값을 폼에 채워
-      //    직접 고칠 수 있게 직접 입력으로 보낸다.
-      const created = await create({
-        ...result.data,
-        name: result.data.name?.trim() || '붙여넣은 매물',
-        dealType: result.data.dealType,
-      });
-      if (created.ok) return; // 정보 확인 화면으로 이동함
+      /*
+       * ② 나머지는 읽었는데 거래유형만 없거나 알 수 없는 값인 경우 — 실패가 아니라 부분 성공이다.
+       *   매물 설명에 "전세/월세"가 안 적힌 경우는 흔하고, "반전세"처럼 셋 중 어느 것도
+       *   아닌 표현도 들어온다. 읽어낸 값을 버리지 않고 폼에 채운 뒤 거래유형만 고르게 한다.
+       *   ★ 거래유형은 조사지·안전 점검 항목 선정의 입력값이라 추측해서 채우지 않는다. (R8)
+       */
+      if (!data.dealType || !DEAL_TYPES.includes(data.dealType)) {
+        fillFormFrom(data);
+        setTab('form');
+        setError(
+          data.dealType
+            ? `거래 유형을 "${data.dealType}"으로 읽었는데 전세·월세·매매 중에 없어요. 나머지는 채워뒀으니 거래 유형만 골라 주세요.`
+            : '거래 유형만 읽지 못했어요. 나머지는 채워뒀으니 전세·월세·매매 중에서 골라 주세요.',
+        );
+        return;
+      }
 
-      fillFormFrom(result.data);
-      setError(`자동 인식 결과에 문제가 있습니다 (${created.error}) 읽어온 값을 채워뒀으니 직접 확인해 주세요.`);
+      // ③ 전부 읽음 — 등록하고 정보 확인 화면으로 넘어간다
+      const created = await create({
+        ...data,
+        name: data.name?.trim() || '붙여넣은 매물',
+        dealType: data.dealType,
+      });
+      if (created.ok) return;
+
+      /*
+       * ④ 서버가 저장을 거부한 경우.
+       *   지금 알려진 거부 조건(별칭 없음·거래유형 무효)은 ②와 기본값으로 막고 있어
+       *   여기까지 오는 경우는 서버 쪽 검증이 늘어나거나 저장 자체가 실패했을 때다.
+       *   화면이 서버의 검증 규칙을 다 알 수는 없으므로 방어를 남긴다.
+       */
+      fillFormFrom(data);
       setTab('form');
+      setError(`등록하지 못했어요 (${created.error}) 읽어온 값을 채워뒀으니 직접 확인해 주세요.`);
     } finally {
       // 성공·실패·예외 어느 쪽이든 스피너와 버튼 잠금은 반드시 풀린다
       setParsing(false);

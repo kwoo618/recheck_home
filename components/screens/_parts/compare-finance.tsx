@@ -49,6 +49,26 @@ export function CompareFinance({
   // ★ 기본값 없음. 사용자가 직접 넣은 값으로만 계산한다.
   const [cvRate, setCvRate] = useState(finance.cvRate?.toString() ?? '');
 
+  /*
+   * 서버가 내려준 금융 프로필이 바뀌면 입력칸도 따라간다.
+   * useState 초기값만 쓰면 매물을 제외해 화면이 다시 그려져도, 다른 기기에서 저장한
+   * 값이 들어와도 입력칸이 옛 값에 머문다.
+   *
+   * 객체 참조가 아니라 값으로 비교한다 — 서버 렌더마다 새 객체가 오므로 참조로 보면
+   * 새로고침 때마다 입력 중인 값을 덮어쓴다.
+   */
+  const financeKey = [finance.cash, finance.loanCap, finance.rate, finance.cvRate]
+    .map((v) => v ?? '')
+    .join('|');
+  const [syncedKey, setSyncedKey] = useState(financeKey);
+  if (financeKey !== syncedKey) {
+    setSyncedKey(financeKey);
+    setCash(finance.cash?.toString() ?? '');
+    setLoanCap(finance.loanCap?.toString() ?? '');
+    setRate(finance.rate?.toString() ?? '');
+    setCvRate(finance.cvRate?.toString() ?? '');
+  }
+
   const [targetRent, setTargetRent] = useState('');
   const [cvPropertyId, setCvPropertyId] = useState(
     properties.find((p) => p.dealType === '월세')?.id ?? '',

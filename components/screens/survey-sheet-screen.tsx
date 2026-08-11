@@ -11,6 +11,7 @@ import { ScreenShell } from './_parts/screen-shell';
 import { PropertyHeader } from './_parts/property-header';
 import { SourceBadge } from './_parts/source-badge';
 import { QuestionBadge } from './_parts/question-badge';
+import { useSingleFlight } from './_parts/use-single-flight';
 import { SurveySheetPrint } from './survey-sheet-print';
 import type { HrefFor } from './_parts/nav';
 
@@ -65,6 +66,7 @@ export function SurveySheetScreen({
   onAskQuestions,
 }: SurveySheetScreenProps) {
   const router = useRouter();
+  const singleFlight = useSingleFlight();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState('');
 
@@ -76,17 +78,23 @@ export function SurveySheetScreen({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
 
-  /** 서버 상태를 바꾼 뒤에는 다시 읽어온다 — 화면이 스스로 목록을 고치지 않는다 */
-  function run(action: () => Promise<ActionResult<unknown>>) {
-    startTransition(async () => {
-      const result = await action();
-      if (!result.ok) {
-        setError(result.error);
-        return;
-      }
-      setError('');
-      router.refresh();
-    });
+  /**
+   * 서버 상태를 바꾼 뒤에는 다시 읽어온다 — 화면이 스스로 목록을 고치지 않는다.
+   * key 는 중복 요청을 막는 단위다. 같은 항목을 두 번 누르면 두 번째는 무시하고,
+   * 다른 항목은 서로 막지 않는다.
+   */
+  function run(key: string, action: () => Promise<ActionResult<unknown>>) {
+    startTransition(() =>
+      singleFlight(key, async () => {
+        const result = await action();
+        if (!result.ok) {
+          setError(result.error);
+          return;
+        }
+        setError('');
+        router.refresh();
+      }),
+    );
   }
 
   const selectedTexts = new Set(p.questions.map((q) => q.text));
@@ -106,12 +114,19 @@ export function SurveySheetScreen({
     setAsking(true);
     setError('');
 
-    void (async () => {
+    void singleFlight('ask', async () => {
       const result = onAskQuestions
         ? await onAskQuestions(p.id, text)
         : { ok: false, questions: [] as string[] };
 
-      const questions = result.questions.filter((q) => q.trim() && !selectedTexts.has(q));
+      /*
+       * selectedTexts 는 렌더 시점의 값이라 여기서는 이미 낡았을 수 있다.
+       * 응답 안의 중복(new Set)과 이미 있는 질문을 함께 걸러 같은 질문이 두 번
+       * 들어가지 않게 한다.
+       */
+      const questions = [...new Set(result.questions.map((q) => q.trim()))].filter(
+        (q) => q && !selectedTexts.has(q),
+      );
 
       if (questions.length === 0) {
         setAsking(false);
@@ -134,21 +149,25 @@ export function SurveySheetScreen({
       setTemplateNote(!result.ok);
       setConcern('');
       router.refresh();
-    })();
+    });
   }
 
   function handleComplete() {
-    startTransition(async () => {
-      if (p.status === 'prep') {
-        const result = await onSetStatus(p.id, 'ready');
-        if (!result.ok) {
-          setError(result.error);
-          return;
+    // 두 번 누르면 setStatus 가 두 번 나가고, 두 번째는 이미 ready 라 서버가 거부한다.
+    // 인쇄는 정상인데 화면에 전이 실패 에러만 남는 상황이 된다.
+    startTransition(() =>
+      singleFlight('complete', async () => {
+        if (p.status === 'prep') {
+          const result = await onSetStatus(p.id, 'ready');
+          if (!result.ok) {
+            setError(result.error);
+            return;
+          }
+          router.refresh();
         }
-        router.refresh();
-      }
-      window.print();
-    });
+        window.print();
+      }),
+    );
   }
 
   const canComplete = p.questions.length > 0 || p.noConcern;
@@ -189,7 +208,7 @@ export function SurveySheetScreen({
                       className="rc-rm"
                       aria-label={`${v.title} 목록에서 제거`}
                       disabled={pending}
-                      onClick={() => run(() => onRemoveVisitCheck(v.id))}
+                      onClick={() => run(`rm-check-${v.id}`, () => onRemoveVisitCheck(v.id))}
                     >
                       ×
                     </button>
@@ -214,7 +233,7 @@ export function SurveySheetScreen({
               onClick={() => {
                 const title = newCheck.trim();
                 setNewCheck('');
-                run(() => onAddVisitCheck(p.id, { title }));
+                run(`add-check-${title}`, () => onAddVisitCheck(p.id, { title }));
               }}
             >
               추가
@@ -247,7 +266,7 @@ export function SurveySheetScreen({
                           type="checkbox"
                           checked={on}
                           disabled={pending}
-                          onChange={(e) => run(() => onToggleBankQuestion(p.id, text, e.target.checked))}
+                          onChange={(e) => run(`bank-${text}`, () => onToggleBankQuestion(p.id, text, e.target.checked))}
                         />
                         <span className="rc-chk-t" style={{ fontWeight: 500 }}>
                           {text}
@@ -300,7 +319,7 @@ export function SurveySheetScreen({
               type="checkbox"
               checked={p.noConcern}
               disabled={pending}
-              onChange={(e) => run(() => onSetNoConcern(p.id, e.target.checked))}
+              onChange={(e) => run('no-concern', () => onSetNoConcern(p.id, e.target.checked))}
             />
             <span className="rc-chk-t" style={{ fontWeight: 500 }}>
               따로 걱정되는 건 없어요
@@ -338,7 +357,7 @@ export function SurveySheetScreen({
                       onClick={() => {
                         const text = editText.trim();
                         setEditingId(null);
-                        run(() => onEditQuestion(q.id, text));
+                        run(`edit-${q.id}`, () => onEditQuestion(q.id, text));
                       }}
                     >
                       저장
@@ -368,7 +387,7 @@ export function SurveySheetScreen({
                       >
                         수정
                       </button>
-                      <button type="button" disabled={pending} onClick={() => run(() => onRemoveQuestion(q.id))}>
+                      <button type="button" disabled={pending} onClick={() => run(`rm-q-${q.id}`, () => onRemoveQuestion(q.id))}>
                         삭제
                       </button>
                     </div>

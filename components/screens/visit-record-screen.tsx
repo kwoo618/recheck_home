@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import type { VisitResult } from '@/db/schema';
 import type { ActionResult, PropertyDTO } from '@/lib/types';
 import type { VisitResultInput } from '@/lib/actions/visit';
@@ -12,6 +12,7 @@ import { PropertyHeader } from './_parts/property-header';
 import { SourceBadge } from './_parts/source-badge';
 import { QuestionBadge } from './_parts/question-badge';
 import { resultLabel } from './_parts/format';
+import { useUnsavedGuard } from './_parts/use-unsaved-guard';
 import { SurveySheetPrint } from './survey-sheet-print';
 import type { HrefFor } from './_parts/nav';
 
@@ -60,6 +61,25 @@ export function VisitRecordScreen({
   );
   const [noAnswers, setNoAnswers] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(p.questions.map((q) => [q.id, q.noAnswer])),
+  );
+
+  /*
+   * 서버에 보낸 값과 지금 화면의 값이 다른지 본다.
+   * 저장 후에는 props 가 갱신되므로 자연히 false 로 돌아온다.
+   */
+  const dirty = useMemo(() => {
+    const checksChanged = p.visitChecks.some(
+      (v) => (results[v.id] ?? '') !== v.result || (memos[v.id] ?? '') !== v.memo,
+    );
+    const answersChanged = p.questions.some(
+      (q) => (answers[q.id] ?? '') !== q.answer || (noAnswers[q.id] ?? false) !== q.noAnswer,
+    );
+    return checksChanged || answersChanged;
+  }, [p.visitChecks, p.questions, results, memos, answers, noAnswers]);
+
+  useUnsavedGuard(
+    dirty && !pending,
+    '기록한 내용이 아직 저장되지 않았어요. 이 화면을 떠나면 입력한 내용이 사라집니다. 그래도 나갈까요?',
   );
 
   function setResult(id: string, next: Exclude<VisitResult, ''>) {
@@ -223,6 +243,9 @@ export function VisitRecordScreen({
           >
             {pending ? '저장하는 중...' : '기록 저장'}
           </button>
+          {dirty && !pending && (
+            <span className="rc-unsaved">저장하지 않은 변경이 있어요</span>
+          )}
           <button type="button" className="rc-btn rc-btn-ghost" onClick={() => window.print()}>
             조사지 다시 인쇄
           </button>

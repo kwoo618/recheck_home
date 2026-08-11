@@ -78,12 +78,18 @@
 - [x] 첫 커밋 완료 — `32e5700` Day 1 (49파일) 푸시됨. 이후 `d11c483` docs 커밋
 - [x] `.gitignore`에 `.env.local` 포함 확인 — 전체 히스토리 감사(`git log --all`) 결과 추적되는 env 파일은 `.env.example`뿐. 키 유출 없음
   - private 전환 이유: 봇이 public 저장소를 상시 스캔하므로 키가 한 번 커밋되면 푸시 직후 수 분 내에 수집됨. amend로 지워도 늦다. D2에 `GEMINI_API_KEY`·`DATABASE_URL`을 다루므로 선제 전환
-- [ ] Vercel 프로젝트 연결
-- [ ] **Vercel 함수 리전을 `sin1`(싱가포르)로 설정** ← Neon과 같은 리전. 기본값 `iad1`이면 DB 왕복이 태평양을 넘음
+- [x] Vercel 프로젝트 연결 — `main` 푸시 시 자동 배포 확인 (2026-08-11)
+- [x] **Vercel 함수 리전 `sin1`(싱가포르) 확인** — 응답 헤더 `X-Vercel-Id: icn1::sin1::…`
+      (엣지는 서울 `icn1`, 함수 실행은 싱가포르 `sin1` = Neon과 동일 리전)
 - [ ] Vercel 환경변수 등록 (4개: DATABASE_URL / GEMINI_API_KEY / NEXT_PUBLIC_KAKAO_MAP_KEY / KAKAO_REST_KEY)
-- [ ] 첫 배포 성공 — 배포 URL: `________`
+  - [x] `DATABASE_URL` — 배포본에서 실제 쿼리 성공 확인 (아래 메모 참조)
+  - [ ] 나머지 3개는 미검증. 해당 기능(지도·AI) 붙일 때 확인
+- [x] 첫 배포 성공 — 배포 URL: **https://recheck-home.vercel.app**
 - [ ] 배포 도메인을 카카오 플랫폼에 등록했는지 재확인 ← 자주 빠뜨림
-- 메모:
+  - 등록할 값: `https://recheck-home.vercel.app` (앱 `1540296` > 플랫폼 키 > JavaScript 키 > JavaScript SDK 도메인)
+- 메모: 2026-08-11 임시 `/api/health` 라우트로 배포본 ↔ Neon 연결을 검증했다.
+  `{"ok":true,"count":0}` / HTTP 200, 웜 응답 0.26~0.48s. **검증 후 라우트는 삭제함**
+  (커밋 `20ed6de`에서 추가, 이후 삭제. 다시 필요하면 해당 커밋에서 복원)
 
 ---
 

@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>리:체크 v4 — 계약 전 2차 검증</title>
+<style>
+  :root{
+    --paper:#F6F5F1; --surface:#FFFFFF; --ink:#22252B; --ink-soft:#5A5E66; --ink-faint:#9A9EA6;
+    --line:#E3E1DA; --line-strong:#C9C6BC;
+    --teal:#145C54; --teal-soft:#E4EFED; --teal-mid:#1D9E75;
+    --amber:#B7791F; --amber-soft:#FAF0DC;
+    --red:#B23A3A; --red-soft:#F9E9E9;
+    --blue:#2C5FA8; --blue-soft:#E8EEF7;
+    --violet:#4C4699; --violet-soft:#EBEAF7;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:"Pretendard","Apple SD Gothic Neo","Noto Sans KR",system-ui,sans-serif;
+    background:var(--paper); color:var(--ink); line-height:1.6; font-size:15px; -webkit-font-smoothing:antialiased;}
+  .wrap{max-width:940px; margin:0 auto; padding:0 20px 80px;}
+  header.top{display:flex; align-items:center; gap:14px; padding:24px 0 16px; border-bottom:1.5px solid var(--ink); margin-bottom:24px; flex-wrap:wrap;}
+  .logo{font-size:21px; font-weight:800; letter-spacing:-.5px; cursor:pointer;}
+  .logo .re{color:var(--teal);}
+  .tagline{font-size:12.5px; color:var(--ink-soft);}
+  .top-actions{margin-left:auto; display:flex; gap:6px;}
+
+  .src{display:inline-flex; align-items:center; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:20px; vertical-align:middle;}
+  .src.rule{background:var(--teal-soft); color:var(--teal);}
+  .src.ai{background:var(--violet-soft); color:var(--violet);}
+  .src.user{background:#EFEEE9; color:var(--ink-soft);}
+
+  .btn{display:inline-flex; align-items:center; justify-content:center; gap:6px; border:1.5px solid var(--ink);
+    background:var(--surface); color:var(--ink); padding:9px 18px; border-radius:10px; font-size:14px; font-weight:600;
+    cursor:pointer; transition:.15s; font-family:inherit;}
+  .btn:hover{background:var(--ink); color:#fff;}
+  .btn.primary{background:var(--teal); border-color:var(--teal); color:#fff;}
+  .btn.primary:hover{background:#0E453F;}
+  .btn.ghost{border-color:var(--line-strong); font-weight:500;}
+  .btn.ghost:hover{background:var(--surface); color:var(--ink); border-color:var(--ink);}
+  .btn.danger{border-color:var(--red); color:var(--red);}
+  .btn.danger:hover{background:var(--red); color:#fff;}
+  .btn.small{padding:5px 12px; font-size:12.5px; border-radius:8px;}
+  .btn:disabled{opacity:.4; cursor:not-allowed;}
+  .btn.primary:disabled:hover{background:var(--teal);}
+  .btn:disabled:hover{background:var(--surface); color:var(--ink);}
+
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:20px 22px; margin-bottom:14px;}
+  .card h3{font-size:15.5px; font-weight:700; margin-bottom:3px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .card .sub{font-size:13px; color:var(--ink-soft); margin-bottom:12px;}
+
+  .phase-pill{font-size:11px; font-weight:800; letter-spacing:.5px; padding:3px 10px; border-radius:4px; background:var(--ink); color:#fff;}
+
+  /* 대시보드 */
+  .prop-card{display:flex; align-items:center; gap:16px; transition:border-color .15s;}
+  .prop-card:hover{border-color:var(--ink);}
+  .prop-info{flex:1; min-width:0;}
+  .prop-name{font-size:16.5px; font-weight:700; cursor:pointer;}
+  .prop-name:hover{text-decoration:underline;}
+  .prop-meta{font-size:12.5px; color:var(--ink-soft); margin-top:1px;}
+  .status-tag{font-size:11.5px; font-weight:700; padding:3px 10px; border-radius:20px; white-space:nowrap;}
+  .st-prep{background:#EFEEE9; color:var(--ink-soft);}
+  .st-ready{background:var(--blue-soft); color:var(--blue);}
+  .st-recorded{background:var(--amber-soft); color:var(--amber);}
+  .st-confirmed{background:var(--teal-soft); color:var(--teal);}
+  .st-excluded{background:var(--red-soft); color:var(--red);}
+  .next-act{white-space:nowrap;}
+
+  .ring{position:relative; width:52px; height:52px; flex-shrink:0;}
+  .ring svg{transform:rotate(-90deg);}
+  .ring .pct{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800;}
+
+  .empty{text-align:center; padding:56px 20px; border:1.5px dashed var(--line-strong); border-radius:14px; color:var(--ink-soft);}
+  .empty b{color:var(--ink); font-size:16.5px; display:block; margin-bottom:6px;}
+
+  /* 폼 */
+  .fgrid{display:grid; grid-template-columns:1fr 1fr; gap:12px 16px;}
+  .fgrid .full{grid-column:1/-1;}
+  label.fl{display:block; font-size:12.5px; font-weight:600; margin-bottom:4px;}
+  label.fl .opt{color:var(--ink-faint); font-weight:400;}
+  input[type=text],input[type=number],select,textarea{width:100%; padding:9px 12px; border:1px solid var(--line-strong);
+    border-radius:8px; font-size:14px; font-family:inherit; background:var(--surface); color:var(--ink);}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--teal); outline-offset:1px; border-color:var(--teal);}
+  .seg{display:flex; border:1.5px solid var(--ink); border-radius:8px; overflow:hidden; width:fit-content;}
+  .seg button{border:0; background:var(--surface); padding:8px 18px; font-size:13.5px; font-weight:600; cursor:pointer; font-family:inherit; color:var(--ink);}
+  .seg button.on{background:var(--ink); color:#fff;}
+
+  .tabs2{display:flex; gap:0; margin-bottom:18px; border-bottom:1.5px solid var(--line-strong);}
+  .tabs2 button{border:0; background:none; padding:10px 18px; font-size:14px; font-weight:600; cursor:pointer;
+    font-family:inherit; color:var(--ink-faint); border-bottom:2.5px solid transparent; margin-bottom:-1.5px;}
+  .tabs2 button.on{color:var(--ink); border-bottom-color:var(--teal);}
+
+  .chip{display:inline-block; font-size:12px; background:var(--paper); border:1px solid var(--line-strong);
+    border-radius:20px; padding:4px 12px; margin:3px 4px 0 0; cursor:pointer;}
+  .chip:hover{border-color:var(--ink);}
+
+  /* 상세 헤더 & 국면 스텝 */
+  .detail-head{display:flex; align-items:flex-start; gap:14px; margin-bottom:16px;}
+  .detail-head h2{font-size:20px; font-weight:800; letter-spacing:-.3px;}
+  .detail-head .meta{font-size:12.5px; color:var(--ink-soft);}
+  .back{font-size:13px; color:var(--ink-soft); cursor:pointer; margin-bottom:10px; display:inline-block;}
+  .back:hover{color:var(--ink);}
+  .phases{display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap;}
+  .phases .ph{display:flex; align-items:center; gap:7px; border:1px solid var(--line-strong); background:var(--surface);
+    border-radius:10px; padding:7px 14px; font-size:12.5px; font-weight:600; color:var(--ink-faint); cursor:pointer;}
+  .phases .ph .pn{font-size:10px; font-weight:800; letter-spacing:.5px;}
+  .phases .ph.on{border-color:var(--ink); color:var(--ink); background:var(--ink); color:#fff;}
+  .phases .ph.done{color:var(--teal); border-color:var(--teal-soft); background:var(--teal-soft);}
+
+  /* 체크/질문 아이템 */
+  .chk-item{display:flex; gap:11px; padding:11px 0; border-bottom:1px solid var(--line); align-items:flex-start;}
+  .chk-item:last-child{border-bottom:0;}
+  .chk-item input[type=checkbox]{width:17px; height:17px; margin-top:3px; accent-color:var(--teal); flex-shrink:0; cursor:pointer;}
+  .chk-item .t{font-weight:600; font-size:13.5px;}
+  .chk-item .d{font-size:12.5px; color:var(--ink-soft); margin-top:1px;}
+  .chk-item.done .t{color:var(--ink-faint); text-decoration:line-through;}
+  .rm{margin-left:auto; color:var(--ink-faint); cursor:pointer; font-size:16px; line-height:1; padding:4px; flex-shrink:0;}
+  .rm:hover{color:var(--red);}
+
+  details.qbank{border:1px solid var(--line); border-radius:10px; margin-bottom:8px; background:var(--surface);}
+  details.qbank summary{padding:11px 14px; font-size:13.5px; font-weight:700; cursor:pointer; list-style:none; display:flex; align-items:center; gap:8px;}
+  details.qbank summary::after{content:'▾'; margin-left:auto; color:var(--ink-faint); transition:.15s;}
+  details.qbank[open] summary::after{transform:rotate(180deg);}
+  details.qbank .qb-body{padding:0 14px 10px;}
+  .qb-count{font-size:11px; color:var(--teal); font-weight:700;}
+
+  .q-item{padding:12px 0; border-bottom:1px solid var(--line);}
+  .q-item:last-child{border-bottom:0;}
+  .q-text{font-weight:600; font-size:13.5px; margin-bottom:6px; display:flex; align-items:flex-start; gap:6px;}
+  .q-text .num{color:var(--teal); font-weight:800; flex-shrink:0;}
+  .q-actions{display:flex; gap:8px; font-size:12px; color:var(--ink-faint); margin-top:4px;}
+  .q-actions span{cursor:pointer; text-decoration:underline;}
+  .q-actions span:hover{color:var(--ink);}
+  .ans-row{display:flex; gap:8px;}
+  .ans-row input{flex:1;}
+
+  /* 방문 기록: 4택 세그먼트 */
+  .res-seg{display:flex; gap:5px; margin-top:6px; flex-wrap:wrap;}
+  .res-seg button{border:1px solid var(--line-strong); background:var(--surface); border-radius:20px; padding:5px 13px;
+    font-size:12.5px; font-weight:600; cursor:pointer; font-family:inherit; color:var(--ink-soft);}
+  .res-seg button.on-good{background:var(--teal); border-color:var(--teal); color:#fff;}
+  .res-seg button.on-ok{background:var(--ink-soft); border-color:var(--ink-soft); color:#fff;}
+  .res-seg button.on-bad{background:var(--red); border-color:var(--red); color:#fff;}
+  .res-seg button.on-na{background:var(--ink-faint); border-color:var(--ink-faint); color:#fff;}
+  .memo-in{margin-top:7px;}
+
+  .notice{font-size:12.5px; color:var(--ink-soft); background:var(--paper); border-radius:8px; padding:10px 14px; margin:10px 0;}
+  .notice.warn{background:var(--amber-soft); color:var(--amber);}
+  .notice.info{background:var(--blue-soft); color:var(--blue);}
+
+  /* 비교 테이블 */
+  .cmp-scroll{overflow-x:auto;}
+  table.cmp{border-collapse:collapse; width:100%; min-width:520px;}
+  table.cmp th,table.cmp td{border:1px solid var(--line); padding:9px 13px; font-size:13px; text-align:left; vertical-align:top;}
+  table.cmp thead th{background:var(--ink); color:#fff; font-size:13.5px;}
+  table.cmp .rowlabel{background:var(--paper); font-weight:600; white-space:nowrap; color:var(--ink-soft);}
+  td .arr-hi{color:var(--red); font-weight:800;}
+  td .arr-lo{color:var(--blue); font-weight:800;}
+  td.miss{background:var(--amber-soft); color:var(--amber); font-weight:600;}
+  td.bad-cell{color:var(--red); font-weight:700;}
+  .legend{font-size:11.5px; color:var(--ink-faint); margin-top:8px;}
+  .ai-summary{background:var(--violet-soft); border-radius:10px; padding:14px 16px; font-size:13.5px; margin-top:12px; white-space:pre-wrap;}
+
+  .report-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+  .report-box{border:1px solid var(--line); border-radius:10px; padding:13px 15px;}
+  .report-box h4{font-size:12.5px; font-weight:700; margin-bottom:7px;}
+  .report-box ul{list-style:none;}
+  .report-box li{font-size:12.5px; padding:3px 0; border-bottom:1px dashed var(--line);}
+  .report-box li:last-child{border:0;}
+  .report-box.ok h4{color:var(--teal);}
+  .report-box.no h4{color:var(--amber);}
+
+  .spinner{display:inline-block; width:13px; height:13px; border:2px solid var(--violet-soft); border-top-color:var(--violet); border-radius:50%; animation:spin .7s linear infinite; vertical-align:-2px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .toast{position:fixed; bottom:22px; left:50%; transform:translateX(-50%); background:var(--ink); color:#fff;
+    padding:10px 22px; border-radius:30px; font-size:13.5px; font-weight:600; display:none; z-index:99;}
+
+  /* 인쇄 */
+  #print-area{display:none;}
+  @media print{
+    body>.wrap, .toast{display:none !important;}
+    #print-area{display:block; font-family:"Pretendard","Apple SD Gothic Neo",sans-serif; color:#000; font-size:12px; line-height:1.55;}
+    #print-area h1{font-size:17px; border-bottom:2px solid #000; padding-bottom:6px; margin-bottom:4px;}
+    #print-area .pmeta{font-size:11px; color:#444; margin-bottom:14px;}
+    #print-area h2{font-size:13.5px; margin:16px 0 6px; background:#eee; padding:4px 8px;}
+    #print-area table{border-collapse:collapse; width:100%;}
+    #print-area th,#print-area td{border:1px solid #999; padding:5px 8px; font-size:11.5px; text-align:left;}
+    #print-area th{background:#f2f2f2;}
+    #print-area .blank{height:26px;}
+    #print-area .foot{margin-top:14px; font-size:10px; color:#666;}
+  }
+  @media (max-width:640px){ .fgrid{grid-template-columns:1fr;} .report-grid{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="logo" onclick="go('dash')"><span class="re">리:</span>체크</div>
+    <div class="tagline">계약 전 2차 검증 · v4</div>
+    <div class="top-actions">
+      <button class="btn ghost small" onclick="exportJSON()">데이터 내보내기</button>
+      <button class="btn ghost small" onclick="$('imp').click()">불러오기</button>
+      <input type="file" id="imp" accept=".json" style="display:none" onchange="importJSON(this)">
+    </div>
+  </header>
+  <main id="view"></main>
+</div>
+<div class="toast" id="toast"></div>
+<div id="print-area"></div>
+
+<script>
+/* ============================================================
+   상태
+   status: prep(정보확인) → ready(조사지 완성·방문 대기) → recorded(기록됨) → confirmed / excluded
+   ============================================================ */
+const S = { props:[], route:'dash', cur:null, nextId:1, addTab:'link',
+  finance:{cash:'', loan:'', rate:'', cvRate:'5.5'} };
+
+/* ============================================================
+   [더미 DB] 링크 매칭용 — 실서비스에선 제휴 API 전제
+   ============================================================ */
+const DUMMY_DB = [
+  {key:'zigbang.com/room/10001', name:'대명동 원룸 A', dealType:'월세', price:45, deposit:500, area:23, age:18, heating:'개별난방', floor:'2'},
+  {key:'zigbang.com/room/10002', name:'대명동 원룸 B', dealType:'월세', price:50, deposit:300, area:26, age:6, heating:'개별난방', floor:'4'},
+  {key:'dabang.app/room/20003', name:'산격동 투룸', dealType:'전세', price:9500, deposit:0, area:42, age:22, heating:'개별난방', floor:'1'},
+  {key:'zigbang.com/room/10004', name:'복현동 오피스텔', dealType:'월세', price:62, deposit:1000, area:29, age:4, heating:'지역난방', floor:'11'},
+  {key:'dabang.app/room/20005', name:'경산 임당 원룸', dealType:'전세', price:7000, deposit:0, area:24, age:15, heating:'개별난방', floor:'3'},
+  {key:'land.naver.com/30006', name:'경산 옥산 빌라', dealType:'전세', price:11000, deposit:0, area:49, age:12, heating:'개별난방', floor:'2'},
+  {key:'zigbang.com/room/10007', name:'신천동 원룸', dealType:'월세', price:48, deposit:500, area:22, age:20, heating:'중앙난방', floor:'5'},
+  {key:'dabang.app/room/20008', name:'만촌동 오피스텔', dealType:'월세', price:70, deposit:1000, area:31, age:2, heating:'지역난방', floor:'14'},
+  {key:'land.naver.com/30009', name:'수성동 아파트', dealType:'매매', price:28000, deposit:0, area:59, age:25, heating:'중앙난방', floor:'7'},
+  {key:'zigbang.com/room/10010', name:'침산동 원룸', dealType:'전세', price:8500, deposit:0, area:25, age:9, heating:'개별난방', floor:'6'},
+  {key:'dabang.app/room/20011', name:'동성로 인근 원룸', dealType:'월세', price:55, deposit:500, area:21, age:17, heating:'개별난방', floor:'3'},
+  {key:'land.naver.com/30012', name:'경산 정평 투룸', dealType:'전세', price:10500, deposit:0, area:45, age:8, heating:'개별난방', floor:'5'},
+];
+
+/* ============================================================
+   [규칙] 현장 직접 확인 항목 — 조건 → 항목 (결정론)
+   ============================================================ */
+const VISIT_RULES = [
+  {id:'v-water', cond:p=>true, cat:'현장', t:'수압·배수 직접 확인', d:'세면대·샤워기 동시에 틀어보기'},
+  {id:'v-noise', cond:p=>true, cat:'현장', t:'소음 확인', d:'벽 두께, 도로·상가 인접 여부 — 가능하면 저녁 재방문'},
+  {id:'v-light', cond:p=>true, cat:'현장', t:'채광·환기 확인', d:'창 방향, 맞바람 환기 가능 여부'},
+  {id:'v-mold', cond:p=>p.age>=10, cat:'현장', t:'곰팡이·결로 흔적', d:'벽 모서리·창틀·몰딩 주변, 새 도배 뒤 확인'},
+  {id:'v-window', cond:p=>p.age>=15, cat:'설비', t:'창호(샷시) 상태·단열', d:'구축은 창호 상태가 냉난방비와 직결'},
+  {id:'v-boiler', cond:p=>p.age>=15||p.heating==='개별난방', cat:'설비', t:'보일러 연식·작동 상태', d:'제조연도 라벨 확인, 온수 직접 틀어보기'},
+  {id:'v-option', cond:p=>true, cat:'설비', t:'옵션 가전 작동 확인', d:'에어컨·세탁기·냉장고 전원 켜보기'},
+  {id:'v-secure', cond:p=>p.floor!==''&&Number(p.floor)<=1, cat:'현장', t:'방범창·현관 보안', d:'저층은 방범 시설과 공동현관 잠금 확인'},
+  {id:'v-elev', cond:p=>p.floor!==''&&Number(p.floor)>=4, cat:'상세', t:'엘리베이터 유무·상태', d:'4층 이상 계단만 있으면 이사·생활 부담'},
+  {id:'v-park', cond:p=>true, cat:'상세', t:'주차·자전거 보관', d:'차량·자전거 이용 시 보관 위치 확인'},
+  {id:'v-trash', cond:p=>true, cat:'상세', t:'쓰레기 배출 장소·방식', d:'배출 요일과 위치 — 생활 편의에 직접 영향'},
+  {id:'v-mgmt', cond:p=>p.dealType==='월세', cat:'가격', t:'관리비 포함 항목 확인', d:'수도·인터넷·청소비 포함 여부를 현장에서 재확인'},
+];
+
+/* [규칙] 질문 은행 — 카테고리별 자주 확인하는 질문 */
+const QBANK = {
+  '난방·냉방':[ '최근 겨울철 월평균 난방비가 어느 정도였나요?', '여름철 냉방 시 전기요금은 보통 얼마나 나오나요?', '보일러는 언제 설치·교체됐나요?' ],
+  '수도·수압':[ '온수는 바로 나오는 편인가요?', '배수구 역류나 막힘 문제가 있었던 적 있나요?' ],
+  '소음·이웃':[ '옆집·윗집 생활 소음 관련 민원이 있었나요?', '근처에 밤늦게 운영하는 상가나 공사장이 있나요?', '이웃 연령대나 구성은 어떻게 되나요?' ],
+  '보안':[ '공동현관 출입 방식은 어떻게 되나요?', 'CCTV는 어디에 설치되어 있나요?', '택배는 어떻게 받나요?' ],
+  '관리비·비용':[ '관리비에 포함되는 항목이 정확히 무엇인가요?', '관리비 외 별도로 나가는 비용이 있나요?', '인터넷·TV는 개별 가입인가요?' ],
+  '계약 조건':[ '입주 가능일은 언제부터인가요?', '계약 기간과 갱신 조건은 어떻게 되나요?', '수리가 필요할 때 비용 부담은 누가 하나요?', '이전 세입자가 퇴거한 이유를 아시나요?' ],
+  '주변 환경':[ '가장 가까운 편의점·마트는 어디인가요?', '대중교통 첫차·막차 시간대는 어떻게 되나요?' ],
+};
+
+/* [규칙] 계약 전 안전 점검 (서류·권리) */
+const SAFETY_RULES = [
+  {id:'s-owner', cond:p=>true, t:'등기부등본 소유자 = 계약 상대방 확인', d:'임대인 신분증과 등기부 소유자 대조', crit:true},
+  {id:'s-lien', cond:p=>p.dealType!=='월세'||p.deposit>=1000, t:'근저당·압류·가압류 확인', d:'을구 선순위 권리 — 보증금 회수 순위에 직결', crit:true},
+  {id:'s-ratio', cond:p=>p.dealType==='전세', t:'전세가율 확인', d:'주변 매매 시세 대비 — 국토부 실거래가 공개시스템', crit:true},
+  {id:'s-insure', cond:p=>p.dealType==='전세', t:'전세보증금 반환보증 가입 가능 확인', d:'HUG·SGI 사전 조회', crit:false},
+  {id:'s-movein', cond:p=>p.dealType!=='매매', t:'전입신고 가능 여부 확인', d:'전입 불가 매물은 대항력 확보 불가', crit:true},
+  {id:'s-bldg', cond:p=>true, t:'건축물대장 열람 — 위반건축물·용도 확인', d:'정부24 무료 열람 — 근린생활시설(근생)은 전세대출·보증보험 불가 가능성', crit:true},
+  {id:'s-trust', cond:p=>true, t:'신탁 등기 여부 확인', d:'등기부 갑구에 신탁이 있으면 신탁사 동의 없는 계약은 무효 위험', crit:true},
+  {id:'s-agent', cond:p=>true, t:'공인중개사 정등록 여부 확인', d:'국가공간정보포털 조회 — 무등록 중개는 사고 시 공제 보상 불가', crit:false},
+  {id:'s-tax', cond:p=>p.dealType!=='매매', t:'임대인 국세·지방세 완납증명 확인', d:'세금 체납은 보증금보다 선순위가 될 수 있음 (임차인 열람권 있음)', crit:false},
+  {id:'s-terms', cond:p=>true, t:'특약 사항 검토', d:'수리 책임·원상복구 범위·중도 해지 조건', crit:false},
+  {id:'s-price', cond:p=>p.dealType==='매매', t:'실거래가 대비 매매가 확인', d:'동일 단지·평형 최근 거래 조회', crit:true},
+];
+
+/* [규칙] 계약 당일 · 이후 절차 */
+const CONTRACT_DAY = [
+  {id:'c1', t:'계약 직전 등기부등본 재발급·재확인'},
+  {id:'c2', t:'임대인 신분증과 등기부 소유자 대조'},
+  {id:'c3', t:'입금 계좌 명의 = 임대인 본인 확인'},
+  {id:'c4', t:'특약 문구 계약서 반영 확인'},
+  {id:'c5', t:'계약금 영수증 수령'},
+];
+const AFTER = {
+  '계약 후':[ {id:'a1',t:'잔금 준비 및 이체 한도 확인'}, {id:'a2',t:'잔금 지급 직전 등기부 재확인'}, {id:'a3',t:'열쇠·비밀번호 인수 확인'} ],
+  '입주 당일':[ {id:'a4',t:'전입신고 (주민센터·정부24)'}, {id:'a5',t:'확정일자 받기 (전·월세)'}, {id:'a6',t:'공과금 명의 변경·검침값 기록'} ],
+  '입주 후':[ {id:'a7',t:'주소 변경 (은행·카드·통신사)'}, {id:'a8',t:'계약서·영수증 사본 보관'}, {id:'a9',t:'하자 발견 시 사진 후 즉시 통보'} ],
+};
+
+/* ============================================================
+   [AI] ① 기타 우려 → 질문 변환  ② 비교 차이 요약
+   가드레일: 판정·우열 금지 / 실패 시 폴백
+   ============================================================ */
+const BANNED = ['추천','안전합니다','위험합니다','좋은 매물','나쁜 매물','계약하세요','계약하지 마','더 낫','가장 좋','유리합니다','불리합니다'];
+
+async function aiQuestions(concern, p){
+  const res = await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({ model:"claude-sonnet-4-6", max_tokens:1000,
+      system:`너는 부동산 질문 생성 도우미다. 절대 매물을 판단(좋다/나쁘다/추천)하지 않는다. 사용자 우려를 중개사에게 물어볼 구체적 질문으로만 바꾼다. JSON 배열로만 응답. 예: ["질문1","질문2"] 질문은 2~4개.`,
+      messages:[{role:"user", content:`매물: ${p.dealType}, ${p.age}년차, ${p.heating}\n우려: "${concern}"\n질문 JSON 배열:`}] })
+  });
+  const d = await res.json();
+  const text = (d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+  const arr = JSON.parse(text.replace(/```json|```/g,'').trim());
+  return arr.filter(q=>typeof q==='string' && !BANNED.some(b=>q.includes(b))).slice(0,4);
+}
+
+async function aiCompareSummary(ps){
+  const data = ps.map(p=>({
+    이름:p.name, 유형:p.dealType, 가격:fmtPrice(p), 연식:p.age+'년차',
+    현장확인:p.visitChecks.filter(v=>v.result).map(v=>`${v.t}: ${resLabel(v.result)}${v.memo? '('+v.memo+')':''}`),
+    질문답변:p.questions.filter(q=>q.answer).map(q=>`${q.text} → ${q.answer}`),
+    미확인:[...p.visitChecks.filter(v=>!v.result||v.result==='na').map(v=>v.t), ...p.questions.filter(q=>!q.answer).map(q=>q.text)],
+  }));
+  const res = await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST", headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({ model:"claude-sonnet-4-6", max_tokens:1000,
+      system:`너는 매물 조사 기록의 차이점을 정리하는 도우미다. 규칙: 1) 절대 우열 판단("A가 낫다", 추천, 순위)을 하지 않는다. 2) 기록된 사실의 차이와 각 매물의 미확인 항목만 서술한다. 3) 한국어로 5문장 이내, 매물 이름을 그대로 사용.`,
+      messages:[{role:"user", content:`조사 기록:\n${JSON.stringify(data,null,1)}\n차이점과 미확인 항목을 요약:`}] })
+  });
+  const d = await res.json();
+  let text = (d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('').trim();
+  if(!text || BANNED.some(b=>text.includes(b))) throw new Error('guard');
+  return text;
+}
+
+/* ============================================================
+   유틸
+   ============================================================ */
+const $ = id=>document.getElementById(id);
+const esc = s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function toast(m){ const t=$('toast'); t.textContent=m; t.style.display='block'; clearTimeout(t._h); t._h=setTimeout(()=>t.style.display='none',2200); }
+function prop(id){ return S.props.find(p=>p.id===id); }
+function fmtPrice(p){ return p.dealType==='월세'? `보증금 ${p.deposit||0}만 / 월 ${p.price||0}만` : `${p.dealType} ${p.price>=10000? Math.floor(p.price/10000)+'억'+(p.price%10000? ' '+(p.price%10000).toLocaleString()+'만':'') : (p.price||0).toLocaleString()+'만'}`; }
+function resLabel(r){ return {good:'좋음', ok:'보통', bad:'문제있음', na:'미확인'}[r]||'—'; }
+function statusInfo(p){
+  return {prep:['정보 확인 필요','st-prep','정보 확인하기','confirm'],
+    ready:['방문 대기','st-ready','방문 기록 입력','record'],
+    recorded:['기록 완료','st-recorded','안전 점검 하기','safety'],
+    confirmed:['계약 확정','st-confirmed','계약·입주 절차','contract'],
+    excluded:['제외됨','st-excluded','다시 검토','confirm']}[p.status];
+}
+function progress(p){
+  const total = p.visitChecks.length + p.questions.length;
+  if(!total) return 0;
+  const done = p.visitChecks.filter(v=>v.result&&v.result!=='na').length + p.questions.filter(q=>q.answer).length;
+  return Math.round(done/total*100);
+}
+function ringSVG(pct){
+  const r=21, C=2*Math.PI*r, off=C*(1-pct/100);
+  const col = pct===100? 'var(--teal-mid)' : pct>=50? 'var(--amber)' : 'var(--line-strong)';
+  return `<div class="ring"><svg width="52" height="52" viewBox="0 0 52 52">
+    <circle cx="26" cy="26" r="${r}" fill="none" stroke="var(--line)" stroke-width="4.5"/>
+    <circle cx="26" cy="26" r="${r}" fill="none" stroke="${col}" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${off}"/>
+    </svg><div class="pct">${pct}%</div></div>`;
+}
+function exportJSON(){
+  const blob = new Blob([JSON.stringify(S.props,null,1)],{type:'application/json'});
+  const a = document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='recheck-backup.json'; a.click(); toast('백업 파일을 내려받았어요');
+}
+function importJSON(inp){
+  const f = inp.files[0]; if(!f) return;
+  const rd = new FileReader();
+  rd.onload = ()=>{ try{
+    const arr = JSON.parse(rd.result);
+    if(!Array.isArray(arr)) throw 0;
+    S.props = arr; S.nextId = Math.max(0,...arr.map(p=>p.id))+1;
+    toast('데이터를 불러왔어요'); go('dash');
+  }catch(e){ toast('파일 형식이 올바르지 않아요'); } };
+  rd.readAsText(f); inp.value='';
+}
+
+/* ============================================================
+   라우팅
+   ============================================================ */
+function go(route,id){ S.route=route; if(id!==undefined) S.cur=id; render(); window.scrollTo(0,0); }
+function render(){
+  const v=$('view');
+  const map={dash:viewDash, add:viewAdd, confirm:viewConfirm, sheet:viewSheet, record:viewRecord, compare:viewCompare, safety:viewSafety, contract:viewContract};
+  v.innerHTML = (map[S.route]||viewDash)();
+}
+
+/* ---------- 대시보드 ---------- */
+function viewDash(){
+  const n=S.props.length;
+  const active = S.props.filter(p=>!['confirmed','excluded'].includes(p.status));
+  let list;
+  if(!n){
+    list=`<div class="empty"><b>방 보러 가기 전에, 조사지부터 만들어요</b>
+      직방·다방에서 찾은 매물을 등록하면<br>현장에서 확인할 것·물어볼 것을 정리해 드립니다.
+      <div style="margin-top:16px"><button class="btn primary" onclick="go('add')">첫 매물 등록</button></div></div>`;
+  } else {
+    list = S.props.map(p=>{
+      const [label,cls,act,route]=statusInfo(p);
+      return `<div class="card prop-card">
+        ${ringSVG(progress(p))}
+        <div class="prop-info">
+          <div class="prop-name" onclick="go('${route}',${p.id})">${esc(p.name)}</div>
+          <div class="prop-meta">${fmtPrice(p)} · ${p.age}년차 · ${esc(p.heating)}${p.floor? ' · '+esc(p.floor)+'층':''}</div>
+        </div>
+        <span class="status-tag ${cls}">${label}</span>
+        <button class="btn small next-act ${p.status==='excluded'?'ghost':'primary'}" onclick="go('${route}',${p.id})">${act}</button>
+      </div>`;
+    }).join('');
+  }
+  return `
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
+    <div><h2 style="font-size:19px; font-weight:800;">내 매물</h2>
+    <div style="font-size:12.5px; color:var(--ink-soft);">${!n?'':active.length>=2? `검토 중 ${active.length}개 — 비교 모드를 쓸 수 있어요`:`${n}개 등록됨`}</div></div>
+    <div style="display:flex; gap:8px;">
+      ${active.length>=2? `<button class="btn" onclick="go('compare')">매물 비교</button>`:''}
+      ${n? `<button class="btn primary" onclick="go('add')">+ 매물 추가</button>`:''}
+    </div>
+  </div>${list}`;
+}
+
+/* ---------- ① 매물 등록: 링크 우선 + 수기 ---------- */
+function viewAdd(){
+  const linkTab = S.addTab==='link';
+  return `
+  <span class="back" onclick="go('dash')">← 돌아가기</span>
+  <div class="card">
+    <h3><span class="phase-pill">국면 1 · 방문 준비</span> 매물 등록</h3>
+    <div class="sub">링크를 붙여넣으면 매물 정보를 자동으로 읽어옵니다. 읽기에 실패하면 직접 입력할 수 있어요.</div>
+    <div class="tabs2">
+      <button class="${S.addTab==='link'?'on':''}" onclick="S.addTab='link';render()">링크로 등록</button>
+      <button class="${S.addTab==='paste'?'on':''}" onclick="S.addTab='paste';render()">텍스트 붙여넣기</button>
+      <button class="${S.addTab==='manual'?'on':''}" onclick="S.addTab='manual';render()">직접 입력</button>
+    </div>
+    ${S.addTab==='paste'? `
+      <label class="fl">매물 상세 내용 붙여넣기 <span class="src ai">AI 구조화</span></label>
+      <textarea id="f-paste" rows="6" placeholder="직방·다방 매물 페이지에서 상세 설명을 복사해 붙여넣으세요.&#10;예) 월세 500/45, 대명동, 18년차 빌라 2층, 개별난방, 23㎡, 풀옵션..."></textarea>
+      <div style="margin-top:10px; display:flex; gap:8px; align-items:center;">
+        <button class="btn primary" id="paste-btn" onclick="tryPaste()">읽어오기</button>
+        <span id="paste-status" style="font-size:12.5px; color:var(--ink-soft);"></span>
+      </div>
+      <div class="notice">사용자가 직접 복사한 텍스트를 AI가 구조화합니다(약관 위반 없음). AI는 정보 추출만 하며, 다음 화면에서 직접 확인·수정하게 됩니다.</div>
+    ` : linkTab? `
+      <label class="fl">매물 링크</label>
+      <div class="ans-row">
+        <input type="text" id="f-link" placeholder="직방·다방·네이버부동산 매물 링크 붙여넣기" onkeydown="if(event.key==='Enter')tryLink()">
+        <button class="btn primary" onclick="tryLink()">읽어오기</button>
+      </div>
+      <div class="notice info" style="margin-top:12px;">데모용 예시 링크 — 클릭하면 자동 입력됩니다:<br>
+        ${DUMMY_DB.slice(0,4).map(d=>`<span class="chip" onclick="$('f-link').value='https://${d.key}';tryLink()">${esc(d.name)}</span>`).join('')}
+      </div>
+      <div class="notice">실서비스에서는 부동산 플랫폼 제휴 API 연동을 전제로 하며, 현재는 데모 데이터로 시연합니다.</div>
+    ` : manualForm()}
+  </div>`;
+}
+function manualForm(pre){
+  const p = pre||{name:'',dealType:'전세',price:'',deposit:'',area:'',age:'',heating:'개별난방',floor:'',link:''};
+  return `
+    <div class="fgrid">
+      <div class="full"><label class="fl">매물 별칭</label>
+        <input type="text" id="f-name" value="${esc(p.name)}" placeholder="예: 대명동 원룸 A"></div>
+      <div class="full"><label class="fl">거래 유형</label>
+        <div class="seg" id="f-deal">${['전세','월세','매매'].map(d=>`<button class="${p.dealType===d?'on':''}" onclick="segDeal(this)">${d}</button>`).join('')}</div></div>
+      <div id="w-price"><label class="fl">${p.dealType==='전세'?'전세금':p.dealType==='월세'?'월세':'매매가'} (만원)</label>
+        <input type="number" id="f-price" value="${p.price}"></div>
+      <div id="w-deposit" style="${p.dealType==='월세'?'':'display:none'}"><label class="fl">보증금 (만원)</label>
+        <input type="number" id="f-deposit" value="${p.deposit}"></div>
+      <div><label class="fl">면적 (㎡) <span class="opt">(선택)</span></label><input type="number" id="f-area" value="${p.area}"></div>
+      <div><label class="fl">건물 연식 (년차)</label><input type="number" id="f-age" value="${p.age}"></div>
+      <div><label class="fl">난방 방식</label>
+        <select id="f-heating">${['개별난방','중앙난방','지역난방','모름'].map(h=>`<option ${p.heating===h?'selected':''}>${h}</option>`).join('')}</select></div>
+      <div><label class="fl">층수 <span class="opt">(선택)</span></label><input type="number" id="f-floor" value="${esc(p.floor)}"></div>
+      <input type="hidden" id="f-linkkeep" value="${esc(p.link||'')}">
+    </div>
+    <div style="margin-top:18px; display:flex; gap:8px;">
+      <button class="btn primary" onclick="saveManual()">등록</button>
+      <button class="btn ghost" onclick="go('dash')">취소</button>
+    </div>`;
+}
+function segDeal(btn){
+  [...btn.parentElement.children].forEach(b=>b.classList.remove('on')); btn.classList.add('on');
+  const d=btn.textContent;
+  $('w-deposit').style.display = d==='월세'? '':'none';
+  $('w-price').querySelector('label').textContent = (d==='전세'?'전세금':d==='월세'?'월세':'매매가')+' (만원)';
+}
+async function tryPaste(){
+  const text = $('f-paste').value.trim();
+  if(text.length<10){ toast('매물 내용을 붙여넣어 주세요'); return; }
+  const st=$('paste-status'); $('paste-btn').disabled=true;
+  st.innerHTML='<span class="spinner"></span> 정보를 읽는 중...';
+  try{
+    const res = await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({ model:"claude-sonnet-4-6", max_tokens:1000,
+        system:`부동산 매물 텍스트에서 정보를 추출한다. 판단·평가는 하지 않는다. JSON만 응답: {"name":"동네+유형 별칭","dealType":"전세|월세|매매","price":숫자(만원, 월세면 월세액),"deposit":숫자(만원, 월세 보증금, 없으면 0),"area":숫자(㎡, 모르면 0),"age":숫자(년차, 모르면 0),"heating":"개별난방|중앙난방|지역난방|모름","floor":"층수 문자열, 모르면 빈문자열"}`,
+        messages:[{role:"user", content:text}] })
+    });
+    const d = await res.json();
+    const raw = (d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    const obj = JSON.parse(raw.replace(/```json|```/g,'').trim());
+    if(!obj.dealType) throw 0;
+    createProp({ name:obj.name||'붙여넣은 매물', dealType:obj.dealType, price:Number(obj.price)||0,
+      deposit:Number(obj.deposit)||0, area:Number(obj.area)||0, age:Number(obj.age)||0,
+      heating:obj.heating||'모름', floor:String(obj.floor||''), link:'' });
+  }catch(e){
+    st.textContent='';
+    toast('자동 인식에 실패했어요 — 직접 입력으로 전환합니다');
+    S.addTab='manual'; render();
+  }
+}
+function tryLink(){
+  const link = $('f-link').value.trim();
+  if(!link){ toast('링크를 입력해 주세요'); return; }
+  const hit = DUMMY_DB.find(d=>link.includes(d.key));
+  if(!hit){
+    toast('링크를 읽지 못했어요 — 직접 입력으로 전환합니다');
+    S.addTab='manual'; render(); return;
+  }
+  createProp({...hit, link, area:hit.area});
+}
+function saveManual(){
+  const name=$('f-name').value.trim();
+  if(!name){ toast('매물 별칭을 입력해 주세요'); return; }
+  createProp({
+    name, dealType:document.querySelector('#f-deal .on').textContent,
+    price:Number($('f-price').value)||0, deposit:Number($('f-deposit').value)||0,
+    area:Number($('f-area').value)||0, age:Number($('f-age').value)||0,
+    heating:$('f-heating').value, floor:$('f-floor').value.trim(), link:$('f-linkkeep').value,
+  });
+}
+function createProp(data){
+  const p = {...data, id:S.nextId++, status:'prep', visitChecks:[], questions:[], noConcern:false,
+    safetyChecks:{}, contractChecks:{}, afterChecks:{}};
+  S.props.push(p);
+  toast('매물을 읽어왔어요 — 정보를 확인해 주세요');
+  go('confirm', p.id);
+}
+
+/* ---------- 공통: 매물 상세 헤더 + 국면 표시 ---------- */
+function detailChrome(p, phase){
+  const phases=[
+    ['A','방문 준비','confirm'], ['B','방문 기록','record'], ['C','계약','safety'],
+  ];
+  const order={confirm:0, sheet:0, record:1, safety:2, contract:2};
+  const cur=order[phase];
+  return `
+  <span class="back" onclick="go('dash')">← 매물 목록</span>
+  <div class="detail-head">
+    ${ringSVG(progress(p))}
+    <div><h2>${esc(p.name)}</h2>
+    <div class="meta">${fmtPrice(p)} · ${p.age}년차 · ${esc(p.heating)}${p.floor? ' · '+p.floor+'층':''}</div></div>
+  </div>
+  <div class="phases">${phases.map((ph,i)=>`
+    <div class="ph ${i===cur?'on': i<cur?'done':''}" onclick="go('${ph[2]}',${p.id})">
+      <span class="pn">${ph[0]}</span>${ph[1]}${i<cur?' ✓':''}</div>`).join('')}
+  </div>`;
+}
+
+/* ---------- ② 정보 확인·수정 (사람 2차 확인) ---------- */
+function viewConfirm(){
+  const p=prop(S.cur); if(!p) return viewDash();
+  return detailChrome(p,'confirm')+`
+  <div class="card">
+    <h3>읽어온 정보가 맞는지 확인해 주세요 <span class="src user">사람 확인</span></h3>
+    <div class="sub">자동으로 읽어온 정보는 틀릴 수 있어요. 실제 매물과 다른 부분은 직접 고쳐 주세요.</div>
+    ${manualFormEdit(p)}
+  </div>`;
+}
+function manualFormEdit(p){
+  return `
+    <div class="fgrid">
+      <div class="full"><label class="fl">매물 별칭</label><input type="text" id="e-name" value="${esc(p.name)}"></div>
+      <div class="full"><label class="fl">거래 유형</label>
+        <div class="seg" id="e-deal">${['전세','월세','매매'].map(d=>`<button class="${p.dealType===d?'on':''}" onclick="segDealE(this)">${d}</button>`).join('')}</div></div>
+      <div id="ew-price"><label class="fl">${p.dealType==='전세'?'전세금':p.dealType==='월세'?'월세':'매매가'} (만원)</label>
+        <input type="number" id="e-price" value="${p.price}"></div>
+      <div id="ew-deposit" style="${p.dealType==='월세'?'':'display:none'}"><label class="fl">보증금 (만원)</label>
+        <input type="number" id="e-deposit" value="${p.deposit}"></div>
+      <div><label class="fl">면적 (㎡)</label><input type="number" id="e-area" value="${p.area||''}"></div>
+      <div><label class="fl">건물 연식 (년차)</label><input type="number" id="e-age" value="${p.age}"></div>
+      <div><label class="fl">난방 방식</label>
+        <select id="e-heating">${['개별난방','중앙난방','지역난방','모름'].map(h=>`<option ${p.heating===h?'selected':''}>${h}</option>`).join('')}</select></div>
+      <div><label class="fl">층수</label><input type="number" id="e-floor" value="${esc(p.floor)}"></div>
+    </div>
+    <div style="margin-top:18px; display:flex; gap:8px;">
+      <button class="btn primary" onclick="confirmInfo(${p.id})">정보 확인 완료 — 조사지 만들기</button>
+    </div>`;
+}
+function segDealE(btn){
+  [...btn.parentElement.children].forEach(b=>b.classList.remove('on')); btn.classList.add('on');
+  const d=btn.textContent;
+  $('ew-deposit').style.display = d==='월세'? '':'none';
+  $('ew-price').querySelector('label').textContent=(d==='전세'?'전세금':d==='월세'?'월세':'매매가')+' (만원)';
+}
+function confirmInfo(pid){
+  const p=prop(pid);
+  p.name=$('e-name').value.trim()||p.name;
+  p.dealType=document.querySelector('#e-deal .on').textContent;
+  p.price=Number($('e-price').value)||0; p.deposit=Number($('e-deposit').value)||0;
+  p.area=Number($('e-area').value)||0; p.age=Number($('e-age').value)||0;
+  p.heating=$('e-heating').value; p.floor=$('e-floor').value.trim();
+  /* 조건 변경 시 현장 항목 재생성 (기록 전이면) */
+  if(p.status==='prep'||p.status==='excluded'){
+    p.visitChecks = VISIT_RULES.filter(r=>r.cond(p)).map(r=>({id:r.id,cat:r.cat,t:r.t,d:r.d,result:'',memo:''}));
+    if(p.status==='excluded') p.status='prep';
+  }
+  toast('정보가 저장됐어요');
+  go('sheet', pid);
+}
+
+/* ---------- ③ 조사지 만들기: 직접 확인 항목 + 질문 은행 + AI 기타 ---------- */
+function viewSheet(){
+  const p=prop(S.cur); if(!p) return viewDash();
+  const cats={};
+  p.visitChecks.forEach((v,i)=>{ (cats[v.cat]=cats[v.cat]||[]).push([v,i]); });
+  const visitHTML = Object.entries(cats).map(([cat,items])=>`
+    <div style="margin-bottom:8px;"><div style="font-size:12px; font-weight:800; color:var(--ink-faint); letter-spacing:.5px; margin:10px 0 2px;">${cat}</div>
+    ${items.map(([v,i])=>`<div class="chk-item">
+      <div><div class="t">${esc(v.t)}</div><div class="d">${esc(v.d)}</div></div>
+      <span class="rm" onclick="rmVisit(${p.id},${i})" title="목록에서 제거">×</span></div>`).join('')}</div>`).join('');
+  const bankHTML = Object.entries(QBANK).map(([cat,qs])=>{
+    const selCount = qs.filter(q=>p.questions.some(x=>x.text===q)).length;
+    return `<details class="qbank"><summary>${cat} ${selCount? `<span class="qb-count">${selCount}개 선택</span>`:''}</summary>
+      <div class="qb-body">${qs.map(q=>{
+        const on = p.questions.some(x=>x.text===q);
+        return `<div class="chk-item"><input type="checkbox" ${on?'checked':''} onchange="toggleBankQ(${p.id},'${esc(q).replace(/'/g,"\\'")}',this.checked)">
+          <div><div class="t" style="font-weight:500;">${esc(q)}</div></div></div>`;
+      }).join('')}</div></details>`;
+  }).join('');
+  const qListHTML = p.questions.length? p.questions.map((q,i)=>`
+    <div class="q-item">
+      <div class="q-text"><span class="num">Q${i+1}</span><span id="qt-${i}">${esc(q.text)}</span>
+        <span class="src ${q.source==='ai'?'ai':'rule'}">${q.source==='ai'?'AI 변환':'질문 은행'}</span></div>
+      <div class="q-actions"><span onclick="editQ(${p.id},${i})">수정</span><span onclick="rmQ(${p.id},${i})">삭제</span></div>
+    </div>`).join('') : `<div style="font-size:13px;color:var(--ink-faint);padding:6px 0;">아직 선택한 질문이 없어요.</div>`;
+  return detailChrome(p,'sheet')+`
+  <div class="notice info">현장 항목 체크는 <b>방문 후</b>에 해요. 지금은 방문 때 가져갈 조사지를 만드는 단계입니다.</div>
+  <div class="card">
+    <h3>① 직접 확인할 것 <span class="src rule">규칙 기반</span></h3>
+    <div class="sub">이 매물 조건(${p.dealType}·${p.age}년차·${esc(p.heating)})에 맞춰 자동 선정됐어요. 필요 없는 항목은 ×로 빼세요.</div>
+    ${visitHTML}
+    <div class="ans-row" style="margin-top:10px;">
+      <input type="text" id="add-visit" placeholder="직접 확인 항목 추가 (예: 반려동물 가능 여부 게시물 확인)">
+      <button class="btn small" onclick="addVisit(${p.id})">추가</button>
+    </div>
+  </div>
+  <div class="card">
+    <h3>② 중개사에게 물어볼 것</h3>
+    <div class="sub">다른 자취생들이 많이 확인한 질문이에요. 해당되는 것을 고르세요. <b>뭘 걱정해야 할지 모르겠어도 괜찮아요</b> — 목록이 대신 떠올려 드립니다.</div>
+    ${bankHTML}
+    <div style="margin-top:14px;">
+      <label class="fl">목록에 없는 고민이 있다면 <span class="src ai">AI 변환</span></label>
+      <div class="ans-row">
+        <input type="text" id="concern" placeholder='예: "반려묘랑 살아야 해요", "밤에 골목이 어두울까 봐요"' onkeydown="if(event.key==='Enter')askAI(${p.id})">
+        <button class="btn" id="ask-btn" onclick="askAI(${p.id})">질문으로 바꾸기</button>
+      </div>
+      <div id="ai-status" style="margin-top:8px; font-size:12.5px; color:var(--ink-soft);"></div>
+    </div>
+    <div class="chk-item" style="border:0; margin-top:6px;">
+      <input type="checkbox" ${p.noConcern?'checked':''} onchange="prop(${p.id}).noConcern=this.checked;render()">
+      <div><div class="t" style="font-weight:500;">따로 걱정되는 건 없어요</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>③ 내 질문 목록 <span style="font-size:11.5px;color:var(--ink-faint);font-weight:400;">수정·삭제 가능</span></h3>
+    ${qListHTML}
+  </div>
+  <div style="display:flex; gap:8px; flex-wrap:wrap;">
+    <button class="btn primary" onclick="finishSheet(${p.id})" ${p.questions.length||p.noConcern? '':'disabled'}>조사지 완성 — 인쇄 미리보기</button>
+    <button class="btn ghost" onclick="go('record',${p.id})">방문 기록으로 건너뛰기</button>
+  </div>`;
+}
+function rmVisit(pid,i){ prop(pid).visitChecks.splice(i,1); render(); }
+function addVisit(pid){
+  const v=$('add-visit').value.trim(); if(!v){toast('항목을 입력해 주세요');return;}
+  prop(pid).visitChecks.push({id:'v-c'+Date.now(),cat:'추가',t:v,d:'',result:'',memo:''}); render();
+}
+function toggleBankQ(pid,text,on){
+  const p=prop(pid);
+  if(on){ if(!p.questions.some(q=>q.text===text)) p.questions.push({text,source:'bank',answer:'',noAnswer:false}); }
+  else p.questions = p.questions.filter(q=>q.text!==text);
+  render();
+}
+function editQ(pid,i){
+  const p=prop(pid); const cur=p.questions[i].text;
+  const nv=window.prompt('질문 수정', cur);
+  if(nv&&nv.trim()){ p.questions[i].text=nv.trim(); render(); }
+}
+function rmQ(pid,i){ prop(pid).questions.splice(i,1); render(); }
+async function askAI(pid){
+  const p=prop(pid); const concern=$('concern').value.trim();
+  if(!concern){toast('고민을 입력해 주세요');return;}
+  const st=$('ai-status'); $('ask-btn').disabled=true;
+  st.innerHTML='<span class="spinner"></span> 질문으로 바꾸는 중...';
+  let qs, src='ai';
+  try{ qs = await aiQuestions(concern,p); if(!qs.length) throw 0; }
+  catch(e){ qs=[`${concern} — 이 부분은 어떤가요? (관련해서 확인할 점이 있을까요?)`]; src='bank';
+    st.textContent='AI 연결이 어려워 기본 형태로 추가했어요. 문구를 수정해서 쓰세요.'; }
+  qs.forEach(t=>{ if(!p.questions.some(q=>q.text===t)) p.questions.push({text:t,source:src,answer:'',noAnswer:false}); });
+  if(src==='ai') st.textContent='';
+  $('concern').value=''; $('ask-btn').disabled=false;
+  render(); toast(`질문 ${qs.length}개 추가됨`);
+}
+function finishSheet(pid){
+  const p=prop(pid);
+  if(p.status==='prep') p.status='ready';
+  printSheet(pid);
+}
+
+/* ---------- ④ 조사지 인쇄 ---------- */
+function printSheet(pid){
+  const p=prop(pid);
+  const cats={}; p.visitChecks.forEach(v=>{ (cats[v.cat]=cats[v.cat]||[]).push(v); });
+  $('print-area').innerHTML=`
+    <h1>방문 조사지 — ${esc(p.name)}</h1>
+    <div class="pmeta">${fmtPrice(p)} · ${p.age}년차 · ${esc(p.heating)}${p.floor?' · '+p.floor+'층':''} · 리:체크 출력 ${new Date().toLocaleDateString('ko-KR')}</div>
+    <h2>직접 확인할 것</h2>
+    <table><tr><th style="width:44%">항목</th><th>좋음</th><th>보통</th><th>문제</th><th style="width:30%">메모</th></tr>
+    ${Object.entries(cats).map(([c,items])=>items.map(v=>
+      `<tr><td>[${c}] ${esc(v.t)}</td><td></td><td></td><td></td><td></td></tr>`).join('')).join('')}
+    </table>
+    <h2>중개사에게 물어볼 것</h2>
+    <table><tr><th style="width:55%">질문</th><th>받은 답변</th></tr>
+    ${p.questions.map((q,i)=>`<tr><td>Q${i+1}. ${esc(q.text)}</td><td class="blank"></td></tr>`).join('')||'<tr><td colspan="2">별도 질문 없음</td></tr>'}
+    </table>
+    <div class="foot">※ 이 조사지는 확인을 돕는 참고 자료이며, 계약 판단은 본인의 몫입니다. 다녀온 뒤 리:체크에 결과를 입력하면 매물 비교에 활용됩니다.</div>`;
+  toast('인쇄 창을 엽니다 — PDF로 저장도 가능해요');
+  setTimeout(()=>window.print(), 300);
+  setTimeout(()=>go('record',pid), 600);
+}
+
+/* ---------- ⑤ 방문 기록 (빠른 입력) ---------- */
+function viewRecord(){
+  const p=prop(S.cur); if(!p) return viewDash();
+  const visitHTML = p.visitChecks.map((v,i)=>`
+    <div class="q-item">
+      <div class="q-text">${esc(v.t)} <span style="font-weight:400;color:var(--ink-faint);font-size:11.5px;">[${v.cat}]</span></div>
+      <div class="res-seg">
+        ${[['good','좋음'],['ok','보통'],['bad','문제있음'],['na','미확인']].map(([k,l])=>
+          `<button class="${v.result===k?'on-'+k:''}" onclick="setRes(${p.id},${i},'${k}')">${l}</button>`).join('')}
+      </div>
+      ${v.result==='bad'||v.memo? `<input type="text" class="memo-in" placeholder="메모 (선택)" value="${esc(v.memo)}" onchange="prop(${p.id}).visitChecks[${i}].memo=this.value">`:''}
+    </div>`).join('');
+  const qHTML = p.questions.map((q,i)=>`
+    <div class="q-item">
+      <div class="q-text"><span class="num">Q${i+1}</span>${esc(q.text)}</div>
+      ${q.noAnswer? `<div style="font-size:12.5px;color:var(--ink-faint);">답을 듣지 못함 <span style="text-decoration:underline;cursor:pointer;" onclick="prop(${p.id}).questions[${i}].noAnswer=false;render()">취소</span></div>`
+      : `<div class="ans-row">
+          <input type="text" placeholder="받은 답변" value="${esc(q.answer)}" onchange="prop(${p.id}).questions[${i}].answer=this.value">
+          <button class="btn small ghost" onclick="prop(${p.id}).questions[${i}].noAnswer=true;prop(${p.id}).questions[${i}].answer='';render()">못 들음</button>
+        </div>`}
+    </div>`).join('');
+  return detailChrome(p,'record')+`
+  <div class="card">
+    <h3>다녀온 결과를 기록해요 <span class="src user">직접 입력</span></h3>
+    <div class="sub">항목마다 버튼 한 번이면 돼요. 조사지에 적어온 내용을 옮겨 적으세요.</div>
+    <div style="font-size:12px; font-weight:800; color:var(--ink-faint); letter-spacing:.5px; margin-bottom:4px;">직접 확인한 것</div>
+    ${visitHTML||'<div style="font-size:13px;color:var(--ink-faint);">확인 항목이 없어요.</div>'}
+  </div>
+  <div class="card">
+    <div style="font-size:12px; font-weight:800; color:var(--ink-faint); letter-spacing:.5px; margin-bottom:4px;">질문에 받은 답변</div>
+    ${qHTML||'<div style="font-size:13px;color:var(--ink-faint);">질문이 없어요.</div>'}
+  </div>
+  <div style="display:flex; gap:8px; flex-wrap:wrap;">
+    <button class="btn primary" onclick="finishRecord(${p.id})">기록 저장</button>
+    <button class="btn ghost" onclick="printSheet(${p.id})">조사지 다시 인쇄</button>
+  </div>`;
+}
+function setRes(pid,i,k){ const v=prop(pid).visitChecks[i]; v.result = v.result===k? '':k; render(); }
+function finishRecord(pid){
+  const p=prop(pid);
+  p.status = 'recorded';
+  const active=S.props.filter(x=>!['confirmed','excluded'].includes(x.status));
+  toast('기록이 저장됐어요');
+  if(active.length>=2) go('compare'); else go('safety',pid);
+}
+
+/* ---------- [규칙] 금융 계산 — 순수 함수 (판정 없음, 숫자만) ---------- */
+/* 가정: 이자만 방식(대출금×연이율÷12), 관리비 미포함. 화면에 가정 명시 */
+function calcFin(p){
+  const cash=Number(S.finance.cash)||0, loanCap=Number(S.finance.loan)||0, rate=Number(S.finance.rate)||0;
+  if(p.dealType==='매매') return {na:true};             // 주담대는 상환 구조가 달라 v1 계산 제외
+  const need = p.dealType==='월세'? (p.deposit||0) : (p.price||0);   // 필요 보증금/전세금
+  const loan = Math.min(Math.max(0, need-cash), loanCap);            // 예상 대출
+  const upfront = need - loan;                                       // 초기 필요자금(자기자금)
+  const mInt = Math.round(loan*(rate/100)/12*10)/10;                 // 월 이자(만원)
+  const rent = p.dealType==='월세'? (p.price||0) : 0;
+  return {na:false, need, loan, upfront, mInt, rent, monthly:Math.round((rent+mInt)*10)/10,
+    shortage: upfront>cash};                                         // 자기자금 > 보유현금 = 부족(사실 서술)
+}
+/* 보증금↔월세 전환: 추가 보증금 = 월세 감소액×12 ÷ 전환율 (참고 기준) */
+function calcConvert(curRent, targetRent, cvRate){
+  if(targetRent>=curRent||cvRate<=0) return null;
+  return Math.round((curRent-targetRent)*12/(cvRate/100));
+}
+
+/* ---------- ⑥ 매물 비교 ---------- */
+function viewCompare(){
+  const ps=S.props.filter(p=>!['confirmed','excluded'].includes(p.status));
+  if(ps.length<2) return viewDash();
+  const hasRecords = ps.some(p=>p.visitChecks.some(v=>v.result)||p.questions.some(q=>q.answer));
+  /* 숫자 행: 최고 빨강▲ 최저 파랑▼ */
+  function numRow(label, get, unit){
+    const vals=ps.map(get);
+    const mx=Math.max(...vals), mn=Math.min(...vals);
+    return `<tr><td class="rowlabel">${label}</td>${ps.map((p,i)=>{
+      const v=vals[i];
+      let mark=''; if(mx!==mn){ if(v===mx) mark=' <span class="arr-hi">▲</span>'; else if(v===mn) mark=' <span class="arr-lo">▼</span>'; }
+      return `<td>${v.toLocaleString()}${unit}${mark}</td>`;}).join('')}</tr>`;
+  }
+  const badRow = `<tr><td class="rowlabel">현장 '문제있음'</td>${ps.map(p=>{
+    const n=p.visitChecks.filter(v=>v.result==='bad').length;
+    return `<td class="${n?'bad-cell':''}">${n}건${n? ' — '+p.visitChecks.filter(v=>v.result==='bad').map(v=>esc(v.t)).join(', '):''}</td>`;}).join('')}</tr>`;
+  const missRow = `<tr><td class="rowlabel">미확인 항목</td>${ps.map(p=>{
+    const n=p.visitChecks.filter(v=>!v.result||v.result==='na').length + p.questions.filter(q=>!q.answer&&!q.noAnswer).length;
+    return n? `<td class="miss">${n}건</td>`:`<td>없음</td>`;}).join('')}</tr>`;
+  const allQ=[...new Set(ps.flatMap(p=>p.questions.map(q=>q.text)))];
+  const qRows=allQ.map(qt=>`<tr><td class="rowlabel">${esc(qt)}</td>${ps.map(p=>{
+    const q=p.questions.find(x=>x.text===qt);
+    if(!q) return `<td style="color:var(--ink-faint)">질문 안 함</td>`;
+    if(q.noAnswer) return `<td class="miss">답 못 들음</td>`;
+    return q.answer? `<td>${esc(q.answer)}</td>`:`<td class="miss">미확인</td>`;}).join('')}</tr>`).join('');
+  return `
+  <span class="back" onclick="go('dash')">← 매물 목록</span>
+  <h2 style="font-size:19px; font-weight:800; margin-bottom:2px;">매물 비교</h2>
+  <div style="font-size:12.5px; color:var(--ink-soft); margin-bottom:14px;">${ps.length}개 매물 비교 중 — 선택은 항상 사용자의 몫이에요.</div>
+  <div class="card">
+    <h3>기본 스펙 <span class="src rule">정량 비교</span></h3>
+    <div class="cmp-scroll"><table class="cmp">
+      <thead><tr><th></th>${ps.map(p=>`<th>${esc(p.name)}</th>`).join('')}</tr></thead>
+      <tbody>
+        <tr><td class="rowlabel">거래</td>${ps.map(p=>`<td>${fmtPrice(p)}</td>`).join('')}</tr>
+        ${numRow('가격 (만원)',p=>p.price,'')}
+        ${ps.some(p=>p.dealType==='월세')? numRow('보증금 (만원)',p=>p.deposit,''):''}
+        ${ps.some(p=>p.area)? numRow('면적 (㎡)',p=>p.area||0,''):''}
+        ${numRow('연식 (년차)',p=>p.age,'')}
+        <tr><td class="rowlabel">난방</td>${ps.map(p=>`<td>${esc(p.heating)}</td>`).join('')}</tr>
+        ${badRow}${missRow}
+      </tbody>
+    </table></div>
+    <div class="legend">▲ 최고값 · ▼ 최저값 — <b>수치의 높고 낮음 표시일 뿐, 우열 판정이 아닙니다.</b> (가격은 낮을수록, 층수는 취향에 따라 다르게 볼 수 있어요)</div>
+  </div>
+  <div class="card">
+    <h3>금융·현금흐름 비교 <span class="src rule">결정론 계산</span></h3>
+    <div class="sub">내 자금 조건을 넣으면 매물별 <b>실제 월 부담</b>을 계산해요. 계산만 하고, 어느 쪽이 유리한지는 판단하지 않습니다.</div>
+    <div class="fgrid" style="margin-bottom:12px;">
+      <div><label class="fl">보유 현금 (만원)</label><input type="number" value="${S.finance.cash}" onchange="S.finance.cash=this.value;render()"></div>
+      <div><label class="fl">대출 가능 금액 (만원)</label><input type="number" value="${S.finance.loan}" onchange="S.finance.loan=this.value;render()"></div>
+      <div><label class="fl">예상 대출 금리 (연 %)</label><input type="number" step="0.1" value="${S.finance.rate}" onchange="S.finance.rate=this.value;render()"></div>
+    </div>
+    ${(Number(S.finance.cash)||Number(S.finance.loan))? `
+    <div class="cmp-scroll"><table class="cmp">
+      <thead><tr><th></th>${ps.map(p=>`<th>${esc(p.name)}</th>`).join('')}</tr></thead>
+      <tbody>
+        ${[['필요 보증금·전세금',f=>f.need?.toLocaleString()+'만'],
+           ['예상 대출',f=>f.loan?.toLocaleString()+'만'],
+           ['초기 필요자금(자기자금)',f=>f.upfront?.toLocaleString()+'만'+(f.shortage?' <span class="arr-hi">⚠부족</span>':'')],
+           ['월 대출이자',f=>f.mInt+'만'],
+           ['월세',f=>f.rent+'만'],
+          ].map(([label,fn])=>`<tr><td class="rowlabel">${label}</td>${ps.map(p=>{
+            const f=calcFin(p); return f.na? '<td style="color:var(--ink-faint)">매매 — 계산 제외</td>':`<td>${fn(f)}</td>`;}).join('')}</tr>`).join('')}
+        <tr><td class="rowlabel"><b>월 주거비 합계</b></td>${ps.map(p=>{
+          const f=calcFin(p); return f.na? '<td style="color:var(--ink-faint)">—</td>':`<td><b>${f.monthly}만</b></td>`;}).join('')}</tr>
+      </tbody>
+    </table></div>
+    <div class="legend">가정: 이자만 방식(대출금×연이율÷12), 관리비·중개보수 미포함. ⚠부족 = 초기 필요자금이 보유 현금보다 큼(사실 표시).</div>
+    `:`<div class="notice">자금 조건을 입력하면 매물별 월 부담이 계산돼요.</div>`}
+    <div style="border-top:1px dashed var(--line-strong); margin-top:14px; padding-top:12px;">
+      <div style="font-size:13px; font-weight:700; margin-bottom:6px;">보증금↔월세 전환 참고 계산 <span class="src rule">규칙 기반</span></div>
+      <div class="fgrid">
+        <div><label class="fl">대상 매물 (월세)</label>
+          <select id="cv-prop">${ps.filter(p=>p.dealType==='월세').map(p=>`<option value="${p.id}">${esc(p.name)} — 현재 월 ${p.price}만</option>`).join('')||'<option value="">월세 매물 없음</option>'}</select></div>
+        <div><label class="fl">목표 월세 (만원)</label><input type="number" id="cv-target" placeholder="예: 20"></div>
+        <div><label class="fl">전환율 (연 %, 참고)</label><input type="number" step="0.1" id="cv-rate" value="${S.finance.cvRate}" onchange="S.finance.cvRate=this.value"></div>
+      </div>
+      <div style="margin-top:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <button class="btn small" onclick="runConvert()">계산</button>
+        <span id="cv-out" style="font-size:13px; color:var(--ink-soft);"></span>
+      </div>
+      <div id="cv-ask"></div>
+      <div class="legend">전환율은 법정 전월세전환율(기준금리 연동)을 참고한 값이며, 신규 계약 협상에 강제력은 없어요. 실제 조건은 임대인과의 협의로 정해집니다.</div>
+    </div>
+    <div class="notice warn" style="margin-top:12px;">본 계산은 참고용이며 금융상품 권유·투자자문이 아닙니다. 실제 대출 한도·금리·조건은 금융기관에서 확인하세요.</div>
+  </div>
+  <div class="card">
+    <h3>질문-답변 상세 <span class="src user">직접 조사</span></h3>
+    ${allQ.length? `<div class="cmp-scroll"><table class="cmp">
+      <thead><tr><th></th>${ps.map(p=>`<th>${esc(p.name)}</th>`).join('')}</tr></thead>
+      <tbody>${qRows}</tbody></table></div>`
+      :`<div style="font-size:13px;color:var(--ink-faint);">질문 데이터가 아직 없어요.</div>`}
+    <div style="margin-top:12px;">
+      <button class="btn" id="ai-cmp-btn" onclick="runCompareAI()" ${hasRecords?'':'disabled'}>차이점 AI 요약 <span class="src ai" style="margin-left:2px;">AI</span></button>
+      ${hasRecords?'':'<span style="font-size:12px;color:var(--ink-faint);margin-left:8px;">방문 기록을 입력하면 요약할 수 있어요</span>'}
+    </div>
+    <div id="ai-cmp-out"></div>
+  </div>
+  <div class="card">
+    <h3>선택</h3>
+    <div class="sub">비교를 마쳤다면 진행할 매물을 고르세요. 나머지는 '제외'하면 목록이 정리돼요.</div>
+    <div class="cmp-scroll"><table class="cmp"><tbody>
+      <tr>${ps.map(p=>`<td style="text-align:center;">
+        <div style="font-weight:700; margin-bottom:6px;">${esc(p.name)}</div>
+        <button class="btn primary small" onclick="go('safety',${p.id})">이 매물로 진행</button>
+        <button class="btn ghost small danger" style="margin-top:4px;" onclick="excludeProp(${p.id})">제외</button>
+      </td>`).join('')}</tr>
+    </tbody></table></div>
+  </div>`;
+}
+function runConvert(){
+  const pid=Number($('cv-prop').value); const p=prop(pid);
+  const target=Number($('cv-target').value); const rate=Number($('cv-rate').value);
+  const out=$('cv-out'), ask=$('cv-ask');
+  if(!p){ out.textContent='월세 매물을 선택해 주세요'; return; }
+  if(!target||target<=0){ out.textContent='목표 월세를 입력해 주세요'; return; }
+  const add=calcConvert(p.price, target, rate);
+  if(add===null){ out.textContent='목표 월세는 현재 월세보다 낮아야 해요'; ask.innerHTML=''; return; }
+  const newDeposit=(p.deposit||0)+add;
+  out.innerHTML=`월세 ${p.price}만 → ${target}만으로 낮추려면 보증금 약 <b>${add.toLocaleString()}만원 추가</b> (${(p.deposit||0).toLocaleString()}만 → ${newDeposit.toLocaleString()}만) 수준이 참고 기준이에요.`;
+  const q=`보증금을 ${newDeposit.toLocaleString()}만원 수준으로 올리는 대신 월세를 ${target}만원으로 조정할 수 있을까요?`;
+  ask.innerHTML=`<div class="notice" style="margin-top:8px;">협상 질문 예시 <span class="src rule">템플릿</span><br>"${esc(q)}"
+    <div style="margin-top:6px;"><button class="btn small" onclick='addNegoQ(${pid},${JSON.stringify(q)})'>이 매물 질문 목록에 추가</button></div></div>`;
+}
+function addNegoQ(pid,text){
+  const p=prop(pid);
+  if(!p.questions.some(x=>x.text===text)) p.questions.push({text, source:'bank', answer:'', noAnswer:false});
+  toast('질문 목록에 추가했어요');
+}
+async function runCompareAI(){
+  const btn=$('ai-cmp-btn'), out=$('ai-cmp-out');
+  btn.disabled=true;
+  out.innerHTML='<div class="ai-summary"><span class="spinner"></span> 기록된 차이점을 정리하는 중...</div>';
+  const ps=S.props.filter(p=>!['confirmed','excluded'].includes(p.status));
+  try{
+    const text=await aiCompareSummary(ps);
+    out.innerHTML=`<div class="ai-summary">${esc(text)}\n\n<span style="font-size:11.5px;opacity:.7;">— AI는 기록의 차이만 정리하며, 우열 판단은 하지 않습니다.</span></div>`;
+  }catch(e){
+    out.innerHTML=`<div class="notice">AI 요약을 사용할 수 없어요. 위 표에서 노란 칸(미확인)과 빨간 글씨(문제있음)를 중심으로 비교해 보세요.</div>`;
+  }
+  btn.disabled=false;
+}
+function excludeProp(pid){ prop(pid).status='excluded'; toast('매물을 제외했어요'); render(); }
+
+/* ---------- ⑦ 계약 전 안전 점검 ---------- */
+function viewSafety(){
+  const p=prop(S.cur); if(!p) return viewDash();
+  const rules=SAFETY_RULES.filter(r=>r.cond(p));
+  const missCrit=rules.filter(r=>r.crit&&!p.safetyChecks[r.id]);
+  const items=rules.map(r=>`
+    <div class="chk-item ${p.safetyChecks[r.id]?'done':''}">
+      <input type="checkbox" ${p.safetyChecks[r.id]?'checked':''} onchange="prop(${p.id}).safetyChecks['${r.id}']=this.checked;render()">
+      <div><div class="t">${esc(r.t)} ${r.crit?'<span style="color:var(--red);font-size:11px;">필수</span>':''}</div><div class="d">${esc(r.d)}</div></div>
+    </div>`).join('');
+  return detailChrome(p,'safety')+`
+  <div class="card">
+    <h3>계약 전 안전 점검 <span class="src rule">규칙 기반</span></h3>
+    <div class="sub">${p.dealType} 계약에서 서류·권리 관련으로 확인할 항목이에요. 방 상태가 아니라 <b>내 보증금과 권리</b>를 지키는 단계입니다.</div>
+    ${items}
+    ${missCrit.length? `<div class="notice warn">⚠ 필수 항목 ${missCrit.length}개가 아직 확인되지 않았어요: ${missCrit.map(r=>esc(r.t)).join(' / ')}</div>`:''}
+  </div>
+  <div class="card">
+    <h3>다음 단계</h3>
+    <div class="sub">점검표를 출력해 계약 현장에 들고 가거나, 확인을 마쳤다면 계약을 확정하세요.</div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <button class="btn" onclick="printSafety(${p.id})">최종 점검표 인쇄 / PDF</button>
+      <button class="btn primary" onclick="confirmDeal(${p.id})">계약 확정</button>
+      <button class="btn ghost" onclick="go('dash')">보류</button>
+    </div>
+  </div>`;
+}
+function printSafety(pid){
+  const p=prop(pid);
+  const rules=SAFETY_RULES.filter(r=>r.cond(p));
+  $('print-area').innerHTML=`
+    <h1>계약 전 최종 점검표 — ${esc(p.name)}</h1>
+    <div class="pmeta">${fmtPrice(p)} · ${p.dealType} · 리:체크 출력 ${new Date().toLocaleDateString('ko-KR')}</div>
+    <h2>서류·권리 점검</h2>
+    <table><tr><th style="width:6%">확인</th><th style="width:44%">항목</th><th>내용</th></tr>
+    ${rules.map(r=>`<tr><td style="text-align:center;">${p.safetyChecks[r.id]?'✔':'☐'}</td><td>${r.crit?'[필수] ':''}${esc(r.t)}</td><td>${esc(r.d)}</td></tr>`).join('')}
+    </table>
+    <h2>계약 당일 확인</h2>
+    <table><tr><th style="width:6%">확인</th><th>항목</th></tr>
+    ${CONTRACT_DAY.map(c=>`<tr><td style="text-align:center;">☐</td><td>${esc(c.t)}</td></tr>`).join('')}
+    </table>
+    <div class="foot">※ 본 점검표는 확인을 돕는 참고 자료이며, 계약 여부의 판단과 책임은 계약 당사자 본인에게 있습니다.</div>`;
+  toast('인쇄 창을 엽니다 — PDF 저장 가능');
+  setTimeout(()=>window.print(),300);
+}
+function confirmDeal(pid){
+  const p=prop(pid); p.status='confirmed';
+  toast('계약이 확정됐어요 — 이후 절차를 안내합니다');
+  go('contract',pid);
+}
+
+/* ---------- ⑧ 계약 확정 후: 계약 당일 + 이후 절차 ---------- */
+function viewContract(){
+  const p=prop(S.cur); if(!p) return viewDash();
+  const dayHTML=CONTRACT_DAY.map(c=>`
+    <div class="chk-item ${p.contractChecks[c.id]?'done':''}">
+      <input type="checkbox" ${p.contractChecks[c.id]?'checked':''} onchange="prop(${p.id}).contractChecks['${c.id}']=this.checked;render()">
+      <div><div class="t">${esc(c.t)}</div></div></div>`).join('');
+  const afterHTML=Object.entries(AFTER).map(([phase,items])=>`
+    <div class="card"><h3>${phase} <span class="src rule">규칙 기반</span></h3>
+    ${items.map(a=>{
+      if(a.id==='a5'&&p.dealType==='매매') return '';
+      return `<div class="chk-item ${p.afterChecks[a.id]?'done':''}">
+        <input type="checkbox" ${p.afterChecks[a.id]?'checked':''} onchange="prop(${p.id}).afterChecks['${a.id}']=this.checked;render()">
+        <div><div class="t">${esc(a.t)}</div></div></div>`;}).join('')}
+    </div>`).join('');
+  return detailChrome(p,'contract')+`
+  <div class="card">
+    <h3>계약 당일 체크리스트 <span class="src rule">규칙 기반</span></h3>
+    <div class="sub">계약서에 서명하기 전, 현장에서 마지막으로 확인하세요.</div>
+    ${dayHTML}
+    <button class="btn small ghost" style="margin-top:8px;" onclick="printSafety(${p.id})">점검표 인쇄 / PDF</button>
+  </div>
+  ${afterHTML}
+  <div class="notice">전입신고와 확정일자는 보증금 보호(대항력·우선변제권)의 핵심이에요. 입주 당일 바로 처리하는 것을 권장합니다.</div>`;
+}
+
+render();
+</script>
+</body>
+</html>

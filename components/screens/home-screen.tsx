@@ -78,11 +78,10 @@ export function HomeScreen({ properties, hrefFor, map }: HomeScreenProps) {
               매물 비교
             </Link>
           )}
-          {total > 0 && (
-            <Link href={hrefFor('add')} className="rc-btn rc-btn-primary">
-              + 매물 추가
-            </Link>
-          )}
+          {/* 빈 상태에서도 남긴다 — 큰 안내 카드와 헤더 중 어디를 눌러도 같은 곳으로 간다 */}
+          <Link href={hrefFor('add')} className="rc-btn rc-btn-primary">
+            + 매물 추가
+          </Link>
         </div>
       </div>
 
@@ -133,6 +132,15 @@ function PropertyCard({ property: p, hrefFor }: { property: PropertyDTO; hrefFor
           {action}
         </Link>
       </div>
+      {/*
+        제외한 매물은 되살릴 수 있는데(excluded → prep) 그 길이 정보 확인 화면 안에 숨어 있다.
+        카드에서 어디로 가는지 미리 알려준다.
+      */}
+      {p.status === 'excluded' && (
+        <p className="rc-prop-hint">
+          정보를 확인하고 저장하면 다시 검토 목록으로 돌아와요.
+        </p>
+      )}
     </article>
   );
 }

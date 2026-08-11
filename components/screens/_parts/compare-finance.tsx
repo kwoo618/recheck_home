@@ -37,6 +37,16 @@ export type CompareFinanceProps = {
 
 const num = (v: string) => (v.trim() === '' ? undefined : Number(v));
 
+/*
+ * 가정 문구는 한 덩어리 상수라 그대로 두면 모바일에서 6~7줄이 된다.
+ * 새로 들어간 "기회비용 미반영"·"매매 제외"가 나머지에 묻히면 적어둔 의미가 없다.
+ * 상수는 건드리지 않고 화면에서만 문장 단위로 나눈다.
+ * 마침표 뒤 공백에서만 자른다 — "5.5%" 같은 소수점은 붙어 있어 잘리지 않는다.
+ */
+const ASSUMPTION_LINES = FINANCE_ASSUMPTIONS.split(/(?<=\.)\s+/)
+  .map((line) => line.trim())
+  .filter(Boolean);
+
 export function CompareFinance({
   properties,
   finance,
@@ -109,8 +119,8 @@ export function CompareFinance({
         금융·현금흐름 비교 <SourceBadge kind="rule" label="결정론 계산" />
       </h2>
       <p className="rc-card-sub">
-        내 자금 조건을 넣으면 매물별 <b>월 주거비</b>를 계산해요. 계산만 하고, 어느 쪽이 나은지는
-        판단하지 않습니다.
+        내 자금 조건을 넣으면 매물별 <b>초기 필요자금</b>과 <b>월 주거비</b>를 계산해요. 거래유형이
+        달라도 이 두 축은 견줄 수 있습니다. 계산만 하고, 어느 쪽이 나은지는 판단하지 않습니다.
       </p>
 
       <div className="rc-fgrid" style={{ marginBottom: 12 }}>
@@ -148,10 +158,28 @@ export function CompareFinance({
                   cell={(f) => `${f.need.toLocaleString()}만`} />
                 <FinanceRow label="예상 대출" results={results}
                   cell={(f) => `${f.loan.toLocaleString()}만`} />
-                <FinanceRow label="초기 필요자금(자기자금)" results={results}
+                <FinanceRow label="월 대출이자" results={results} cell={(f) => `${f.monthlyInterest}만`} />
+                {/*
+                  전세는 월세가 0인 게 아니라 개념이 없다. 0만으로 적으면
+                  "월세가 0원인 조건"으로 읽혀 월 주거비만 보고 고르게 된다.
+                */}
+                <FinanceRow label="월세" results={results}
+                  cell={(f, property) =>
+                    property.dealType === '월세' ? (
+                      `${f.rent}만`
+                    ) : (
+                      <span style={{ color: 'var(--rc-ink-faint)' }}>해당 없음</span>
+                    )
+                  } />
+                <FinanceRow label="관리비" results={results} cell={(f) => `${f.mgmtFee}만`} />
+                {/*
+                  아래 두 행이 거래유형이 달라도 견줄 수 있는 축이다.
+                  월 주거비만 강조하면 전세처럼 목돈이 묶이는 조건에서 자금 구속이 과소평가된다.
+                */}
+                <FinanceRow label={<b>초기 필요자금(자기자금)</b>} results={results} emphasis
                   cell={(f) => (
                     <>
-                      {f.upfront.toLocaleString()}만
+                      <b>{f.upfront.toLocaleString()}만</b>
                       {f.cashShortage && (
                         <>
                           {' '}
@@ -160,25 +188,35 @@ export function CompareFinance({
                       )}
                     </>
                   )} />
-                <FinanceRow label="월 대출이자" results={results} cell={(f) => `${f.monthlyInterest}만`} />
-                <FinanceRow label="월세" results={results} cell={(f) => `${f.rent}만`} />
-                <FinanceRow label="관리비" results={results} cell={(f) => `${f.mgmtFee}만`} />
-                <FinanceRow label={<b>월 주거비 합계</b>} results={results}
+                <FinanceRow label={<b>월 주거비 합계</b>} results={results} emphasis
                   cell={(f) => <b>{f.monthlyTotal}만</b>} />
               </tbody>
             </table>
           </div>
           <p className="rc-legend">
-            ⚠ 부족 = 초기 필요자금이 보유 현금보다 큼(산술적 사실 표시이며 판정이 아닙니다).
+            <b>초기 필요자금</b>과 <b>월 주거비</b>는 함께 봐야 합니다. 전세는 월 부담이 작은 대신 목돈이
+            묶이고, 월세는 그 반대예요. 어느 쪽이 나은지는 계산이 정하지 않습니다.
+            <br />⚠ 부족 = 초기 필요자금이 보유 현금보다 큼(산술적 사실 표시이며 판정이 아닙니다).
           </p>
         </>
       ) : (
         <p className="rc-notice">자금 조건을 입력하면 매물별 월 주거비가 계산돼요.</p>
       )}
 
-      {/* 계산 결과가 있든 없든 항상 보인다 */}
-      <p className="rc-legend">{FINANCE_ASSUMPTIONS}</p>
-      <p className="rc-notice rc-notice-warn">{FINANCE_DISCLAIMER}</p>
+      {/*
+        계산 결과가 있든 없든 항상 보인다.
+        가정과 면책을 한 블록으로 묶는다 — 작은 회색 문단이 연달아 쌓이면
+        아무것도 읽지 않게 된다.
+      */}
+      <div className="rc-disclosure">
+        <p className="rc-disclosure-title">계산 가정과 면책</p>
+        <ul>
+          {ASSUMPTION_LINES.map((line) => (
+            <li key={line}>{line}</li>
+          ))}
+        </ul>
+        <p className="rc-disclaimer">{FINANCE_DISCLAIMER}</p>
+      </div>
 
       {/* ── 보증금 ↔ 월세 전환 ───────────────────────────────── */}
       <div className="rc-subsection">
@@ -260,7 +298,12 @@ export function CompareFinance({
         )}
 
         {/* 계산 결과 여부와 무관하게 항상 노출 (PRD §11 리스크) */}
-        <p className="rc-legend">{CONVERSION_NOTICE}</p>
+        <div className="rc-disclosure">
+          <p className="rc-disclosure-title">전환율 안내</p>
+          <ul>
+            <li>{CONVERSION_NOTICE}</li>
+          </ul>
+        </div>
       </div>
     </section>
   );
@@ -270,18 +313,24 @@ function FinanceRow({
   label,
   results,
   cell,
+  emphasis = false,
 }: {
   label: React.ReactNode;
   results: { property: PropertyDTO; finance: ReturnType<typeof calcFinance> }[];
-  cell: (f: Extract<ReturnType<typeof calcFinance>, { applicable: true }>) => React.ReactNode;
+  cell: (
+    f: Extract<ReturnType<typeof calcFinance>, { applicable: true }>,
+    property: PropertyDTO,
+  ) => React.ReactNode;
+  /** 거래유형이 달라도 견줄 수 있는 두 축. 한쪽만 강조하면 다른 쪽이 과소평가된다 */
+  emphasis?: boolean;
 }) {
   return (
-    <tr>
+    <tr className={emphasis ? 'rc-key-row' : undefined}>
       <td className="rc-rowlabel">{label}</td>
       {results.map(({ property, finance }) => (
         <td key={property.id}>
           {finance.applicable ? (
-            cell(finance)
+            cell(finance, property)
           ) : (
             <span style={{ color: 'var(--rc-ink-faint)' }}>매매 — 계산 제외</span>
           )}

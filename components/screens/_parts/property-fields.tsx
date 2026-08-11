@@ -87,12 +87,15 @@ export function PropertyFields({
   onChange,
   onGeocode,
   renderMapPreview,
+  onGeocodingChange,
 }: {
   value: PropertyFormValue;
   onChange: (patch: Partial<PropertyFormValue>) => void;
   onGeocode?: GeocodeFn;
   /** 지도 미리보기 슬롯. 주지 않으면 주소·거리 텍스트만 보여준다 (지도 실패 폴백과 같은 경로 — R4) */
   renderMapPreview?: (coords: { latitude: number; longitude: number }) => ReactNode;
+  /** 좌표를 조회하는 동안 알린다 — 조회가 끝나기 전에 저장하면 좌표 없이 저장된다 */
+  onGeocodingChange?: (geocoding: boolean) => void;
 }) {
   const { open, unavailable } = useDaumPostcode();
   const [geoStatus, setGeoStatus] = useState<GeoStatus>(
@@ -111,13 +114,18 @@ export function PropertyFields({
       return;
     }
     setGeoStatus('loading');
-    const coords = await onGeocode(target);
-    if (coords) {
-      onChange({ latitude: coords.lat, longitude: coords.lng });
-      setGeoStatus('ok');
-    } else {
-      onChange({ latitude: null, longitude: null });
-      setGeoStatus('failed');
+    onGeocodingChange?.(true);
+    try {
+      const coords = await onGeocode(target);
+      if (coords) {
+        onChange({ latitude: coords.lat, longitude: coords.lng });
+        setGeoStatus('ok');
+      } else {
+        onChange({ latitude: null, longitude: null });
+        setGeoStatus('failed');
+      }
+    } finally {
+      onGeocodingChange?.(false);
     }
   }
 

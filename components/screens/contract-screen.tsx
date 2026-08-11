@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import type { PropertyStatus } from '@/db/schema';
 import { CONTRACT_DAY, selectAfterSteps, type RuleContext } from '@/lib/rules';
 import type { ActionResult, PropertyDTO } from '@/lib/types';
@@ -10,6 +10,8 @@ import type { CheckGroup } from '@/lib/actions/checks';
 import { ScreenShell } from './_parts/screen-shell';
 import { PropertyHeader } from './_parts/property-header';
 import { SourceBadge } from './_parts/source-badge';
+import { useMutations } from './_parts/use-mutations';
+import { SaveStatus } from './_parts/save-status';
 import { SafetyPrint } from './safety-print';
 import type { HrefFor } from './_parts/nav';
 
@@ -41,7 +43,7 @@ export type ContractScreenProps = {
 
 export function ContractScreen({ property: p, hrefFor, onToggleCheck, onSetStatus }: ContractScreenProps) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const { run: mutate, isBusy, busy, saveState } = useMutations();
   const [error, setError] = useState('');
   const [cancelling, setCancelling] = useState(false);
 
@@ -55,8 +57,8 @@ export function ContractScreen({ property: p, hrefFor, onToggleCheck, onSetStatu
   const afterGroups = selectAfterSteps(ctx);
 
   function toggle(group: CheckGroup, ruleId: string, on: boolean) {
-    startTransition(async () => {
-      const result = await onToggleCheck(p.id, group, ruleId, on);
+    void mutate(`${group}-${ruleId}`, () => onToggleCheck(p.id, group, ruleId, on)).then((result) => {
+      if (!result) return;
       if (!result.ok) {
         setError(result.error);
         return;
@@ -71,6 +73,7 @@ export function ContractScreen({ property: p, hrefFor, onToggleCheck, onSetStatu
       <PropertyHeader property={p} phase="contract" hrefFor={hrefFor} />
 
       <div className="rc-screen-only">
+        <SaveStatus state={saveState} />
         <section className="rc-card">
           <h2 className="rc-card-title">
             계약 당일 체크리스트 <SourceBadge kind="rule" />
@@ -84,7 +87,7 @@ export function ContractScreen({ property: p, hrefFor, onToggleCheck, onSetStatu
                 <input
                   type="checkbox"
                   checked={on}
-                  disabled={pending}
+                  disabled={isBusy(`contract-${c.id}`)}
                   onChange={(e) => toggle('contract', c.id, e.target.checked)}
                 />
                 <span className="rc-chk-t">{c.title}</span>
@@ -112,7 +115,7 @@ export function ContractScreen({ property: p, hrefFor, onToggleCheck, onSetStatu
                   <input
                     type="checkbox"
                     checked={on}
-                    disabled={pending}
+                    disabled={isBusy(`after-${item.id}`)}
                     onChange={(e) => toggle('after', item.id, e.target.checked)}
                   />
                   <span className="rc-chk-t">{item.title}</span>
@@ -138,7 +141,7 @@ export function ContractScreen({ property: p, hrefFor, onToggleCheck, onSetStatu
             <button
               type="button"
               className="rc-btn rc-btn-ghost rc-btn-danger"
-              disabled={pending}
+              disabled={busy}
               onClick={() => setCancelling(true)}
             >
               계약 확정 취소
@@ -167,10 +170,10 @@ export function ContractScreen({ property: p, hrefFor, onToggleCheck, onSetStatu
               <button
                 type="button"
                 className="rc-btn rc-btn-danger"
-                disabled={pending}
-                onClick={() =>
-                  startTransition(async () => {
-                    const result = await onSetStatus(p.id, 'recorded');
+                disabled={isBusy('cancel-deal')}
+                onClick={() => {
+                  void mutate('cancel-deal', () => onSetStatus(p.id, 'recorded')).then((result) => {
+                    if (!result) return;
                     if (!result.ok) {
                       setCancelling(false);
                       setError(result.error);
@@ -179,10 +182,10 @@ export function ContractScreen({ property: p, hrefFor, onToggleCheck, onSetStatu
                     setCancelling(false);
                     router.refresh();
                     router.push(hrefFor('safety', p.id));
-                  })
-                }
+                  });
+                }}
               >
-                {pending ? '처리하는 중...' : '확정 취소'}
+                {isBusy('cancel-deal') ? '처리하는 중...' : '확정 취소'}
               </button>
               <button type="button" className="rc-btn rc-btn-ghost" onClick={() => setCancelling(false)}>
                 돌아가기

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { formatDistanceLabel } from '@/lib/geo';
 import type { PropertyDTO } from '@/lib/types';
 import { ScreenShell } from './_parts/screen-shell';
+import { HomeMapList } from './_parts/home-map-list';
 import { ProgressRing } from './_parts/progress-ring';
 import { formatSpecLine } from './_parts/format';
 import { isActive, statusInfo } from './_parts/status';
@@ -20,8 +21,11 @@ export type HomeScreenProps = {
   properties: PropertyDTO[];
   hrefFor: HrefFor;
   /**
-   * 지도 패널. 주지 않으면 리스트만 그린다.
-   * 지도 로딩 실패 시 리스트로 대체하는 폴백 경로가 곧 기본값이다. (R4)
+   * 지도 패널 (`<PropertyMapPanel properties={toMapProperties(properties)} />`).
+   * 주지 않으면 리스트만 그린다 — 지도 로딩 실패 폴백과 같은 경로다. (R4)
+   *
+   * 하단 고정 문구("등록한 매물만 표시됩니다…")와 좌표 없는 매물 안내는
+   * 패널이 직접 렌더하므로 여기서 다시 쓰지 않는다.
    */
   map?: ReactNode;
 };
@@ -31,6 +35,29 @@ export function HomeScreen({ properties, hrefFor, map }: HomeScreenProps) {
   const activeCount = properties.filter((p) => isActive(p.status)).length;
   const located = properties.filter((p) => p.distanceFromSchool !== null);
   const unlocated = properties.filter((p) => p.distanceFromSchool === null);
+
+  const list = (
+    <>
+      {located.map((p) => (
+        <PropertyCard key={p.id} property={p} hrefFor={hrefFor} />
+      ))}
+
+      {unlocated.length > 0 && (
+        <>
+          <h3 className="rc-group-label">위치 미지정 {unlocated.length}개</h3>
+          {/* 지도를 함께 쓸 때는 같은 설명이 지도 패널 아래에도 나온다 — 한 번만 보여준다 */}
+          {!map && (
+            <p className="rc-notice">
+              좌표를 얻지 못해 지도에 표시되지 않는 매물이에요. 확인·비교·인쇄는 그대로 됩니다.
+            </p>
+          )}
+          {unlocated.map((p) => (
+            <PropertyCard key={p.id} property={p} hrefFor={hrefFor} />
+          ))}
+        </>
+      )}
+    </>
+  );
 
   return (
     <ScreenShell hrefFor={hrefFor}>
@@ -71,34 +98,11 @@ export function HomeScreen({ properties, hrefFor, map }: HomeScreenProps) {
             </Link>
           </div>
         </div>
+      ) : map ? (
+        <HomeMapList map={map}>{list}</HomeMapList>
       ) : (
-        <div className={`rc-home-body${map ? ' rc-has-map' : ''}`}>
-          {map && (
-            <aside className="rc-home-map">
-              {map}
-              <p className="rc-map-note">
-                등록한 매물만 표시됩니다. 지도에서 새 매물을 찾지 않습니다.
-              </p>
-            </aside>
-          )}
-
-          <div className="rc-home-list">
-            {located.map((p) => (
-              <PropertyCard key={p.id} property={p} hrefFor={hrefFor} />
-            ))}
-
-            {unlocated.length > 0 && (
-              <>
-                <h3 className="rc-group-label">위치 미지정 {unlocated.length}개</h3>
-                <p className="rc-notice">
-                  좌표를 얻지 못해 지도에 표시되지 않는 매물이에요. 확인·비교·인쇄는 그대로 됩니다.
-                </p>
-                {unlocated.map((p) => (
-                  <PropertyCard key={p.id} property={p} hrefFor={hrefFor} />
-                ))}
-              </>
-            )}
-          </div>
+        <div className="rc-home-body">
+          <div className="rc-home-list">{list}</div>
         </div>
       )}
     </ScreenShell>

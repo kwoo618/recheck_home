@@ -13,6 +13,7 @@ import { SourceBadge } from './_parts/source-badge';
 import { QuestionBadge } from './_parts/question-badge';
 import { resultLabel } from './_parts/format';
 import { useUnsavedGuard } from './_parts/use-unsaved-guard';
+import { SaveStatus } from './_parts/save-status';
 import { SurveySheetPrint } from './survey-sheet-print';
 import type { HrefFor } from './_parts/nav';
 
@@ -130,6 +131,17 @@ export function VisitRecordScreen({
       <PropertyHeader property={p} phase="record" hrefFor={hrefFor} />
 
       <div className="rc-screen-only">
+        {/*
+          실패했을 때만 띄운다.
+          · 성공하면 곧바로 다음 화면으로 넘어가므로 "저장됨"을 띄울 자리가 없다.
+          · 저장 중은 버튼이 "저장하는 중..."으로 바뀌어 이미 알린다.
+          · 실패는 다르다. 이 화면은 길어서 하단 버튼 옆 에러 문구를 놓친 채
+            저장된 줄 알고 나갈 수 있고, 그러면 입력이 통째로 사라진다.
+            스크롤을 따라오는 칩으로 한 번 더 알린다.
+          error 는 이 화면에서 저장 실패에만 쓰이므로 별도 상태를 두지 않는다.
+        */}
+        <SaveStatus state={error && !pending ? 'error' : 'idle'} />
+
         <section className="rc-card">
           <h2 className="rc-card-title">
             다녀온 결과를 기록해요 <SourceBadge kind="user" />

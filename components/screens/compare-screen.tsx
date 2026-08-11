@@ -226,7 +226,16 @@ export function CompareScreen({
                 />
               )}
               <NumberRow properties={ps} label="관리비 (만원)" pick={(p) => p.mgmtFee} />
-              {ps.some((p) => p.area > 0) && <NumberRow properties={ps} label="면적 (㎡)" pick={(p) => p.area} />}
+              {/*
+                면적을 비워두면 서버가 0으로 저장한다. 스키마가 nullable 이 아니라
+                "0㎡"와 "입력 안 함"을 값으로 구분할 수 없다.
+                0 을 —로 적고 비교에서도 빼서, 없는 값이 최저값으로 읽히지 않게 한다.
+                ★ 관리비는 같은 처리를 하지 않는다. 관리비가 실제로 0원인 매물이 있어서
+                  0 을 "모름"으로 적으면 사실과 다른 표기가 된다. (R8)
+              */}
+              {ps.some((p) => p.area > 0) && (
+                <NumberRow properties={ps} label="면적 (㎡)" pick={(p) => p.area} blankZero />
+              )}
               <NumberRow properties={ps} label="연식 (년차)" pick={(p) => p.age} />
               <tr>
                 <td className="rc-rowlabel">난방</td>
@@ -265,6 +274,7 @@ export function CompareScreen({
         <p className="rc-legend">
           ▲ 최고값 · ▼ 최저값 — <b>수치의 높고 낮음 표시일 뿐, 우열 판정이 아닙니다.</b> (가격은 낮을수록,
           층수는 취향에 따라 다르게 볼 수 있어요)
+          <br />— 는 입력하지 않은 값이에요. 비교에서도 빠집니다.
         </p>
 
         {mixedDeal && (
@@ -450,6 +460,7 @@ function NumberRow({
   pick,
   unit = '',
   marks = true,
+  blankZero = false,
 }: {
   properties: PropertyDTO[];
   label: string;
@@ -457,23 +468,36 @@ function NumberRow({
   unit?: string;
   /** false면 값만 적는다. 서로 다른 축의 값이라 높낮이를 견줄 수 없을 때 쓴다 */
   marks?: boolean;
+  /** 0을 "입력 안 함"으로 보고 —로 적으며 최고·최저 계산에서 뺀다 */
+  blankZero?: boolean;
 }) {
   const values = properties.map(pick);
-  const max = Math.max(...values);
-  const min = Math.min(...values);
-  const varied = marks && max !== min;
+  const comparable = blankZero ? values.filter((v) => v > 0) : values;
+  const max = comparable.length ? Math.max(...comparable) : 0;
+  const min = comparable.length ? Math.min(...comparable) : 0;
+  const varied = marks && comparable.length > 1 && max !== min;
 
   return (
     <tr>
       <td className="rc-rowlabel">{label}</td>
-      {properties.map((p, i) => (
-        <td key={p.id}>
-          {values[i].toLocaleString()}
-          {unit}
-          {varied && values[i] === max && <span className="rc-arr-hi"> ▲</span>}
-          {varied && values[i] === min && <span className="rc-arr-lo"> ▼</span>}
-        </td>
-      ))}
+      {properties.map((p, i) => {
+        const value = values[i];
+        if (blankZero && value === 0) {
+          return (
+            <td key={p.id} style={{ color: 'var(--rc-ink-faint)' }}>
+              —
+            </td>
+          );
+        }
+        return (
+          <td key={p.id}>
+            {value.toLocaleString()}
+            {unit}
+            {varied && value === max && <span className="rc-arr-hi"> ▲</span>}
+            {varied && value === min && <span className="rc-arr-lo"> ▼</span>}
+          </td>
+        );
+      })}
     </tr>
   );
 }

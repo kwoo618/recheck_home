@@ -267,7 +267,8 @@ export function PropertyFields({
 
       <div>
         <label className="rc-fl" htmlFor="rc-f-mgmt">
-          관리비 (만원) <span className="rc-opt">(선택)</span>
+          관리비 (만원){' '}
+          <span className="rc-opt">(관리비가 없으면 0을 입력하세요)</span>
         </label>
         <input
           id="rc-f-mgmt"
@@ -281,7 +282,7 @@ export function PropertyFields({
 
       <div>
         <label className="rc-fl" htmlFor="rc-f-area">
-          면적 (㎡) <span className="rc-opt">(선택)</span>
+          면적 (㎡) <span className="rc-opt">(선택 · 모르면 비워두세요)</span>
         </label>
         <input
           id="rc-f-area"
@@ -327,7 +328,7 @@ export function PropertyFields({
 
       <div>
         <label className="rc-fl" htmlFor="rc-f-floor">
-          층수 <span className="rc-opt">(선택)</span>
+          층수 <span className="rc-opt">(선택 · 모르면 비워두세요)</span>
         </label>
         <input
           id="rc-f-floor"

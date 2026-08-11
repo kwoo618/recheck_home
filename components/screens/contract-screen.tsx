@@ -8,6 +8,7 @@ import type { CheckGroup } from '@/lib/actions/checks';
 import { ScreenShell } from './_parts/screen-shell';
 import { PropertyHeader } from './_parts/property-header';
 import { SourceBadge } from './_parts/source-badge';
+import { SafetyPrint } from './safety-print';
 import type { HrefFor } from './_parts/nav';
 
 /**
@@ -81,6 +82,13 @@ export function ContractScreen({ property: p, hrefFor, onToggleCheck }: Contract
               </label>
             );
           })}
+
+          {/* 인쇄물은 안전 점검 화면과 같은 것을 쓴다 (프로토타입도 printSafety 하나를 공유했다) */}
+          <div className="rc-form-actions">
+            <button type="button" className="rc-btn rc-btn-sm rc-btn-ghost" onClick={() => window.print()}>
+              점검표 인쇄 / PDF
+            </button>
+          </div>
         </section>
 
         {afterGroups.map((group) => (
@@ -112,6 +120,8 @@ export function ContractScreen({ property: p, hrefFor, onToggleCheck }: Contract
           것을 권장합니다.
         </p>
       </div>
+
+      <SafetyPrint property={p} />
     </ScreenShell>
   );
 }

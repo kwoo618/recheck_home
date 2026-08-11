@@ -566,6 +566,30 @@
 .rc-notice-warn { background: var(--rc-amber-soft); color: var(--rc-amber); }
 .rc-notice-info { background: var(--rc-blue-soft); color: var(--rc-blue); }
 
+/* '필수' = 보증금·권리에 직결된다는 분류 표시. 판정이 아니다 */
+.rc-required { color: var(--rc-red); font-size: 11px; font-weight: 700; }
+
+/* ── 확인 모달 ──────────────────────────────────────────────── */
+.rc-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgb(34 37 43 / 45%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 50;
+}
+.rc-modal {
+  background: var(--rc-surface);
+  border-radius: 14px;
+  padding: 20px 22px;
+  max-width: 460px;
+  width: 100%;
+  max-height: 90dvh;
+  overflow-y: auto;
+}
+
 /* ── 비교 테이블 ────────────────────────────────────────────── */
 .rc-cmp-scroll { overflow-x: auto; }
 .rc-cmp { border-collapse: collapse; width: 100%; min-width: 520px; }
@@ -586,6 +610,35 @@
   margin-top: 12px;
   white-space: pre-wrap;
 }
+
+.rc-subsection { border-top: 1px dashed var(--rc-line-strong); margin-top: 14px; padding-top: 12px; }
+.rc-subsection-title {
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* 비교 ⑤ 선택 — 매물별 카드. 순서는 등록 순이며 순위가 아니다 */
+.rc-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+.rc-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: stretch;
+  text-align: center;
+  border: 1px solid var(--rc-line);
+  border-radius: 10px;
+  padding: 12px;
+}
+.rc-choice-name { font-weight: 700; margin-bottom: 2px; }
 
 .rc-report-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
 @media (min-width: 640px) {

@@ -10,11 +10,23 @@
  *   템플릿 응답으로 내려가야 한다. 어떤 경우에도 라우트는 HTTP 200 + {ok:false}. (R4)
  */
 
-/** 기본 모델 */
-export const GEMINI_MODEL = 'gemini-2.5-flash';
+/**
+ * 기본 모델.
+ *
+ * 2026-08-11 실호출 측정: 응답 3.7초. 8초 타임아웃 안에 여유가 있다.
+ *
+ * ★ `gemini-2.5-flash` / `gemini-2.5-flash-lite`는 쓸 수 없다 —
+ *   generateContent가 404 "no longer available to new users"를 돌려준다.
+ * ★ `gemini-flash-latest` 같은 별칭은 쓰지 않는다. 자동 갱신이라
+ *   발표 당일 모델이 바뀔 수 있고, 측정 시 5~6초대로 타임아웃에 근접했다.
+ */
+export const GEMINI_MODEL = 'gemini-3.5-flash';
 
-/** 기본 모델 실패·한도 초과 시 재시도할 모델 */
-export const GEMINI_FALLBACK_MODEL = 'gemini-2.5-flash-lite';
+/**
+ * 기본 모델 실패·한도 초과 시 재시도할 모델.
+ * 2026-08-11 실호출 측정: 응답 1.1초. 기본보다 3배 빨라 지연 상황에서 체감이 낫다.
+ */
+export const GEMINI_FALLBACK_MODEL = 'gemini-3.5-flash-lite';
 
 /** 시도 순서 — 이 배열을 앞에서부터 시도하고, 전부 실패하면 템플릿 폴백 */
 export const GEMINI_MODEL_CHAIN = [GEMINI_MODEL, GEMINI_FALLBACK_MODEL] as const;
@@ -25,6 +37,18 @@ export const GEMINI_MODEL_CHAIN = [GEMINI_MODEL, GEMINI_FALLBACK_MODEL] as const
  * 시간을 넘기면 기다리지 말고 템플릿 폴백으로 내려간다. (PRD §11)
  */
 export const GEMINI_TIMEOUT_MS = 8000;
+
+/**
+ * 응답 토큰 상한.
+ *
+ * ★ Gemini 3.x는 추론(thinking) 토큰을 이 상한에 **함께** 계산한다.
+ *   실측(2026-08-11): 질문 3개를 만드는 데 thoughtsTokenCount 803 + 답변 65 = 868.
+ *   1024로 두면 답변이 조금만 길어져도 잘리고, 잘린 JSON은 파싱에 실패해
+ *   "AI는 응답했는데 결과가 0건"이 된다. 실제로 그 증상이 났다.
+ *
+ * 상한을 올려도 생성한 만큼만 과금되므로 여유를 두는 편이 낫다.
+ */
+export const GEMINI_MAX_OUTPUT_TOKENS = 4096;
 
 /**
  * ⚠ 확인 필요 (R8): 무료 티어의 RPM(분당)·RPD(일일) 요청 한도는 공식 문서에서

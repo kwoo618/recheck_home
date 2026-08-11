@@ -39,6 +39,16 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // 정적 자산·이미지 최적화 경로는 세션이 필요 없으므로 제외한다.
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)'],
+  /*
+   * 제외 대상:
+   *   · 정적 자산·이미지 최적화 경로 — 세션이 필요 없다.
+   *   · /api/** — **여기서 쿠키를 발급하면 안 된다.**
+   *     API 라우트는 우리 카카오·Gemini 키로 외부 API를 호출한다.
+   *     proxy가 모든 요청에 세션을 발급하면 라우트의 세션 검사가 항상 통과해
+   *     보호처럼 보이는 죽은 코드가 되고, 배포 URL을 아는 누구나 쿼터를 소진시킬 수 있다.
+   *     화면은 항상 페이지를 먼저 거치므로 정상 사용자는 이미 쿠키를 갖고 있다.
+   *
+   * `api/`로 매칭한다 — `api`로 하면 `/apiary` 같은 페이지 경로까지 제외된다.
+   */
+  matcher: ['/((?!api/|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)'],
 };

@@ -27,15 +27,15 @@ export function PropertyMapFallback({
   const located = properties.filter((p) => p.latitude !== null && p.longitude !== null);
 
   return (
-    <div className="flex h-full flex-col gap-3 overflow-auto rounded-lg border border-neutral-200 bg-neutral-50 p-4">
-      <p className="text-sm text-neutral-600">{reason}</p>
+    <div className="flex h-full flex-col gap-3 overflow-auto rounded-[14px] border border-[var(--rc-line)] bg-[var(--rc-surface)] p-4">
+      <p className="text-[13px] text-[var(--rc-ink-soft)]">{reason}</p>
 
-      <p className="text-xs text-neutral-500">
+      <p className="text-[12.5px] text-[var(--rc-ink-faint)]">
         기준점: {SCHOOL_ORIGIN.name}
       </p>
 
       {located.length === 0 ? (
-        <p className="text-sm text-neutral-500">위치가 등록된 매물이 없습니다.</p>
+        <p className="text-[13px] text-[var(--rc-ink-faint)]">위치가 등록된 매물이 없습니다.</p>
       ) : (
         <ul className="flex flex-col gap-2">
           {located.map((p) => {
@@ -50,9 +50,9 @@ export function PropertyMapFallback({
                   disabled={!onSelect}
                   aria-current={selected ? 'true' : undefined}
                   // 현장에서 쓰는 화면이므로 터치 타깃을 44px 이상으로 유지한다.
-                  className={`flex min-h-11 w-full items-center gap-2 rounded-md border bg-white px-3 py-2 text-left ${
-                    selected ? 'border-neutral-900' : 'border-neutral-200'
-                  } ${onSelect ? 'cursor-pointer hover:border-neutral-400' : 'cursor-default'}`}
+                  className={`flex min-h-11 w-full items-center gap-2 rounded-[10px] border bg-[var(--rc-surface)] px-3 py-2 text-left ${
+                    selected ? 'border-[var(--rc-ink)]' : 'border-[var(--rc-line)]'
+                  } ${onSelect ? 'cursor-pointer hover:border-[var(--rc-ink)]' : 'cursor-default'}`}
                 >
                   <span
                     aria-hidden
@@ -60,10 +60,10 @@ export function PropertyMapFallback({
                     style={{ backgroundColor: style.color }}
                   />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium text-neutral-900">
+                    <span className="block truncate text-[13.5px] font-semibold text-[var(--rc-ink)]">
                       {p.name}
                     </span>
-                    <span className="block truncate text-xs text-neutral-500">
+                    <span className="block truncate text-[12px] text-[var(--rc-ink-soft)]">
                       {formatDistanceLabel(p.distanceFromSchool)}
                     </span>
                   </span>

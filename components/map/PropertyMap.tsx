@@ -134,15 +134,15 @@ export function PropertyMap({
 
   return (
     <div className={className} style={style}>
-      <div className="relative h-full w-full overflow-hidden rounded-lg border border-neutral-200">
+      <div className="relative h-full w-full overflow-hidden rounded-[14px] border border-[var(--rc-line)]">
         <div ref={containerRef} className="h-full w-full" />
         {status === 'loading' && (
           <div
-            className="absolute inset-0 flex items-center justify-center bg-neutral-100"
+            className="absolute inset-0 flex items-center justify-center bg-[var(--rc-paper)]"
             role="status"
             aria-live="polite"
           >
-            <span className="text-sm text-neutral-500">지도를 불러오는 중…</span>
+            <span className="text-[13px] text-[var(--rc-ink-soft)]">지도를 불러오는 중…</span>
           </div>
         )}
       </div>

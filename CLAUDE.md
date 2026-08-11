@@ -81,7 +81,8 @@ prep → ready → recorded → confirmed
          ↘ excluded ↗ (복구 시 prep)
 confirmed → recorded (확정 취소)
 ```
-전이 검증은 `canTransition()`으로 **서버에서** 수행한다. 허용되지 않은 전이는 400.
+전이 검증은 `canTransition()`으로 **서버에서** 수행한다.
+허용 외 전이는 canTransition() 검증 실패로 `{ok:false}` 반환.
 활성 매물(비교 대상) = status ∉ {confirmed, excluded}
 
 ---

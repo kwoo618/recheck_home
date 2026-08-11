@@ -95,7 +95,7 @@ excluded   제외 (비교에서 탈락)
 
 prep ─정보확인+조사지완성→ ready ─기록저장→ recorded ─확정→ confirmed
 recorded/ready ─제외→ excluded ─복구→ prep      confirmed ─확정취소→ recorded
-허용 외 전이 요청 → 400
+허용 외 전이는 canTransition() 검증 실패로 {ok:false} 반환 (서버에서 강제)
 
 progress = (결과 입력된 visitChecks + 답변된 questions) / 전체 × 100
 활성 매물 = status ∉ {confirmed, excluded}   ← 비교 대상
@@ -488,7 +488,7 @@ type Property = {
 | 구분 | 함수/경로 | 비고 |
 |---|---|---|
 | Server Action | listProperties / createProperty / updateProperty / deleteProperty | createProperty 시 좌표·거리·조사지 항목 자동 생성 |
-| Server Action | setStatus(id, status) | 전이 규칙 위반 시 에러 |
+| Server Action | setStatus(id, status) | `canTransition()` 검증, 위반 시 `{ok:false}` |
 | Server Action | addVisitCheck / removeVisitCheck / saveVisitResults | |
 | Server Action | toggleBankQuestion / editQuestion / removeQuestion / saveAnswers | |
 | Server Action | toggleCheck(id, group, ruleId, on) | safety / contract / after |

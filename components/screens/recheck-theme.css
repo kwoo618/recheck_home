@@ -400,6 +400,7 @@
 
 /* ── 상세 헤더 · 국면 스텝 ──────────────────────────────────── */
 .rc-detail-head { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 16px; }
+.rc-detail-head h1,
 .rc-detail-head h2 { font-size: 20px; font-weight: 800; letter-spacing: -0.3px; }
 .rc-detail-head .rc-meta { font-size: 12.5px; color: var(--rc-ink-soft); }
 .rc-phases { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
@@ -420,6 +421,15 @@
 .rc-ph .rc-pn { font-size: 10px; font-weight: 800; letter-spacing: 0.5px; }
 .rc-ph.rc-on { border-color: var(--rc-ink); background: var(--rc-ink); color: #fff; }
 .rc-ph.rc-done { color: var(--rc-teal); border-color: var(--rc-teal-soft); background: var(--rc-teal-soft); }
+/* 아직 갈 수 없는 국면 — 왜 잠겼는지 함께 적는다 */
+.rc-ph-locked {
+  border-style: dashed;
+  background: var(--rc-paper);
+  color: var(--rc-ink-faint);
+  cursor: default;
+  flex-wrap: wrap;
+}
+.rc-lock-note { font-size: 11px; font-weight: 500; }
 
 /* ── 체크·질문 아이템 ───────────────────────────────────────── */
 .rc-chk-item {

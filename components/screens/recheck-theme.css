@@ -754,3 +754,17 @@
   .rc-print .rc-blank { height: 26px; }
   .rc-print .rc-foot { margin-top: 14px; font-size: 10px; color: #666; }
 }
+
+/* 홈 카드 하단 보조 안내 (제외 매물 복구 경로 등) */
+.rc-prop-hint {
+  width: 100%;
+  font-size: 12px;
+  color: var(--rc-ink-soft);
+  background: var(--rc-paper);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+/* 비교 ③ 금융에서 함께 봐야 하는 두 축 — 한쪽만 강조하면 다른 쪽이 과소평가된다 */
+.rc-cmp tr.rc-key-row td { background: var(--rc-teal-soft); }
+.rc-cmp tr.rc-key-row td.rc-rowlabel { color: var(--rc-teal); }

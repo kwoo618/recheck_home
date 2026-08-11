@@ -420,6 +420,9 @@
 
 /* ── 상세 헤더 · 국면 스텝 ──────────────────────────────────── */
 .rc-detail-head { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 16px; }
+/* flex 자식의 기본 min-width 는 auto 라 내용보다 작아지지 않는다.
+   공백 없는 긴 매물 별칭이 들어오면 헤더가 넘치므로 줄어들 수 있게 열어둔다 */
+.rc-detail-text { min-width: 0; }
 .rc-detail-head h1,
 .rc-detail-head h2 { font-size: 20px; font-weight: 800; letter-spacing: -0.3px; }
 .rc-detail-head .rc-meta { font-size: 12.5px; color: var(--rc-ink-soft); }
@@ -510,6 +513,9 @@
 .rc-q-num { color: var(--rc-teal); font-weight: 800; flex-shrink: 0; }
 .rc-q-actions { display: flex; gap: 8px; font-size: 12px; margin-top: 4px; }
 .rc-q-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: none;
   border: 0;
   color: var(--rc-ink-faint);
@@ -517,21 +523,28 @@
   cursor: pointer;
   font-family: inherit;
   font-size: 12px;
+  /* 세로만 44px 이면 규약 미달이다. 손가락은 가로로도 44px 를 필요로 한다 */
   min-height: var(--rc-tap);
-  padding: 0 4px;
+  min-width: var(--rc-tap);
+  padding: 0 10px;
 }
 .rc-q-actions button:hover { color: var(--rc-ink); }
 .rc-q-cat { font-weight: 400; color: var(--rc-ink-faint); font-size: 11.5px; }
+/* 방문 기록의 '못 들음 취소' — 현장에서 폰으로 누르는 버튼이라 가로도 44px 를 확보한다 */
 .rc-linkish {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: none;
   border: 0;
-  padding: 0 4px;
+  padding: 0 10px;
   font-family: inherit;
   font-size: inherit;
   color: var(--rc-ink-soft);
   text-decoration: underline;
   cursor: pointer;
   min-height: var(--rc-tap);
+  min-width: var(--rc-tap);
 }
 .rc-linkish:hover { color: var(--rc-ink); }
 
@@ -597,6 +610,18 @@
 .rc-cmp td { border: 1px solid var(--rc-line); padding: 9px 13px; font-size: 13px; text-align: left; vertical-align: top; }
 .rc-cmp thead th { background: var(--rc-ink); color: #fff; font-size: 13.5px; }
 .rc-cmp .rc-rowlabel { background: var(--rc-paper); font-weight: 600; white-space: nowrap; color: var(--rc-ink-soft); }
+/*
+  질문 전문처럼 긴 행 제목용. nowrap 이면 행 하나가 400px 을 넘겨 표 전체를 밀어내고,
+  정작 봐야 할 매물 답변 열이 화면 밖으로 나간다. 줄바꿈을 허용하고 열 폭을 묶는다.
+*/
+.rc-cmp .rc-rowlabel-long {
+  white-space: normal;
+  width: 34%;
+  max-width: 300px;
+  min-width: 150px;
+  font-weight: 500;
+  line-height: 1.45;
+}
 .rc-arr-hi { color: var(--rc-red); font-weight: 800; }
 .rc-arr-lo { color: var(--rc-blue); font-weight: 800; }
 .rc-cmp td.rc-miss { background: var(--rc-amber-soft); color: var(--rc-amber); font-weight: 600; }
@@ -678,7 +703,19 @@
   .rc-screen-only { display: none !important; }
   .rc-print-only { display: block !important; }
 
-  .rc-app { background: #fff; }
+  /*
+    화면용 셸 치수를 인쇄에서 되돌린다.
+    min-height:100dvh 가 남으면 짧은 점검표 뒤에 빈 여백(때로는 빈 페이지)이 붙고,
+    wrap 의 max-width·좌우 여백은 종이 폭을 그대로 못 쓰게 만든다.
+  */
+  .rc-app { background: #fff; min-height: 0; }
+  .rc-wrap { max-width: none; margin: 0; padding: 0; }
+
+  /* 항목 한 줄이 페이지 경계에서 잘리면 현장에서 체크하다 놓친다 */
+  .rc-print tr,
+  .rc-print p { break-inside: avoid; }
+  .rc-print h1,
+  .rc-print h2 { break-after: avoid; }
 
   .rc-print {
     font-family: "Pretendard", "Apple SD Gothic Neo", sans-serif;

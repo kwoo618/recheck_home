@@ -68,7 +68,7 @@ export function PropertyHeader({
 
       <div className="rc-detail-head">
         <ProgressRing percent={p.progress} />
-        <div>
+        <div className="rc-detail-text">
           <h1>{p.name}</h1>
           <p className="rc-meta">{formatSpecLine(p)}</p>
           <p className="rc-meta">📍 {formatDistanceLabel(p.distanceFromSchool)}</p>

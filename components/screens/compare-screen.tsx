@@ -276,7 +276,8 @@ export function CompareScreen({
               <tbody>
                 {allQuestions.map((text) => (
                   <tr key={text}>
-                    <td className="rc-rowlabel">{text}</td>
+                    {/* 질문 전문이라 nowrap 을 쓰지 않는다 — 답변 열이 밀려나면 비교가 안 된다 */}
+                    <td className="rc-rowlabel rc-rowlabel-long">{text}</td>
                     {ps.map((p) => {
                       const q = p.questions.find((x) => x.text === text);
                       if (!q) {

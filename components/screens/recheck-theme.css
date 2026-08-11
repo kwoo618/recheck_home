@@ -48,6 +48,12 @@
   font-size: 15px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+  /*
+    한글은 기본값(break-all에 가까운 auto)에서 음절 단위로 줄바꿈된다.
+    폭이 좁아지면 "대구대 경산캠퍼스" 가 한 글자씩 세로로 쌓인다.
+    keep-all 은 단어 중간을 끊지 않으므로 좁은 컬럼에서도 읽을 수 있는 형태로 접힌다.
+  */
+  word-break: keep-all;
 }
 .rc-wrap {
   max-width: 940px;
@@ -227,7 +233,10 @@
 .rc-home-tabs button.rc-on { color: var(--rc-ink); border-bottom-color: var(--rc-teal); }
 
 .rc-home-body { display: grid; grid-template-columns: 1fr; gap: 16px; }
+/* 모바일에서는 지도가 먼저 (§7.2). DOM 순서도 지도가 앞이다 */
 .rc-home-map { order: -1; }
+/* 카드가 뷰포트가 아니라 "자기가 놓인 컬럼" 폭에 반응하게 한다 */
+.rc-home-list { container-type: inline-size; min-width: 0; }
 
 @media (max-width: 1023px) {
   .rc-home-body[data-tab='map'] .rc-home-list { display: none; }
@@ -236,7 +245,14 @@
 @media (min-width: 1024px) {
   .rc-home-tabs { display: none; }
   .rc-home-body.rc-has-map { grid-template-columns: minmax(0, 1fr) 340px; }
-  .rc-home-map { order: 0; position: sticky; top: 12px; align-self: start; }
+  /*
+    목록이 넓은 컬럼(1fr), 지도가 340px 컬럼이다 (PRD §7.1 목록 좌 · 지도 우).
+    ★ order 를 반드시 둘 다 지정할 것. 지도에만 order 를 주면 목록의 기본값(0)과 같아져
+      DOM 순서(지도가 먼저)가 이기고, 지도가 넓은 컬럼을 가져간다.
+      그러면 목록이 340px 로 눌려 카드 텍스트가 한 글자씩 쪼개진다.
+  */
+  .rc-home-list { order: 1; }
+  .rc-home-map { order: 2; position: sticky; top: 12px; align-self: start; }
 }
 
 /* ── 홈: 매물 카드 ──────────────────────────────────────────── */
@@ -259,7 +275,11 @@
 .rc-prop-name:hover { text-decoration: underline; }
 .rc-prop-meta { font-size: 12.5px; color: var(--rc-ink-soft); margin-top: 1px; }
 .rc-prop-dist { font-size: 12.5px; color: var(--rc-ink-soft); margin-top: 3px; }
-/* 좁은 화면에서는 상태·다음 행동을 카드 아래 줄로 내린다 */
+/*
+  좁을 때는 상태·다음 행동을 카드 아래 줄로 내린다.
+  기준은 뷰포트가 아니라 카드가 놓인 컬럼 폭이다 — 넓은 화면이라도 좌우 분할된
+  컬럼 안에서는 좁게 놓일 수 있다. 폭이 모자라면 한 줄에 밀어넣지 말고 쌓는다.
+*/
 .rc-prop-actions {
   display: flex;
   align-items: center;
@@ -267,7 +287,7 @@
   width: 100%;
   flex-wrap: wrap;
 }
-@media (min-width: 640px) {
+@container (min-width: 560px) {
   .rc-prop-actions { width: auto; }
 }
 
@@ -501,6 +521,19 @@
   padding: 0 4px;
 }
 .rc-q-actions button:hover { color: var(--rc-ink); }
+.rc-q-cat { font-weight: 400; color: var(--rc-ink-faint); font-size: 11.5px; }
+.rc-linkish {
+  background: none;
+  border: 0;
+  padding: 0 4px;
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--rc-ink-soft);
+  text-decoration: underline;
+  cursor: pointer;
+  min-height: var(--rc-tap);
+}
+.rc-linkish:hover { color: var(--rc-ink); }
 
 /* ── 방문 기록: 4택 ─────────────────────────────────────────── */
 .rc-res-seg { display: flex; gap: 5px; margin-top: 6px; flex-wrap: wrap; }

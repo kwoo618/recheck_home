@@ -17,6 +17,25 @@ import {
  * 따라서 "같은 입력 → 같은 출력"과 경계값(null·0·반올림)을 중점적으로 검증한다.
  */
 
+describe('SCHOOL_ORIGIN — 거리 계산 기준점', () => {
+  /**
+   * 출처: 카카오 로컬 API 조회, 2026-08-11.
+   * 경산캠퍼스 대표 좌표(POI 중심)이며 정문 좌표가 아님. 추정값 아님.
+   *
+   * 이 상수는 모든 매물의 distance_from_school에 캐시되므로 값이 바뀌면
+   * 이미 등록된 매물의 거리가 전부 틀어진다. 조용한 변경을 막기 위해 고정한다.
+   */
+  it('확인된 좌표에서 벗어나지 않는다', () => {
+    expect(SCHOOL_ORIGIN.lat).toBe(35.90203906952692);
+    expect(SCHOOL_ORIGIN.lng).toBe(128.84884246650373);
+  });
+
+  it('기준점 이름은 "경산캠퍼스"다 — 정문이 기준이 아니므로 정문이라 쓰지 않는다 (R8)', () => {
+    expect(SCHOOL_ORIGIN.name).toBe('대구대 경산캠퍼스');
+    expect(SCHOOL_ORIGIN.name).not.toContain('정문');
+  });
+});
+
 describe('haversineMeters', () => {
   it('같은 지점의 거리는 0이다', () => {
     expect(
@@ -55,7 +74,7 @@ describe('distanceFromSchool', () => {
     expect(distanceFromSchool(null, 128.8)).toBeNull();
   });
 
-  it('정문 좌표를 넣으면 0이다', () => {
+  it('기준점(경산캠퍼스 대표 좌표)을 넣으면 0이다', () => {
     expect(distanceFromSchool(SCHOOL_ORIGIN.lat, SCHOOL_ORIGIN.lng)).toBe(0);
   });
 
@@ -63,6 +82,18 @@ describe('distanceFromSchool', () => {
     const d = distanceFromSchool(35.8951, 128.8102);
     expect(d).not.toBeNull();
     expect(d!).toBeGreaterThan(0);
+  });
+
+  /**
+   * 회귀 방지: 기준점이 실제 캠퍼스에서 멀어지면 모든 거리가 틀어진다.
+   * 캠퍼스 부지 안의 지점은 기준점에서 1km를 넘지 않아야 한다.
+   * (이전 상수는 실제 캠퍼스에서 약 3.9km 떨어져 있었다)
+   */
+  it('캠퍼스 정문 주소의 지오코딩 좌표가 기준점에서 1km 이내다', () => {
+    // 경북 경산시 진량읍 대구대로 201 — 카카오 로컬 API 조회값 (2026-08-11)
+    const d = distanceFromSchool(35.904538973767, 128.842813264293);
+    expect(d).not.toBeNull();
+    expect(d!).toBeLessThan(1000);
   });
 });
 
@@ -108,6 +139,12 @@ describe('formatDistanceLabel', () => {
     expect(label).toContain('직선거리 기준 추정');
     expect(label).toContain('직선');
     expect(label).toContain(SCHOOL_ORIGIN.name);
+  });
+
+  it('기준점을 "경산캠퍼스"로 표기하고 "정문"이라 쓰지 않는다 (R8)', () => {
+    const label = formatDistanceLabel(820);
+    expect(label).toContain('대구대 경산캠퍼스');
+    expect(label).not.toContain('정문');
   });
 
   it('좌표 없는 매물은 "위치 미지정"만 표기한다', () => {

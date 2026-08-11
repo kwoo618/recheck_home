@@ -37,7 +37,7 @@ export const properties = pgTable(
     addressDetail: text('address_detail').default('').notNull(),
     latitude: doublePrecision('latitude'),   // nullable
     longitude: doublePrecision('longitude'), // nullable
-    /** 대구대 정문 기준 직선거리(m). 등록 시 계산해 캐시 */
+    /** 대구대 경산캠퍼스 기준 직선거리(m). 등록 시 계산해 캐시 (기준점은 lib/geo.ts SCHOOL_ORIGIN) */
     distanceFromSchool: integer('distance_from_school'),
 
     // ── 매물 정보 ──

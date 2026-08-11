@@ -12,7 +12,7 @@ type MapProperty = {
   name: string;
   latitude: number | null;
   longitude: number | null;
-  distanceFromSchool: number | null;   // m, 대구대 경산캠퍼스 기준
+  distanceFromSchool: number | null;   // m, 대구대학교 기준
   status: 'prep' | 'ready' | 'recorded' | 'confirmed' | 'excluded';
 };
 
@@ -53,7 +53,7 @@ export default async function Home() {
 | SDK 로딩 중 | 스켈레톤 |
 | **SDK 로딩 실패** (키 없음·네트워크·도메인 미등록·8초 초과) | **리스트 뷰로 대체** + "지도를 불러오지 못했습니다" 안내 (R4) |
 | `latitude`/`longitude`가 `null` | **핀을 찍지 않는다.** 지도 아래 "위치 미지정 N건"으로 별도 안내 |
-| 위치 있는 매물 0건 | 기준점(경산캠퍼스)만 표시 |
+| 위치 있는 매물 0건 | 기준점(대구대학교)만 표시 |
 | 위치 있는 매물 2건 이상 | `fitBounds`로 전부 보이게 |
 | 언마운트 | 오버레이 전부 해제 (메모리 누수 방지) |
 

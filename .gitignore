@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Claude Code 세션 로컬 설정 (저장소 공유 대상 아님)
+.claude/
+
+# 로컬 검증용 임시 데이터
+*.local.json
+*.local.mts
+.htmlcheck/

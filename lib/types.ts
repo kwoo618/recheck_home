@@ -47,7 +47,7 @@ export type PropertyDTO = {
   addressDetail: string;
   latitude: number | null;
   longitude: number | null;
-  /** 대구대 경산캠퍼스 기준 직선거리(m). 좌표가 없으면 null → "위치 미지정" */
+  /** 대구대학교 기준 직선거리(m). 좌표가 없으면 null → "위치 미지정" */
   distanceFromSchool: number | null;
 
   dealType: DealType;

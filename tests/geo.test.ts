@@ -20,7 +20,7 @@ import {
 describe('SCHOOL_ORIGIN — 거리 계산 기준점', () => {
   /**
    * 출처: 카카오 로컬 API 조회, 2026-08-11.
-   * 경산캠퍼스 대표 좌표(POI 중심)이며 정문 좌표가 아님. 추정값 아님.
+   * 대구대학교 경산캠퍼스의 대표 좌표(POI 중심)이며 정문 좌표가 아님. 추정값 아님.
    *
    * 이 상수는 모든 매물의 distance_from_school에 캐시되므로 값이 바뀌면
    * 이미 등록된 매물의 거리가 전부 틀어진다. 조용한 변경을 막기 위해 고정한다.
@@ -30,8 +30,8 @@ describe('SCHOOL_ORIGIN — 거리 계산 기준점', () => {
     expect(SCHOOL_ORIGIN.lng).toBe(128.84884246650373);
   });
 
-  it('기준점 이름은 "경산캠퍼스"다 — 정문이 기준이 아니므로 정문이라 쓰지 않는다 (R8)', () => {
-    expect(SCHOOL_ORIGIN.name).toBe('대구대 경산캠퍼스');
+  it('기준점 표기는 "대구대학교"다 — 정문이 기준이 아니므로 정문이라 쓰지 않는다 (R8)', () => {
+    expect(SCHOOL_ORIGIN.name).toBe('대구대학교');
     expect(SCHOOL_ORIGIN.name).not.toContain('정문');
   });
 });
@@ -74,7 +74,7 @@ describe('distanceFromSchool', () => {
     expect(distanceFromSchool(null, 128.8)).toBeNull();
   });
 
-  it('기준점(경산캠퍼스 대표 좌표)을 넣으면 0이다', () => {
+  it('기준점(캠퍼스 대표 좌표)을 넣으면 0이다', () => {
     expect(distanceFromSchool(SCHOOL_ORIGIN.lat, SCHOOL_ORIGIN.lng)).toBe(0);
   });
 
@@ -141,9 +141,9 @@ describe('formatDistanceLabel', () => {
     expect(label).toContain(SCHOOL_ORIGIN.name);
   });
 
-  it('기준점을 "경산캠퍼스"로 표기하고 "정문"이라 쓰지 않는다 (R8)', () => {
+  it('기준점을 "대구대학교"로 표기하고 "정문"이라 쓰지 않는다 (R8)', () => {
     const label = formatDistanceLabel(820);
-    expect(label).toContain('대구대 경산캠퍼스');
+    expect(label).toContain('대구대학교');
     expect(label).not.toContain('정문');
   });
 

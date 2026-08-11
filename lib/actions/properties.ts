@@ -45,6 +45,20 @@ const HEATINGS: Heating[] = ['개별난방', '중앙난방', '지역난방', '�
    입력 정규화 — 폼에서 문자열로 넘어오는 값을 안전하게 좁힌다
    ══════════════════════════════════════════════════════════════ */
 
+/**
+ * DB 컬럼 타입이 허용하는 상한.
+ *
+ * 넘는 값을 그대로 INSERT 하면 Postgres가 예외를 던지고, 그러면 이 액션이
+ * ActionResult 대신 예외를 밖으로 내보내 프론트가 에러 바운더리를 만난다.
+ * "실패해도 {ok:false}"라는 계약을 지키려면 DB에 닿기 전에 걸러야 한다.
+ *
+ * 자릿수를 하나 더 치는 실수는 흔하다 — 보증금 칸에서 0을 길게 누르면 바로 재현된다.
+ */
+const INT4_MAX = 2_147_483_647;        // integer 컬럼: price / deposit / mgmt_fee / age
+const AREA_MAX = 9999.99;              // numeric(6,2) 컬럼: area
+const NAME_MAX_LENGTH = 60;            // text 컬럼이라 DB 제한은 없지만 화면이 감당 못 한다
+const FLOOR_MAX_LENGTH = 6;            // "-1" ~ "123" 수준. 층수에 그 이상은 의미가 없다
+
 function toInt(v: unknown, fallback = 0): number {
   const n = typeof v === 'string' ? Number(v.replace(/,/g, '')) : Number(v);
   return Number.isFinite(n) ? Math.max(0, Math.trunc(n)) : fallback;
@@ -53,6 +67,50 @@ function toInt(v: unknown, fallback = 0): number {
 function toFloat(v: unknown, fallback = 0): number {
   const n = typeof v === 'string' ? Number(v.replace(/,/g, '')) : Number(v);
   return Number.isFinite(n) ? Math.max(0, n) : fallback;
+}
+
+/**
+ * 정규화가 끝난 값이 DB 상한을 넘는지 확인한다.
+ * 넘으면 사용자가 무엇을 고쳐야 하는지 알 수 있게 필드 이름을 넣어 돌려준다.
+ *
+ * ★ 음수는 여기서 걸러지지 않는다 — toInt/toFloat가 이미 0으로 보정한다.
+ *   "-5를 입력했더니 저장이 안 된다"보다 "0으로 들어갔다"가 덜 막힌다.
+ */
+function checkLimits(v: {
+  name?: string;
+  price?: number;
+  deposit?: number;
+  mgmtFee?: number;
+  age?: number;
+  area?: number;
+  floor?: string;
+}): string | null {
+  const overInt: [string, number | undefined][] = [
+    ['보증금', v.deposit],
+    ['가격(월세·전세금)', v.price],
+    ['관리비', v.mgmtFee],
+    ['연식', v.age],
+  ];
+
+  for (const [label, value] of overInt) {
+    if (value !== undefined && value > INT4_MAX) {
+      return `${label} 입력값이 너무 큽니다. 다시 확인해주세요.`;
+    }
+  }
+
+  if (v.area !== undefined && v.area > AREA_MAX) {
+    return `면적 입력값이 너무 큽니다. ${AREA_MAX}㎡ 이하로 입력해주세요.`;
+  }
+
+  if (v.name !== undefined && v.name.length > NAME_MAX_LENGTH) {
+    return `매물 별칭은 ${NAME_MAX_LENGTH}자 이내로 입력해주세요.`;
+  }
+
+  if (v.floor !== undefined && v.floor.length > FLOOR_MAX_LENGTH) {
+    return '층수 입력값이 너무 깁니다. 숫자만 입력해주세요.';
+  }
+
+  return null;
 }
 
 function toCoord(v: unknown): number | null {
@@ -275,6 +333,18 @@ export async function createProperty(
     status: 'prep' as PropertyStatus, // 등록 직후는 항상 '정보 확인 필요'
   };
 
+  // DB 상한을 넘는 값은 여기서 막는다 — INSERT까지 가면 예외가 되어 계약이 깨진다.
+  const limitError = checkLimits({
+    name: values.name,
+    price: values.price,
+    deposit: values.deposit,
+    mgmtFee: values.mgmtFee,
+    age: values.age,
+    area: Number(values.area),
+    floor: values.floor,
+  });
+  if (limitError) return { ok: false, error: limitError };
+
   const [created] = await db.insert(properties).values(values).returning({ id: properties.id });
 
   // 조사지 ① 직접 확인할 것 — 규칙으로만 선정 (AI 개입 없음)
@@ -374,6 +444,19 @@ export async function updateProperty(
       patch.longitude ?? null,
     );
   }
+
+  // 생성과 같은 이유로 UPDATE 전에도 상한을 확인한다.
+  // 넘어온 필드만 검사한다 — 이미 저장된 값은 통과했던 값이다.
+  const limitError = checkLimits({
+    name: patch.name,
+    price: patch.price,
+    deposit: patch.deposit,
+    mgmtFee: patch.mgmtFee,
+    age: patch.age,
+    area: patch.area === undefined ? undefined : Number(patch.area),
+    floor: patch.floor,
+  });
+  if (limitError) return { ok: false, error: limitError };
 
   patch.updatedAt = new Date();
 

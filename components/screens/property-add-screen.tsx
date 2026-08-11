@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import type { CreatePropertyInput } from '@/lib/actions/properties';
 import { SCHOOL_ORIGIN } from '@/lib/geo';
 import type { ActionResult } from '@/lib/types';
@@ -53,6 +53,8 @@ export function PropertyAddScreen({
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  const creating = useRef(false);
+
   const [pasteText, setPasteText] = useState('');
   const [parsing, setParsing] = useState(false);
   const [parseNote, setParseNote] = useState('');
@@ -63,6 +65,14 @@ export function PropertyAddScreen({
 
   /** 성공하면 정보 확인 화면으로 넘어가므로 돌아오지 않는다. 실패 사유는 호출자에게 돌려준다. */
   async function create(input: CreatePropertyInput): Promise<ActionResult<{ id: string }>> {
+    /*
+     * 빠르게 두 번 누르면 매물이 2건 만들어진다. disabled 는 다음 렌더에야 걸리므로
+     * 그 사이를 ref 로 막는다. 성공했을 때는 풀지 않는다 — 이동하는 동안 한 번 더
+     * 눌리면 또 만들어진다.
+     */
+    if (creating.current) return { ok: false, error: '이미 등록을 진행하고 있어요.' };
+    creating.current = true;
+
     setSubmitting(true);
     setError('');
     try {
@@ -70,9 +80,12 @@ export function PropertyAddScreen({
       if (result.ok) {
         // 등록 직후는 항상 prep — 사람이 2차 확인하는 화면으로 보낸다 (PRD §5.2)
         router.push(hrefFor('confirm', result.data.id));
+      } else {
+        creating.current = false;
       }
       return result;
     } catch {
+      creating.current = false;
       /*
        * Server Action 이 값이 아니라 예외로 실패하는 경우(DB 연결 장애 등).
        * 그대로 두면 에러 바운더리가 떠서 흰 화면이 되고, 등록은 첫 단계라

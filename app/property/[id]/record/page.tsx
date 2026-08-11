@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { getProperty, listActiveProperties } from '@/lib/actions/properties';
+import { withoutAddressDetail } from '@/app/_lib/property';
 import { RecordClient } from './record-client';
 
 /**
@@ -14,5 +15,5 @@ export default async function VisitRecordPage({ params }: { params: Promise<{ id
   const [property, active] = await Promise.all([getProperty(id), listActiveProperties()]);
   if (!property) notFound();
 
-  return <RecordClient property={property} activeCount={active.length} />;
+  return <RecordClient property={withoutAddressDetail(property)} activeCount={active.length} />;
 }

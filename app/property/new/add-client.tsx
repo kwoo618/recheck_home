@@ -4,6 +4,7 @@ import { createProperty } from '@/lib/actions/properties';
 import { PropertyAddScreen } from '@/components/screens/property-add-screen';
 import { hrefFor } from '@/app/_lib/nav';
 import { geocode, parseText } from '@/app/_lib/api-client';
+import { renderMapPreview } from '@/app/_lib/map-preview';
 
 /**
  * 매물 등록 화면의 클라이언트 경계.
@@ -22,6 +23,7 @@ export function AddClient() {
       onCreate={createProperty}
       onGeocode={geocode}
       onParseText={parseText}
+      renderMapPreview={renderMapPreview}
     />
   );
 }

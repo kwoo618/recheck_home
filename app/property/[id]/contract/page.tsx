@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { getProperty } from '@/lib/actions/properties';
+import { withoutAddressDetail } from '@/app/_lib/property';
 import { ContractClient } from './contract-client';
 
 /**
@@ -11,5 +12,5 @@ export default async function ContractPage({ params }: { params: Promise<{ id: s
   const property = await getProperty(id);
   if (!property) notFound();
 
-  return <ContractClient property={property} />;
+  return <ContractClient property={withoutAddressDetail(property)} />;
 }

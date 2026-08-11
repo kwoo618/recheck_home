@@ -33,10 +33,15 @@ export const GEMINI_MODEL_CHAIN = [GEMINI_MODEL, GEMINI_FALLBACK_MODEL] as const
 
 /**
  * 호출 타임아웃(ms).
+ *
  * 사용자는 "AI가 느린 것"보다 "화면이 멈춘 것"을 더 크게 느낀다.
  * 시간을 넘기면 기다리지 말고 템플릿 폴백으로 내려간다. (PRD §11)
+ *
+ * 2026-08-11 실측: parse 6.1초 / summary 5.9초 / questions 4.8초.
+ * 8초로 두면 parse의 여유가 1.9초뿐이라 발표 당일 네트워크가 느리면 폴백으로 빠진다.
+ * 폴백이 있으므로 늘려도 최악은 템플릿 질문이다 — 그보다 정상 응답을 받는 편이 낫다.
  */
-export const GEMINI_TIMEOUT_MS = 8000;
+export const GEMINI_TIMEOUT_MS = 12000;
 
 /**
  * 응답 토큰 상한.

@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { getProperty } from '@/lib/actions/properties';
+import { withoutAddressDetail } from '@/app/_lib/property';
 import { SheetClient } from './sheet-client';
 
 /**
@@ -13,5 +14,5 @@ export default async function SurveySheetPage({ params }: { params: Promise<{ id
   const property = await getProperty(id);
   if (!property) notFound();
 
-  return <SheetClient property={property} />;
+  return <SheetClient property={withoutAddressDetail(property)} />;
 }

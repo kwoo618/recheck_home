@@ -238,7 +238,13 @@ describe('모델 설정', () => {
     expect([...GEMINI_MODEL_CHAIN]).toEqual([GEMINI_MODEL, GEMINI_FALLBACK_MODEL]);
   });
 
-  it('타임아웃이 8초다 (PRD §11)', () => {
-    expect(GEMINI_TIMEOUT_MS).toBe(8000);
+  /**
+   * PRD §11은 8초로 적혀 있으나, 실측 응답이 4.8~6.1초라 여유가 부족해 12초로 올렸다.
+   * 폴백이 있으므로 늘려도 최악은 템플릿 질문이다. (docs/INFRA.md 결정 로그)
+   * 상한은 남겨둔다 — 무한정 기다리면 "화면이 멈춘 것"이 된다.
+   */
+  it('타임아웃이 설정돼 있고 상한을 넘지 않는다', () => {
+    expect(GEMINI_TIMEOUT_MS).toBe(12000);
+    expect(GEMINI_TIMEOUT_MS).toBeLessThanOrEqual(15000);
   });
 });

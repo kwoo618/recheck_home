@@ -1,6 +1,7 @@
 import { listActiveProperties } from '@/lib/actions/properties';
 import { getFinance } from '@/lib/actions/checks';
 import { PropertyMapPanel, toMapProperties } from '@/components/map';
+import { withoutAddressDetails } from '@/app/_lib/property';
 import { CompareClient } from './compare-client';
 
 /**
@@ -16,7 +17,7 @@ export default async function ComparePage() {
 
   return (
     <CompareClient
-      properties={properties}
+      properties={withoutAddressDetails(properties)}
       finance={finance}
       map={<PropertyMapPanel properties={toMapProperties(properties)} height={320} />}
     />

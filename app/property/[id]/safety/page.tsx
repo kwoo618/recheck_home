@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { getProperty } from '@/lib/actions/properties';
+import { withoutAddressDetail } from '@/app/_lib/property';
 import { SafetyClient } from './safety-client';
 
 /**
@@ -13,5 +14,5 @@ export default async function SafetyPage({ params }: { params: Promise<{ id: str
   const property = await getProperty(id);
   if (!property) notFound();
 
-  return <SafetyClient property={property} />;
+  return <SafetyClient property={withoutAddressDetail(property)} />;
 }

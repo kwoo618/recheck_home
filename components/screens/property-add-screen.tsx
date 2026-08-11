@@ -59,17 +59,36 @@ export function PropertyAddScreen({
     setForm((prev) => ({ ...prev, ...p }));
   }
 
-  async function create(input: CreatePropertyInput) {
+  /** 성공하면 정보 확인 화면으로 넘어가므로 돌아오지 않는다. 실패 사유는 호출자에게 돌려준다. */
+  async function create(input: CreatePropertyInput): Promise<ActionResult<{ id: string }>> {
     setSubmitting(true);
     setError('');
-    const result = await onCreate(input);
-    if (result.ok) {
-      // 등록 직후는 항상 prep — 사람이 2차 확인하는 화면으로 보낸다 (PRD §5.2)
-      router.push(hrefFor('confirm', result.data.id));
-      return;
+    try {
+      const result = await onCreate(input);
+      if (result.ok) {
+        // 등록 직후는 항상 prep — 사람이 2차 확인하는 화면으로 보낸다 (PRD §5.2)
+        router.push(hrefFor('confirm', result.data.id));
+      }
+      return result;
+    } finally {
+      setSubmitting(false);
     }
-    setError(result.error);
-    setSubmitting(false);
+  }
+
+  /** AI가 읽어온 값을 직접 입력 폼에 옮긴다. 저장이 거부돼도 사용자가 처음부터 다시 치지 않도록 */
+  function fillFormFrom(data: Partial<CreatePropertyInput>) {
+    setForm((prev) => ({
+      ...prev,
+      name: typeof data.name === 'string' ? data.name : prev.name,
+      dealType: data.dealType ?? prev.dealType,
+      price: data.price !== undefined ? String(data.price) : prev.price,
+      deposit: data.deposit !== undefined ? String(data.deposit) : prev.deposit,
+      mgmtFee: data.mgmtFee !== undefined ? String(data.mgmtFee) : prev.mgmtFee,
+      area: data.area !== undefined ? String(data.area) : prev.area,
+      age: data.age !== undefined ? String(data.age) : prev.age,
+      heating: data.heating ?? prev.heating,
+      floor: typeof data.floor === 'string' ? data.floor : prev.floor,
+    }));
   }
 
   async function handleSubmit() {
@@ -93,22 +112,33 @@ export function PropertyAddScreen({
     setParsing(true);
     setParseNote('');
 
-    const result = onParseText ? await onParseText(text) : { ok: false };
+    try {
+      const result = onParseText ? await onParseText(text) : { ok: false };
 
-    if (result.ok && result.data?.dealType) {
-      await create({
+      // ① 읽기 실패 — 막다른 길이 아니다. 직접 입력으로 넘긴다
+      if (!result.ok || !result.data?.dealType) {
+        setError('자동 인식에 실패했어요. 직접 입력으로 전환합니다.');
+        setTab('form');
+        return;
+      }
+
+      // ② 읽기는 됐지만 저장이 거부된 경우 — AI가 준 값이 서버 검증을 통과하지 못했다.
+      //    같은 화면에 머물면 사용자가 할 수 있는 게 없으므로, 읽어온 값을 폼에 채워
+      //    직접 고칠 수 있게 직접 입력으로 보낸다.
+      const created = await create({
         ...result.data,
         name: result.data.name?.trim() || '붙여넣은 매물',
         dealType: result.data.dealType,
       });
-      return;
-    }
+      if (created.ok) return; // 정보 확인 화면으로 이동함
 
-    // 실패는 막다른 길이 아니다 — 읽은 값 없이 직접 입력으로 넘긴다
-    setParsing(false);
-    setParseNote('');
-    setError('자동 인식에 실패했어요. 직접 입력으로 전환합니다.');
-    setTab('form');
+      fillFormFrom(result.data);
+      setError(`자동 인식 결과에 문제가 있습니다 (${created.error}) 읽어온 값을 채워뒀으니 직접 확인해 주세요.`);
+      setTab('form');
+    } finally {
+      // 성공·실패·예외 어느 쪽이든 스피너와 버튼 잠금은 반드시 풀린다
+      setParsing(false);
+    }
   }
 
   return (
@@ -155,7 +185,6 @@ export function PropertyAddScreen({
               onGeocode={onGeocode}
               renderMapPreview={renderMapPreview}
             />
-            {error && <p className="rc-error">{error}</p>}
             <div className="rc-form-actions">
               <button
                 type="button"
@@ -207,6 +236,9 @@ export function PropertyAddScreen({
             </p>
           </>
         )}
+
+        {/* 탭 밖에 둔다 — 붙여넣기 중 생긴 오류가 탭 전환 전에도 보여야 한다 */}
+        {error && <p className="rc-error">{error}</p>}
       </div>
     </ScreenShell>
   );

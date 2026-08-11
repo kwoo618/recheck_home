@@ -187,8 +187,9 @@ export function SafetyScreen({ property: p, hrefFor, onToggleCheck, onSetStatus 
         {error && <p className="rc-error">{error}</p>}
       </div>
 
+      {/* rc-screen-only — 모달을 연 채로 인쇄하면 점검표 위에 모달이 찍힌다 */}
       {confirming && (
-        <div className="rc-modal-backdrop" onClick={() => setConfirming(false)}>
+        <div className="rc-modal-backdrop rc-screen-only" onClick={() => setConfirming(false)}>
           <div
             className="rc-modal"
             role="dialog"

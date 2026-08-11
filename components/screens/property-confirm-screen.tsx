@@ -76,6 +76,7 @@ export function PropertyConfirmScreen({
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   useEffect(() => {
@@ -113,15 +114,24 @@ export function PropertyConfirmScreen({
       setError(`주소를 입력해 주세요. 주소 검색을 쓰면 ${SCHOOL_ORIGIN.name}까지 거리도 함께 계산돼요.`);
       return;
     }
+    if (geocoding) {
+      setError('위치를 확인하는 중이에요. 잠시 뒤에 다시 눌러 주세요.');
+      return;
+    }
 
     setSaving(true);
     setError('');
-    const result = await onUpdate(property.id, toCreateInput(form));
-    if (result.ok) {
-      router.push(hrefFor('sheet', property.id));
-      return;
+    try {
+      const result = await onUpdate(property.id, toCreateInput(form));
+      if (result.ok) {
+        router.push(hrefFor('sheet', property.id));
+        return;
+      }
+      setError(result.error);
+    } catch {
+      // Server Action 이 예외로 실패해도 에러 바운더리로 올려보내지 않는다 (R4)
+      setError('지금 저장할 수 없어요. 잠시 후 다시 시도해 주세요.');
     }
-    setError(result.error);
     setSaving(false);
   }
 
@@ -147,6 +157,7 @@ export function PropertyConfirmScreen({
           value={form}
           onChange={patch}
           onGeocode={onGeocode}
+          onGeocodingChange={setGeocoding}
           renderMapPreview={renderMapPreview}
         />
 
@@ -161,10 +172,10 @@ export function PropertyConfirmScreen({
           <button
             type="button"
             className="rc-btn rc-btn-primary"
-            disabled={saving}
+            disabled={saving || geocoding}
             onClick={() => void handleSave()}
           >
-            {saving ? '저장하는 중...' : '정보 확인 완료 — 조사지 만들기'}
+            {saving ? '저장하는 중...' : geocoding ? '위치 확인 중...' : '정보 확인 완료 — 조사지 만들기'}
           </button>
           <Link href={hrefFor('dash')} className="rc-btn rc-btn-ghost">
             나중에 하기

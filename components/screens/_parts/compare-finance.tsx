@@ -37,6 +37,16 @@ export type CompareFinanceProps = {
 
 const num = (v: string) => (v.trim() === '' ? undefined : Number(v));
 
+/*
+ * 가정 문구는 한 덩어리 상수라 그대로 두면 모바일에서 6~7줄이 된다.
+ * 새로 들어간 "기회비용 미반영"·"매매 제외"가 나머지에 묻히면 적어둔 의미가 없다.
+ * 상수는 건드리지 않고 화면에서만 문장 단위로 나눈다.
+ * 마침표 뒤 공백에서만 자른다 — "5.5%" 같은 소수점은 붙어 있어 잘리지 않는다.
+ */
+const ASSUMPTION_LINES = FINANCE_ASSUMPTIONS.split(/(?<=\.)\s+/)
+  .map((line) => line.trim())
+  .filter(Boolean);
+
 export function CompareFinance({
   properties,
   finance,
@@ -184,9 +194,8 @@ export function CompareFinance({
             </table>
           </div>
           <p className="rc-legend">
-            <b>초기 필요자금</b>과 <b>월 주거비</b>는 함께 봐야 합니다. 한쪽이 작아도 다른 쪽이 클 수
-            있어요 — 전세는 월 부담이 작은 대신 목돈이 묶이고, 월세는 그 반대입니다. 어느 쪽이 나은지는
-            계산이 정하지 않습니다.
+            <b>초기 필요자금</b>과 <b>월 주거비</b>는 함께 봐야 합니다. 전세는 월 부담이 작은 대신 목돈이
+            묶이고, 월세는 그 반대예요. 어느 쪽이 나은지는 계산이 정하지 않습니다.
             <br />⚠ 부족 = 초기 필요자금이 보유 현금보다 큼(산술적 사실 표시이며 판정이 아닙니다).
           </p>
         </>
@@ -196,11 +205,18 @@ export function CompareFinance({
 
       {/*
         계산 결과가 있든 없든 항상 보인다.
-        "무엇을 하지 않는가"(기회비용 미반영·매매 제외)까지 담고 있어 legend 의 11.5px
-        흐린 글씨로 두면 읽히지 않는다. notice 로 올린다.
+        가정과 면책을 한 블록으로 묶는다 — 작은 회색 문단이 연달아 쌓이면
+        아무것도 읽지 않게 된다.
       */}
-      <p className="rc-notice">{FINANCE_ASSUMPTIONS}</p>
-      <p className="rc-notice rc-notice-warn">{FINANCE_DISCLAIMER}</p>
+      <div className="rc-disclosure">
+        <p className="rc-disclosure-title">계산 가정과 면책</p>
+        <ul>
+          {ASSUMPTION_LINES.map((line) => (
+            <li key={line}>{line}</li>
+          ))}
+        </ul>
+        <p className="rc-disclaimer">{FINANCE_DISCLAIMER}</p>
+      </div>
 
       {/* ── 보증금 ↔ 월세 전환 ───────────────────────────────── */}
       <div className="rc-subsection">
@@ -282,7 +298,12 @@ export function CompareFinance({
         )}
 
         {/* 계산 결과 여부와 무관하게 항상 노출 (PRD §11 리스크) */}
-        <p className="rc-legend">{CONVERSION_NOTICE}</p>
+        <div className="rc-disclosure">
+          <p className="rc-disclosure-title">전환율 안내</p>
+          <ul>
+            <li>{CONVERSION_NOTICE}</li>
+          </ul>
+        </div>
       </div>
     </section>
   );

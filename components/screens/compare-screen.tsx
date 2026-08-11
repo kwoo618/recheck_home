@@ -2,12 +2,14 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useTransition, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import type { FinanceProfile, PropertyStatus, QuestionSource } from '@/db/schema';
 import { DISTANCE_NOTICE, SCHOOL_ORIGIN, formatDistance, formatDistanceLabel } from '@/lib/geo';
 import type { ActionResult, PropertyDTO } from '@/lib/types';
 import { ScreenShell } from './_parts/screen-shell';
 import { SourceBadge } from './_parts/source-badge';
+import { useMutations } from './_parts/use-mutations';
+import { SaveStatus } from './_parts/save-status';
 import { CompareFinance } from './_parts/compare-finance';
 import { formatPrice } from './_parts/format';
 import { isActive } from './_parts/status';
@@ -50,8 +52,9 @@ export function CompareScreen({
   map,
 }: CompareScreenProps) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const { run: mutate, isBusy, saveState } = useMutations();
   const [error, setError] = useState('');
+  const [confirmingExclude, setConfirmingExclude] = useState<string | null>(null);
 
   const [summary, setSummary] = useState<string | null>(null);
   const [summaryFailed, setSummaryFailed] = useState(false);
@@ -96,13 +99,17 @@ export function CompareScreen({
   const allQuestions = [...new Set(ps.flatMap((p) => p.questions.map((q) => q.text)))];
 
   function exclude(id: string) {
-    startTransition(async () => {
-      const result = await onSetStatus(id, 'excluded');
+    setConfirmingExclude(null);
+    void mutate(`exclude-${id}`, () => onSetStatus(id, 'excluded')).then((result) => {
+      if (!result) return;
       if (!result.ok) {
         setError(result.error);
         return;
       }
       setError('');
+      // 비교 대상이 바뀌면 앞서 받은 요약은 이제 없는 매물 이야기를 담고 있다
+      setSummary(null);
+      setSummaryFailed(false);
       router.refresh();
     });
   }
@@ -129,6 +136,7 @@ export function CompareScreen({
       <Link href={hrefFor('dash')} className="rc-back">
         ← 매물 목록
       </Link>
+      <SaveStatus state={saveState} />
       <h1 className="rc-h2">매물 비교</h1>
       <p className="rc-home-count" style={{ marginBottom: 14 }}>
         {ps.length}개 매물 비교 중 — 선택은 항상 사용자의 몫이에요.
@@ -391,14 +399,36 @@ export function CompareScreen({
                   방문 기록 먼저 입력
                 </Link>
               )}
-              <button
-                type="button"
-                className="rc-btn rc-btn-sm rc-btn-ghost rc-btn-danger"
-                disabled={pending}
-                onClick={() => exclude(p.id)}
-              >
-                제외
-              </button>
+              {/* 되돌릴 수 있는 동작이라 모달까지 띄우지 않고 한 번만 되묻는다 */}
+              {confirmingExclude === p.id ? (
+                <>
+                  <span className="rc-field-note">목록에서 빼고 비교에서 제외할까요?</span>
+                  <button
+                    type="button"
+                    className="rc-btn rc-btn-sm rc-btn-danger"
+                    disabled={isBusy(`exclude-${p.id}`)}
+                    onClick={() => exclude(p.id)}
+                  >
+                    제외
+                  </button>
+                  <button
+                    type="button"
+                    className="rc-btn rc-btn-sm rc-btn-ghost"
+                    onClick={() => setConfirmingExclude(null)}
+                  >
+                    취소
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  className="rc-btn rc-btn-sm rc-btn-ghost rc-btn-danger"
+                  disabled={isBusy(`exclude-${p.id}`)}
+                  onClick={() => setConfirmingExclude(p.id)}
+                >
+                  제외
+                </button>
+              )}
             </div>
           ))}
         </div>

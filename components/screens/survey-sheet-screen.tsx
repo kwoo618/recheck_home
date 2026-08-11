@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
+import { useState } from 'react';
 import type { PropertyStatus, QuestionSource } from '@/db/schema';
 import { QUESTION_BANK } from '@/lib/rules';
 import type { ActionResult, PropertyDTO, VisitCheckDTO } from '@/lib/types';
@@ -11,7 +11,8 @@ import { ScreenShell } from './_parts/screen-shell';
 import { PropertyHeader } from './_parts/property-header';
 import { SourceBadge } from './_parts/source-badge';
 import { QuestionBadge } from './_parts/question-badge';
-import { useSingleFlight } from './_parts/use-single-flight';
+import { useMutations } from './_parts/use-mutations';
+import { SaveStatus } from './_parts/save-status';
 import { SurveySheetPrint } from './survey-sheet-print';
 import type { HrefFor } from './_parts/nav';
 
@@ -66,8 +67,7 @@ export function SurveySheetScreen({
   onAskQuestions,
 }: SurveySheetScreenProps) {
   const router = useRouter();
-  const singleFlight = useSingleFlight();
-  const [pending, startTransition] = useTransition();
+  const { run: mutate, isBusy, saveState } = useMutations();
   const [error, setError] = useState('');
 
   const [newCheck, setNewCheck] = useState('');
@@ -84,17 +84,15 @@ export function SurveySheetScreen({
    * 다른 항목은 서로 막지 않는다.
    */
   function run(key: string, action: () => Promise<ActionResult<unknown>>) {
-    startTransition(() =>
-      singleFlight(key, async () => {
-        const result = await action();
-        if (!result.ok) {
-          setError(result.error);
-          return;
-        }
-        setError('');
-        router.refresh();
-      }),
-    );
+    void mutate(key, action).then((result) => {
+      if (!result) return; // 같은 작업이 이미 돌고 있었다
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      setError('');
+      router.refresh();
+    });
   }
 
   const selectedTexts = new Set(p.questions.map((q) => q.text));
@@ -114,7 +112,7 @@ export function SurveySheetScreen({
     setAsking(true);
     setError('');
 
-    void singleFlight('ask', async () => {
+    void mutate('ask', async () => {
       const result = onAskQuestions
         ? await onAskQuestions(p.id, text)
         : { ok: false, questions: [] as string[] };
@@ -132,7 +130,7 @@ export function SurveySheetScreen({
         setAsking(false);
         setTemplateNote(!result.ok);
         setError('추가할 질문을 만들지 못했어요. 아래 질문 은행에서 골라 보세요.');
-        return;
+        return { ok: true as const, data: undefined };
       }
 
       // AI가 만든 것만 'ai'. 템플릿 폴백은 결정론 문구이므로 'bank'로 저장한다.
@@ -149,25 +147,25 @@ export function SurveySheetScreen({
       setTemplateNote(!result.ok);
       setConcern('');
       router.refresh();
+      return { ok: true as const, data: undefined };
     });
   }
 
   function handleComplete() {
     // 두 번 누르면 setStatus 가 두 번 나가고, 두 번째는 이미 ready 라 서버가 거부한다.
     // 인쇄는 정상인데 화면에 전이 실패 에러만 남는 상황이 된다.
-    startTransition(() =>
-      singleFlight('complete', async () => {
-        if (p.status === 'prep') {
-          const result = await onSetStatus(p.id, 'ready');
-          if (!result.ok) {
-            setError(result.error);
-            return;
-          }
-          router.refresh();
+    void (async () => {
+      if (p.status === 'prep') {
+        const result = await mutate('complete', () => onSetStatus(p.id, 'ready'));
+        if (!result) return;
+        if (!result.ok) {
+          setError(result.error);
+          return;
         }
-        window.print();
-      }),
-    );
+        router.refresh();
+      }
+      window.print();
+    })();
   }
 
   const canComplete = p.questions.length > 0 || p.noConcern;
@@ -177,6 +175,7 @@ export function SurveySheetScreen({
       <PropertyHeader property={p} phase="sheet" hrefFor={hrefFor} />
 
       <div className="rc-screen-only">
+        <SaveStatus state={saveState} />
         <p className="rc-notice rc-notice-info">
           현장 항목 체크는 <b>방문 후</b>에 해요. 지금은 방문 때 가져갈 조사지를 만드는 단계입니다.
         </p>
@@ -207,7 +206,7 @@ export function SurveySheetScreen({
                       type="button"
                       className="rc-rm"
                       aria-label={`${v.title} 목록에서 제거`}
-                      disabled={pending}
+                      disabled={isBusy(`rm-check-${v.id}`)}
                       onClick={() => run(`rm-check-${v.id}`, () => onRemoveVisitCheck(v.id))}
                     >
                       ×
@@ -229,7 +228,7 @@ export function SurveySheetScreen({
             <button
               type="button"
               className="rc-btn rc-btn-sm"
-              disabled={pending || !newCheck.trim()}
+              disabled={isBusy(`add-check-${newCheck.trim()}`) || !newCheck.trim()}
               onClick={() => {
                 const title = newCheck.trim();
                 setNewCheck('');
@@ -265,7 +264,7 @@ export function SurveySheetScreen({
                         <input
                           type="checkbox"
                           checked={on}
-                          disabled={pending}
+                          disabled={isBusy(`bank-${text}`)}
                           onChange={(e) => run(`bank-${text}`, () => onToggleBankQuestion(p.id, text, e.target.checked))}
                         />
                         <span className="rc-chk-t" style={{ fontWeight: 500 }}>
@@ -295,7 +294,7 @@ export function SurveySheetScreen({
               <button
                 type="button"
                 className="rc-btn"
-                disabled={asking || pending}
+                disabled={asking || isBusy('ask')}
                 onClick={handleAskAI}
               >
                 질문으로 바꾸기
@@ -318,7 +317,7 @@ export function SurveySheetScreen({
             <input
               type="checkbox"
               checked={p.noConcern}
-              disabled={pending}
+              disabled={isBusy('no-concern')}
               onChange={(e) => run('no-concern', () => onSetNoConcern(p.id, e.target.checked))}
             />
             <span className="rc-chk-t" style={{ fontWeight: 500 }}>
@@ -353,7 +352,7 @@ export function SurveySheetScreen({
                     <button
                       type="button"
                       className="rc-btn rc-btn-sm rc-btn-primary"
-                      disabled={pending || !editText.trim()}
+                      disabled={isBusy(`edit-${q.id}`) || !editText.trim()}
                       onClick={() => {
                         const text = editText.trim();
                         setEditingId(null);
@@ -378,8 +377,10 @@ export function SurveySheetScreen({
                       <QuestionBadge question={q} />
                     </div>
                     <div className="rc-q-actions">
+                      {/* 편집 중에 다른 질문을 열면 쓰던 내용이 저장 없이 사라진다 */}
                       <button
                         type="button"
+                        disabled={editingId !== null}
                         onClick={() => {
                           setEditingId(q.id);
                           setEditText(q.text);
@@ -387,7 +388,7 @@ export function SurveySheetScreen({
                       >
                         수정
                       </button>
-                      <button type="button" disabled={pending} onClick={() => run(`rm-q-${q.id}`, () => onRemoveQuestion(q.id))}>
+                      <button type="button" disabled={isBusy(`rm-q-${q.id}`)} onClick={() => run(`rm-q-${q.id}`, () => onRemoveQuestion(q.id))}>
                         삭제
                       </button>
                     </div>
@@ -404,7 +405,7 @@ export function SurveySheetScreen({
           <button
             type="button"
             className="rc-btn rc-btn-primary"
-            disabled={!canComplete || pending}
+            disabled={!canComplete || isBusy('complete')}
             onClick={handleComplete}
           >
             조사지 완성 — 인쇄 미리보기

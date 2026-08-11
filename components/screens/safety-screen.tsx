@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useState } from 'react';
 import type { PropertyStatus } from '@/db/schema';
 import { selectSafetyRules, type RuleContext } from '@/lib/rules';
 import type { ActionResult, PropertyDTO } from '@/lib/types';
@@ -10,6 +10,8 @@ import type { CheckGroup } from '@/lib/actions/checks';
 import { ScreenShell } from './_parts/screen-shell';
 import { PropertyHeader } from './_parts/property-header';
 import { SourceBadge } from './_parts/source-badge';
+import { useMutations } from './_parts/use-mutations';
+import { SaveStatus } from './_parts/save-status';
 import { SafetyPrint } from './safety-print';
 import type { HrefFor } from './_parts/nav';
 
@@ -40,7 +42,7 @@ export type SafetyScreenProps = {
 
 export function SafetyScreen({ property: p, hrefFor, onToggleCheck, onSetStatus }: SafetyScreenProps) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const { run: mutate, isBusy, busy, saveState } = useMutations();
   const [error, setError] = useState('');
   const [confirming, setConfirming] = useState(false);
 
@@ -67,8 +69,8 @@ export function SafetyScreen({ property: p, hrefFor, onToggleCheck, onSetStatus 
   }, [confirming]);
 
   function toggle(ruleId: string, on: boolean) {
-    startTransition(async () => {
-      const result = await onToggleCheck(p.id, 'safety', ruleId, on);
+    void mutate(`safety-${ruleId}`, () => onToggleCheck(p.id, 'safety', ruleId, on)).then((result) => {
+      if (!result) return;
       if (!result.ok) {
         setError(result.error);
         return;
@@ -79,8 +81,8 @@ export function SafetyScreen({ property: p, hrefFor, onToggleCheck, onSetStatus 
   }
 
   function confirmDeal() {
-    startTransition(async () => {
-      const result = await onSetStatus(p.id, 'confirmed');
+    void mutate('confirm-deal', () => onSetStatus(p.id, 'confirmed')).then((result) => {
+      if (!result) return;
       if (!result.ok) {
         setConfirming(false);
         setError(result.error);
@@ -122,6 +124,7 @@ export function SafetyScreen({ property: p, hrefFor, onToggleCheck, onSetStatus 
       <PropertyHeader property={p} phase="safety" hrefFor={hrefFor} />
 
       <div className="rc-screen-only">
+        <SaveStatus state={saveState} />
         <section className="rc-card">
           <h2 className="rc-card-title">
             계약 전 안전 점검 <SourceBadge kind="rule" />
@@ -138,7 +141,7 @@ export function SafetyScreen({ property: p, hrefFor, onToggleCheck, onSetStatus 
                 <input
                   type="checkbox"
                   checked={on}
-                  disabled={pending}
+                  disabled={isBusy(`safety-${r.id}`)}
                   onChange={(e) => toggle(r.id, e.target.checked)}
                 />
                 <span>
@@ -172,14 +175,14 @@ export function SafetyScreen({ property: p, hrefFor, onToggleCheck, onSetStatus 
               <button
                 type="button"
                 className="rc-btn rc-btn-primary"
-                disabled={pending}
+                disabled={busy}
                 onClick={() => setConfirming(true)}
               >
                 계약 확정
               </button>
             )}
             <Link href={hrefFor('dash')} className="rc-btn rc-btn-ghost">
-              보류
+              나중에 하기 — 매물 목록
             </Link>
           </div>
         </section>
@@ -216,10 +219,10 @@ export function SafetyScreen({ property: p, hrefFor, onToggleCheck, onSetStatus 
               <button
                 type="button"
                 className="rc-btn rc-btn-primary"
-                disabled={pending}
+                disabled={isBusy('confirm-deal')}
                 onClick={confirmDeal}
               >
-                {pending ? '처리하는 중...' : '계약 확정'}
+                {isBusy('confirm-deal') ? '처리하는 중...' : '계약 확정'}
               </button>
               <button
                 type="button"

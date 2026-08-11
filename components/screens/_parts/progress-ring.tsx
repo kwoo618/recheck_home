@@ -13,7 +13,12 @@ export function ProgressRing({ percent }: { percent: number }) {
     pct === 100 ? 'var(--rc-teal-mid)' : pct >= 50 ? 'var(--rc-amber)' : 'var(--rc-line-strong)';
 
   return (
-    <div className="rc-ring" role="img" aria-label={`확인 진행률 ${pct}%`}>
+    <div
+      className="rc-ring"
+      role="img"
+      aria-label={`확인 진행률 ${pct}%`}
+      title={pct === 0 ? '아직 기록한 항목이 없어요' : `확인 진행률 ${pct}%`}
+    >
       <svg width="52" height="52" viewBox="0 0 52 52" aria-hidden="true">
         <circle cx="26" cy="26" r={r} fill="none" stroke="var(--rc-line)" strokeWidth="4.5" />
         <circle

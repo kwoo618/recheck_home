@@ -101,17 +101,23 @@ export function VisitRecordScreen({
         noAnswer: noAnswers[q.id] ?? false,
       }));
 
-      const saved = await onSaveVisitResults(p.id, visitPayload);
-      if (!saved.ok) {
-        setError(saved.error);
-        return;
-      }
-      if (answerPayload.length > 0) {
-        const savedAnswers = await onSaveAnswers(p.id, answerPayload);
-        if (!savedAnswers.ok) {
-          setError(savedAnswers.error);
+      try {
+        const saved = await onSaveVisitResults(p.id, visitPayload);
+        if (!saved.ok) {
+          setError(saved.error);
           return;
         }
+        if (answerPayload.length > 0) {
+          const savedAnswers = await onSaveAnswers(p.id, answerPayload);
+          if (!savedAnswers.ok) {
+            setError(savedAnswers.error);
+            return;
+          }
+        }
+      } catch {
+        // 예외를 그대로 두면 에러 바운더리가 뜨고 입력한 기록이 화면째 사라진다 (R4)
+        setError('지금 저장할 수 없어요. 입력한 내용은 그대로 있으니 잠시 후 다시 눌러 주세요.');
+        return;
       }
 
       router.refresh();
@@ -129,7 +135,9 @@ export function VisitRecordScreen({
             다녀온 결과를 기록해요 <SourceBadge kind="user" />
           </h2>
           <p className="rc-card-sub">
-            항목마다 버튼 한 번이면 돼요. 조사지에 적어온 내용을 옮겨 적으세요.
+            항목마다 버튼 한 번이면 돼요. 조사지에 적어온 내용을 옮겨 적으세요. 잘못 눌렀다면{' '}
+            <b>같은 버튼을 다시 눌러 해제</b>할 수 있어요 — <b>미확인</b>은 &ldquo;확인하지 못했다&rdquo;는
+            기록이고, 해제는 아직 입력하지 않은 상태입니다.
           </p>
 
           <h3 className="rc-group-label">직접 확인한 것</h3>

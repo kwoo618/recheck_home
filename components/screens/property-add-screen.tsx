@@ -54,6 +54,8 @@ export function PropertyAddScreen({
   const [submitting, setSubmitting] = useState(false);
 
   const creating = useRef(false);
+  // 주소 조회가 끝나기 전에 저장하면 좌표 없이 등록된다
+  const [geocoding, setGeocoding] = useState(false);
 
   const [pasteText, setPasteText] = useState('');
   const [parsing, setParsing] = useState(false);
@@ -128,6 +130,10 @@ export function PropertyAddScreen({
     }
     if (!form.address.trim()) {
       setError(`주소를 입력해 주세요. 주소 검색을 쓰면 ${SCHOOL_ORIGIN.name}까지 거리도 함께 계산돼요.`);
+      return;
+    }
+    if (geocoding) {
+      setError('위치를 확인하는 중이에요. 잠시 뒤에 다시 눌러 주세요.');
       return;
     }
     const created = await create(toCreateInput(form));
@@ -237,16 +243,17 @@ export function PropertyAddScreen({
               value={form}
               onChange={patch}
               onGeocode={onGeocode}
+              onGeocodingChange={setGeocoding}
               renderMapPreview={renderMapPreview}
             />
             <div className="rc-form-actions">
               <button
                 type="button"
                 className="rc-btn rc-btn-primary"
-                disabled={submitting}
+                disabled={submitting || geocoding}
                 onClick={() => void handleSubmit()}
               >
-                {submitting ? '등록하는 중...' : '등록하고 정보 확인 →'}
+                {submitting ? '등록하는 중...' : geocoding ? '위치 확인 중...' : '등록하고 정보 확인 →'}
               </button>
               <Link href={hrefFor('dash')} className="rc-btn rc-btn-ghost">
                 취소

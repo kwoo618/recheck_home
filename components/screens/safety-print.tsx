@@ -1,11 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { flushSync } from 'react-dom';
 import { CONTRACT_DAY, selectSafetyRules, type RuleContext } from '@/lib/rules';
 import { formatDistanceLabel } from '@/lib/geo';
 import type { PropertyDTO } from '@/lib/types';
 import { formatPrice } from './_parts/format';
+import { usePrintDocument } from './_parts/use-print-document';
 
 /**
  * 계약 전 최종 점검표 인쇄 (프로토타입 printSafety)
@@ -17,12 +16,8 @@ import { formatPrice } from './_parts/format';
  * ★ 주소·거리는 넣되 상세주소는 넣지 않는다. (R7)
  */
 export function SafetyPrint({ property: p }: { property: PropertyDTO }) {
-  const [printedAt, setPrintedAt] = useState('');
-  useEffect(() => {
-    const stamp = () => flushSync(() => setPrintedAt(new Date().toLocaleDateString('ko-KR')));
-    window.addEventListener('beforeprint', stamp);
-    return () => window.removeEventListener('beforeprint', stamp);
-  }, []);
+  // 출력일과 PDF 저장 파일명(리체크_최종점검표_{매물명}_{날짜})을 인쇄 시점에 만든다
+  const printedAt = usePrintDocument('최종점검표', p.name);
 
   const ctx: RuleContext = {
     dealType: p.dealType,

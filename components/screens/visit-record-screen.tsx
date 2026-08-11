@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, useTransition } from 'react';
 import type { VisitResult } from '@/db/schema';
@@ -225,6 +226,15 @@ export function VisitRecordScreen({
           <button type="button" className="rc-btn rc-btn-ghost" onClick={() => window.print()}>
             조사지 다시 인쇄
           </button>
+        </div>
+
+        <div className="rc-next-step">
+          <span className="rc-field-note">
+            저장하면 기록 완료로 바뀌고, 검토 중인 매물이 2개 이상이면 비교 화면으로 넘어가요.
+          </span>
+          <Link href={hrefFor('dash')} className="rc-btn rc-btn-ghost">
+            나중에 하기 — 매물 목록
+          </Link>
         </div>
       </div>
 

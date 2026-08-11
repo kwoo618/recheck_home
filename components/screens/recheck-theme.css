@@ -418,6 +418,17 @@
   flex-wrap: wrap;
 }
 
+/* 긴 화면 맨 아래의 다음 단계 안내 — 여기까지 내려온 사람이 위로 되돌아가지 않도록 */
+.rc-next-step {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--rc-line-strong);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 /* ── 상세 헤더 · 국면 스텝 ──────────────────────────────────── */
 .rc-detail-head { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 16px; }
 /* flex 자식의 기본 min-width 는 auto 라 내용보다 작아지지 않는다.

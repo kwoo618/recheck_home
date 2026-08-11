@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { flushSync } from 'react-dom';
 import { formatDistanceLabel } from '@/lib/geo';
 import type { PropertyDTO } from '@/lib/types';
 import { formatSpecLine } from './_parts/format';
+import { usePrintDocument } from './_parts/use-print-document';
 
 /**
  * ④ 조사지 인쇄 (프로토타입 printSheet)
@@ -16,18 +15,8 @@ import { formatSpecLine } from './_parts/format';
  * ★ 주소와 거리는 넣되 상세주소(동/호수)는 넣지 않는다. (R7)
  */
 export function SurveySheetPrint({ property: p }: { property: PropertyDTO }) {
-  /*
-   * 출력일은 실제로 인쇄를 누른 순간에 만든다.
-   *   · 서버에서 렌더하면 배포 서버 시간대(UTC) 기준이라 새벽에는 날짜가 하루 어긋난다.
-   *   · beforeprint 는 버튼 인쇄와 Ctrl+P 둘 다에서 뜬다.
-   *   · flushSync 로 즉시 반영하지 않으면 첫 인쇄물에 날짜가 빠질 수 있다.
-   */
-  const [printedAt, setPrintedAt] = useState('');
-  useEffect(() => {
-    const stamp = () => flushSync(() => setPrintedAt(new Date().toLocaleDateString('ko-KR')));
-    window.addEventListener('beforeprint', stamp);
-    return () => window.removeEventListener('beforeprint', stamp);
-  }, []);
+  // 출력일과 PDF 저장 파일명(리체크_조사지_{매물명}_{날짜})을 인쇄 시점에 만든다
+  const printedAt = usePrintDocument('조사지', p.name);
 
   return (
     <div className="rc-print-only rc-print">

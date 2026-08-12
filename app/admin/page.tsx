@@ -125,11 +125,23 @@ export default async function AdminPage({
       <Section n={1} title="요약">
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <Card label="매물" value={s.summary.properties.toLocaleString()} />
-          <Card label="세션" value={s.summary.sessions.toLocaleString()} sub="익명 쿠키 기준" />
+          <Card
+            label="매물 보유 세션"
+            value={s.summary.sessionsWithProperty.toLocaleString()}
+            sub={`발급된 익명 세션 ${s.summary.sessions.toLocaleString()} (봇·크롤러 포함)`}
+          />
           <Card label="조사지 완성" value={s.summary.sheetDone.toLocaleString()} sub="ready 이후 도달" />
           <Card label="현장 기록 완료" value={s.summary.recorded.toLocaleString()} sub="recorded 이후 도달" />
           <Card label="비교 가능 세션" value={s.summary.comparable.toLocaleString()} sub="활성 매물 2건 이상" />
         </div>
+
+        {/* 두 숫자가 왜 다른지 화면에서 바로 읽히게 한다. 숨기는 것도 정직하지 않다. */}
+        <p className="mt-3 text-[11.5px] text-[var(--rc-ink-soft)]">
+          <b>두 숫자가 크게 다른 이유</b>: 로그인이 없어 <b>쿠키 없는 페이지 요청마다 익명 세션이 하나씩 발급</b>됩니다.
+          검색 엔진·링크 미리보기 크롤러·점검 스크립트도 세션으로 잡히므로,
+          <b> 발급된 세션 수는 사용자 수가 아닙니다.</b> 사람이 실제로 쓴 것에 가장 가까운 수는{' '}
+          <b>매물 보유 세션 {s.summary.sessionsWithProperty.toLocaleString()}</b>입니다.
+        </p>
       </Section>
 
       {/* ── 2. 퍼널 ── */}

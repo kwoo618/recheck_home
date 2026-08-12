@@ -157,8 +157,24 @@ export async function loadAdminStats() {
     activeByUser.set(p.userId, (activeByUser.get(p.userId) ?? 0) + 1);
   }
 
+  /*
+   * ★ "세션 수"를 사용자 수로 쓰지 않는다.
+   *
+   *   proxy.ts 가 **쿠키 없는 모든 페이지 요청**에 세션을 발급하고, 렌더 중
+   *   getSessionUserId() 가 users 행을 만든다. 그래서 봇·OG 크롤러·헬스체크·
+   *   점검 스크립트가 전부 "세션"으로 잡힌다.
+   *   실측(2026-08-12): 세션 177개 중 매물을 만든 것은 10개뿐이었다.
+   *
+   *   발표에서 177을 인용하면 사실이 아니다. 매물을 만든 세션만 앞에 두고,
+   *   총 발급 수는 무엇인지 밝혀서 작게 병기한다 — 숨기는 것도 정직하지 않다.
+   */
+  const sessionsWithProperty = new Set(props.map((p) => p.userId)).size;
+
   const summary = {
     properties: props.length,
+    /** 매물을 하나라도 만든 세션 — 사람이 실제로 쓴 것에 가장 가까운 수 */
+    sessionsWithProperty,
+    /** 발급된 익명 세션 전체. 봇·크롤러 포함이라 사용자 수가 아니다 */
     sessions: userRows.length,
     /** 조사지 완성 = prep을 벗어난 것 (ready 이후) */
     sheetDone: props.filter((p) => p.status === 'ready' || p.status === 'recorded' || p.status === 'confirmed').length,

@@ -55,6 +55,16 @@ export function formatSpecLine(p: SpecFields): string {
   return parts.join(' · ');
 }
 
+/**
+ * 방문 기록의 4택.
+ *
+ * ★ 화면(visit-record-screen)과 인쇄물(survey-sheet-print)이 같은 배열을 쓴다.
+ *   종이에 없는 칸은 현장에서 적을 수 없다. 실제로 인쇄물에 '미확인'이 빠져 있어서,
+ *   "확인 못 했다"를 빈칸으로 적어올 수밖에 없었고 화면에서 미확인(진행률에 반영됨)과
+ *   미입력(반영 안 됨)을 구분해 옮길 수 없었다. 한쪽만 늘어나지 않게 여기 한 곳에 둔다.
+ */
+export const RESULT_CHOICES: Exclude<VisitResult, ''>[] = ['good', 'ok', 'bad', 'na'];
+
 /** 방문 기록 4택 라벨 — 프로토타입 resLabel() 그대로 */
 export function resultLabel(r: VisitResult): string {
   const map: Record<VisitResult, string> = {

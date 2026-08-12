@@ -11,7 +11,7 @@ import { ScreenShell } from './_parts/screen-shell';
 import { PropertyHeader } from './_parts/property-header';
 import { SourceBadge } from './_parts/source-badge';
 import { QuestionBadge } from './_parts/question-badge';
-import { resultLabel } from './_parts/format';
+import { RESULT_CHOICES, resultLabel } from './_parts/format';
 import { useUnsavedGuard } from './_parts/use-unsaved-guard';
 import { SaveStatus } from './_parts/save-status';
 import { SurveySheetPrint } from './survey-sheet-print';
@@ -26,8 +26,9 @@ import type { HrefFor } from './_parts/nav';
  *   진행률에서 완료로 센다. 프로토타입은 answer 만 셌기 때문에 그대로 옮기면 %가 어긋난다.
  *   (진행률 계산은 서버가 한다 — 여기서 다시 세지 않는다)
  * ★ 저장 후 status → recorded 전이는 서버(saveVisitResults)가 한다.
+ * ★ 4택 목록(RESULT_CHOICES)은 _parts/format 에 있다 — 인쇄물의 결과 열과 같은 배열을 써야
+ *   종이에 없는 칸이 생기지 않는다.
  */
-const RESULT_CHOICES: Exclude<VisitResult, ''>[] = ['good', 'ok', 'bad', 'na'];
 
 export type VisitRecordScreenProps = {
   property: PropertyDTO;
@@ -154,7 +155,17 @@ export function VisitRecordScreen({
 
           <h3 className="rc-group-label">직접 확인한 것</h3>
           {p.visitChecks.length === 0 ? (
-            <p className="rc-field-note">확인 항목이 없어요.</p>
+            /* 빈 상태에서 돌아갈 길을 준다 — 항목을 만드는 곳은 조사지다 (조사지 화면의 빈 상태와 같은 방식) */
+            <>
+              <p className="rc-field-note">
+                확인 항목이 없어요. 조사지에서 현장에서 볼 항목을 추가할 수 있어요.
+              </p>
+              <div className="rc-form-actions">
+                <Link href={hrefFor('sheet', p.id)} className="rc-btn rc-btn-sm rc-btn-ghost">
+                  조사지 열기
+                </Link>
+              </div>
+            </>
           ) : (
             p.visitChecks.map((v) => {
               const current = results[v.id] ?? '';
@@ -198,7 +209,16 @@ export function VisitRecordScreen({
         <section className="rc-card">
           <h3 className="rc-group-label">질문에 받은 답변</h3>
           {p.questions.length === 0 ? (
-            <p className="rc-field-note">질문이 없어요.</p>
+            <>
+              <p className="rc-field-note">
+                질문이 없어요. 조사지의 질문 은행에서 물어볼 것을 고를 수 있어요.
+              </p>
+              <div className="rc-form-actions">
+                <Link href={hrefFor('sheet', p.id)} className="rc-btn rc-btn-sm rc-btn-ghost">
+                  조사지 열기
+                </Link>
+              </div>
+            </>
           ) : (
             p.questions.map((q, i) => {
               const heard = !(noAnswers[q.id] ?? false);
@@ -235,12 +255,17 @@ export function VisitRecordScreen({
                       상태와 동작을 형태로 가른다 (FB-03).
                       전에는 둘 다 rc-field-note / rc-linkish 라 글꼴·크기·색이 같아 폰에서 둘 다
                       버튼으로 보였다. 상태는 테두리 없는 알약, 동작은 테두리 있는 버튼이다.
+
+                      ★ danger 를 쓰지 않는다. 이 버튼은 '못 들음' 기록을 되돌려 답변 입력칸을
+                        다시 여는 복구 동작이지 무언가를 지우는 동작이 아니다. 빨간 테두리는
+                        "답변을 지운다"로 읽혀 오히려 누르지 못하게 만든다.
+                        형태 구분(알약 vs 버튼)만으로 이미 충분하다.
                     */
                     <div className="rc-noanswer">
                       <span className="rc-state-pill">답을 듣지 못함</span>
                       <button
                         type="button"
-                        className="rc-btn rc-btn-sm rc-btn-danger"
+                        className="rc-btn rc-btn-sm rc-btn-ghost"
                         aria-label={`${q.text} — 답을 듣지 못함 취소`}
                         onClick={() => setNoAnswers((prev) => ({ ...prev, [q.id]: false }))}
                       >

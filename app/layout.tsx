@@ -36,7 +36,7 @@ const siteUrl =
 
 const title = "리:체크 — 계약 전 2차 검증";
 const description =
-  "찾은 집을, 계약 전에 다시 확인하세요. 직방·다방·중개사에서 찾아온 매물의 확인 항목을 규칙으로 정리해 드립니다. 매물을 추천하지 않습니다.";
+  "찾은 집을, 계약 전에 다시 확인하세요. 부동산 앱이나 중개사무소에서 찾아온 매물의 확인 항목을 규칙으로 정리해 드립니다. 매물을 추천하지 않습니다.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),

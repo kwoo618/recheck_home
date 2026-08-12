@@ -9,7 +9,10 @@ import type { VisitResult } from '@/db/schema';
  *   (백엔드 세션 병합 후 이동 검토 — 인벤토리 A 항목에 보고함)
  */
 
-type PriceFields = Pick<PropertyDTO, 'dealType' | 'price' | 'deposit'>;
+type PriceFields = Pick<
+  PropertyDTO,
+  'dealType' | 'price' | 'deposit' | 'prepaidMonths' | 'prepaidTotal'
+>;
 
 /**
  * 입력하지 않은 숫자 필드는 0으로 저장된다 — 스키마가 nullable 이 아니라 "0"과 "미입력"을
@@ -23,8 +26,44 @@ type PriceFields = Pick<PropertyDTO, 'dealType' | 'price' | 'deposit'>;
  */
 const DASH = '—';
 
+/**
+ * 사글세 안내 각주 — 월 환산액을 보여주는 곳에는 **반드시** 함께 둔다.
+ * 이게 없으면 사용자가 월세로 읽는다. 실제로 매달 나가는 돈이 아니라 나눗셈 결과일 뿐이다.
+ */
+export const PREPAID_MONTHLY_NOTE =
+  '선납 총액을 개월 수로 나눈 값입니다. 매달 내는 금액이 아닙니다.';
+
+/**
+ * 월 환산액 표기 — 기간을 반드시 붙인다.
+ * "50만"만 적으면 6개월 계약과 12개월 계약이 같아 보인다. 총액이 다르다는 사실이 숨는다.
+ */
+export function formatPrepaidMonthly(monthlyEquivalent: number, months: number): string {
+  return `${monthlyEquivalent.toLocaleString()}만 (${months}개월 선납 환산)`;
+}
+
+/** 비교표처럼 열이 좁을 때 — 기간만 짧게 붙인다 */
+export function formatPrepaidMonthlyShort(monthlyEquivalent: number, months: number): string {
+  return `${monthlyEquivalent.toLocaleString()}만 (${months}개월)`;
+}
+
 /** 프로토타입 fmtPrice() 에 미입력(0) 처리를 더한 것 */
 export function formatPrice(p: PriceFields): string {
+  /*
+    사글세는 월세·전세금·매매가가 없다. 보증금과 선납금이 실제로 나가는 돈이다.
+    ★ null 과 0 을 다르게 다룬다 — null("아직 입력하지 않음")이면 그 조각을 아예 적지 않고,
+      0("선납 없음")이면 —로 적는다. 둘을 같게 보이면 사용자가 넣지 않은 사실이 생긴다. (R8)
+    ★ 여기에 월 환산액을 넣지 않는다. 각주를 함께 둘 수 없는 자리라 숫자만 남으면
+      월세로 읽힌다. 환산액은 각주를 붙일 수 있는 비교표·금융 화면에서만 보여준다.
+  */
+  if (p.dealType === '사글세') {
+    const parts = [`보증금 ${(p.deposit || 0).toLocaleString()}만`];
+    if (p.prepaidTotal !== null && p.prepaidTotal !== undefined) {
+      const total = p.prepaidTotal > 0 ? `${p.prepaidTotal.toLocaleString()}만` : DASH;
+      const months = p.prepaidMonths ? ` (${p.prepaidMonths}개월)` : '';
+      parts.push(`선납 ${total}${months}`);
+    }
+    return parts.join(' / ');
+  }
   if (p.dealType === '월세') {
     // 보증금 0은 그대로 둔다 — 무보증 월세가 실제로 있어 미입력으로 단정할 수 없다
     const rent = p.price > 0 ? `${p.price.toLocaleString()}만` : DASH;

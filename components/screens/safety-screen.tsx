@@ -10,6 +10,8 @@ import type { CheckGroup } from '@/lib/actions/checks';
 import { ScreenShell } from './_parts/screen-shell';
 import { PropertyHeader } from './_parts/property-header';
 import { SourceBadge } from './_parts/source-badge';
+import { GlossaryPanel } from './_parts/glossary-panel';
+import { GLOSSARY_BY_SCREEN } from './_parts/glossary';
 import { useMutations } from './_parts/use-mutations';
 import { SaveStatus } from './_parts/save-status';
 import { SafetyPrint } from './safety-print';
@@ -173,6 +175,9 @@ export function SafetyScreen({ property: p, hrefFor, onToggleCheck, onSetStatus 
               {missingCritical.map((r) => r.title).join(' / ')}
             </p>
           )}
+
+          {/* 항목 제목·설명(lib/rules.ts)에 나오는 말들. 규칙 문구는 못 고치므로 화면이 덧붙인다 */}
+          <GlossaryPanel terms={GLOSSARY_BY_SCREEN.safety} />
         </section>
 
         <section className="rc-card">

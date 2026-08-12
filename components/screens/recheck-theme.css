@@ -726,6 +726,30 @@
 .rc-qbank-body { padding: 0 14px 10px; }
 .rc-qb-count { font-size: 11px; color: var(--rc-teal); font-weight: 700; }
 
+/* ── 용어 설명 ──────────────────────────────────────────────── */
+/* rc-qbank 의 접기 UI를 그대로 쓴다. 같은 화면에서 여는 방식이 두 가지면 학습이 두 번 필요하다 */
+.rc-glossary { margin-top: 12px; }
+.rc-glossary-list { margin: 0; padding: 0; }
+.rc-glossary-item {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rc-line);
+}
+.rc-glossary-item:last-child { border-bottom: 0; }
+/* 넓어지면 용어와 뜻을 두 단으로. 좁을 때 억지로 나누면 용어 칸이 한 글자씩 쌓인다 */
+@media (min-width: 560px) {
+  .rc-glossary-item { grid-template-columns: 128px 1fr; gap: 12px; align-items: baseline; }
+}
+.rc-glossary-term { font-size: 13px; font-weight: 700; color: var(--rc-ink); }
+.rc-glossary-desc {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--rc-ink-soft);
+}
+
 .rc-q-item { padding: 12px 0; border-bottom: 1px solid var(--rc-line); }
 .rc-q-item:last-child { border-bottom: 0; }
 .rc-q-text { font-weight: 600; font-size: 13.5px; margin-bottom: 6px; display: flex; align-items: flex-start; gap: 6px; flex-wrap: wrap; }
@@ -846,12 +870,60 @@
 .rc-modal .rc-card-title { overflow-wrap: anywhere; }
 
 /* ── 비교 테이블 ────────────────────────────────────────────── */
-.rc-cmp-scroll { overflow-x: auto; }
+/*
+  표 안 가로 스크롤은 의도된 동작이다. 다만 360~390px 에서는 표의 약 38%가 잘리는데
+  (실측: 보이는 폭 324px / 표 520px) 모바일은 스크롤바가 터치 전까지 숨겨져 있어
+  "오른쪽에 더 있다"는 신호가 하나도 없었다. 매물 5건이면 2.5건이 화면 밖이다.
+
+  안내 문구를 넣는 대신 그림자로 알린다 — 표가 4개라 문구를 넣으면 그만큼 화면이 길어지고,
+  이미 390px 에서 7,000px 이 넘는 화면이다.
+
+  background-attachment 의 local/scroll 조합이 핵심이다.
+    · local  덮개(표면색) — 내용과 함께 스크롤한다. 끝에 닿으면 그림자를 덮어 지운다
+    · scroll 그림자      — 컨테이너에 고정된다
+  스크롤할 수 없으면 덮개가 그림자를 완전히 가리므로 아무것도 보이지 않는다.
+  JS 도 마크업도 필요 없고, 스크롤 위치에 따라 저절로 나타났다 사라진다.
+*/
+.rc-cmp-scroll {
+  overflow-x: auto;
+  background-image:
+    linear-gradient(to right, var(--rc-surface), rgb(255 255 255 / 0%)),
+    linear-gradient(to left, var(--rc-surface), rgb(255 255 255 / 0%)),
+    linear-gradient(to right, rgb(34 37 43 / 16%), rgb(34 37 43 / 0%)),
+    linear-gradient(to left, rgb(34 37 43 / 16%), rgb(34 37 43 / 0%));
+  background-position: left center, right center, left center, right center;
+  background-repeat: no-repeat;
+  background-size: 22px 100%, 22px 100%, 14px 100%, 14px 100%;
+  background-attachment: local, local, scroll, scroll;
+}
 .rc-cmp { border-collapse: collapse; width: 100%; min-width: 520px; }
 .rc-cmp th,
 .rc-cmp td { border: 1px solid var(--rc-line); padding: 9px 13px; font-size: 13px; text-align: left; vertical-align: top; }
+/* 칸이 투명하면 위 그림자가 표 내용 뒤로 비쳐 글자가 흐려진다. 칸마다 배경을 채운다.
+   더 구체적인 규칙(.rc-miss / .rc-bad-cell / .rc-key-row / .rc-rowlabel)이 그대로 이긴다 */
+.rc-cmp td { background: var(--rc-surface); }
 .rc-cmp thead th { background: var(--rc-ink); color: #fff; font-size: 13.5px; }
+/* 머리행의 빈 첫 칸도 함께 고정한다 — 아래 행 제목만 고정하면 좌상단이 어긋나 보인다.
+   z-index 는 행 제목(1)보다 높아야 가로·세로 어느 쪽으로 밀어도 위에 남는다 */
+.rc-cmp thead th:first-child { position: sticky; left: 0; z-index: 2; }
+/*
+  행 제목을 왼쪽에 고정한다.
+  그림자만으로는 "오른쪽에 더 있다"만 알린다. 실제로 끝까지 밀면 행 제목이 화면 밖으로 나가서
+  숫자만 남고 어느 항목인지 알 수 없었다(러너 사진에서 확인). 고정하면 방향도 알려주고
+  — 내용이 고정된 열 밑으로 흐르는 것이 보인다 — 끝까지 밀어도 읽을 수 있다.
+
+  ★ .rc-rowlabel-long(질문 전문)은 제외한다. 그쪽은 열 폭이 최대 300px 이라 390px 화면에서
+    고정하면 답변 칸에 24px 밖에 안 남는다.
+  ★ border-collapse: collapse 에서는 sticky 셀의 세로 테두리가 그려지지 않는 브라우저가 있어
+    box-shadow 로 오른쪽 경계를 대신 그린다.
+*/
 .rc-cmp .rc-rowlabel { background: var(--rc-paper); font-weight: 600; white-space: nowrap; color: var(--rc-ink-soft); }
+.rc-cmp .rc-rowlabel:not(.rc-rowlabel-long) {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  box-shadow: 1px 0 0 var(--rc-line);
+}
 /*
   질문 전문처럼 긴 행 제목용. nowrap 이면 행 하나가 400px 을 넘겨 표 전체를 밀어내고,
   정작 봐야 할 매물 답변 열이 화면 밖으로 나간다. 줄바꿈을 허용하고 열 폭을 묶는다.
@@ -1065,4 +1137,11 @@
   .rc-phases { gap: 6px; }
   .rc-ph { padding: 6px 9px; font-size: 12px; gap: 5px; }
   .rc-lock-note { font-size: 10.5px; }
+  /*
+    거래 유형이 4종(전세·월세·매매·사글세)이 되면서 .rc-seg 가 길어졌다.
+    이 요소는 overflow:hidden 이고 flex-wrap 이 없어 넘치면 스크롤이 아니라 잘린다.
+    360px 에서는 패딩 18px 로도 들어가지만(실측 258.8px / 카드 안쪽 294px) 320px 화면에서는 넘친다.
+    좁은 화면에서만 좌우 패딩을 줄여 잘림을 막는다.
+  */
+  .rc-seg button { padding: 8px 14px; }
 }

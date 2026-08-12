@@ -11,6 +11,8 @@ import { ScreenShell } from './_parts/screen-shell';
 import { PropertyHeader } from './_parts/property-header';
 import { SourceBadge } from './_parts/source-badge';
 import { QuestionBadge } from './_parts/question-badge';
+import { GlossaryPanel } from './_parts/glossary-panel';
+import { GLOSSARY_BY_SCREEN } from './_parts/glossary';
 import { RESULT_CHOICES, resultLabel } from './_parts/format';
 import { useUnsavedGuard } from './_parts/use-unsaved-guard';
 import { SaveStatus } from './_parts/save-status';
@@ -209,6 +211,9 @@ export function VisitRecordScreen({
               );
             })
           )}
+
+          {/* 항목 제목·설명에 '창호(샷시)'·'결로'가 그대로 나온다 (lib/rules.ts VISIT_RULES) */}
+          <GlossaryPanel terms={GLOSSARY_BY_SCREEN.record} />
         </section>
 
         <section className="rc-card">

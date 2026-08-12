@@ -26,6 +26,12 @@ export type PropertyFormValue = {
   price: string;
   deposit: string;
   mgmtFee: string;
+  /**
+   * 사글세 전용. 폼에서는 문자열이고 빈 문자열이 "아직 입력하지 않음"이다.
+   * toCreateInput 에서 '' → null 로 넘긴다. 0 으로 접으면 "선납 없음"이라는 다른 뜻이 된다.
+   */
+  prepaidMonths: string;
+  prepaidTotal: string;
   area: string;
   age: string;
   heating: Heating;
@@ -33,10 +39,15 @@ export type PropertyFormValue = {
   link: string;
 };
 
+/** 보증금을 받는 거래유형 — 월세와 사글세 둘 다 보증금이 따로 있다 */
+export function hasDeposit(d: DealType): boolean {
+  return d === '월세' || d === '사글세';
+}
+
 /** POST /api/geocode `{address}` → `{lat,lng} | null` (PRD §8.4) */
 export type GeocodeFn = (address: string) => Promise<{ lat: number; lng: number } | null>;
 
-export const DEAL_TYPES: DealType[] = ['전세', '월세', '매매'];
+export const DEAL_TYPES: DealType[] = ['전세', '월세', '매매', '사글세'];
 export const HEATINGS: Heating[] = ['개별난방', '중앙난방', '지역난방', '모름'];
 
 export const EMPTY_FORM: PropertyFormValue = {
@@ -49,6 +60,8 @@ export const EMPTY_FORM: PropertyFormValue = {
   price: '',
   deposit: '',
   mgmtFee: '',
+  prepaidMonths: '',
+  prepaidTotal: '',
   area: '',
   age: '',
   heating: '개별난방',
@@ -57,6 +70,7 @@ export const EMPTY_FORM: PropertyFormValue = {
 };
 
 export function toCreateInput(v: PropertyFormValue): CreatePropertyInput {
+  const prepaid = v.dealType === '사글세';
   return {
     name: v.name.trim(),
     address: v.address.trim(),
@@ -65,9 +79,17 @@ export function toCreateInput(v: PropertyFormValue): CreatePropertyInput {
     latitude: v.latitude,
     longitude: v.longitude,
     dealType: v.dealType,
-    price: v.price,
-    deposit: v.dealType === '월세' ? v.deposit : '0',
+    // 사글세에는 월세·전세금·매매가에 해당하는 값이 없다. 선납 총액이 그 자리다
+    price: prepaid ? '0' : v.price,
+    deposit: hasDeposit(v.dealType) ? v.deposit : '0',
     mgmtFee: v.mgmtFee,
+    /*
+      ★ 빈 값을 '0' 으로 보내지 않는다. 서버 toNullableInt 가 '' 를 null 로 바꾸는데,
+        여기서 미리 '0' 으로 접으면 "선납 없음"이라는 다른 사실이 저장된다.
+        사글세가 아니면 아예 null 을 보낸다 — 유형을 바꿨을 때 이전 값이 남으면 계산이 조용히 틀어진다.
+    */
+    prepaidMonths: prepaid ? v.prepaidMonths : null,
+    prepaidTotal: prepaid ? v.prepaidTotal : null,
     area: v.area,
     age: v.age,
     heating: v.heating,
@@ -241,21 +263,24 @@ export function PropertyFields({
         </div>
       </div>
 
-      <div>
-        <label className="rc-fl" htmlFor="rc-f-price">
-          {priceLabel(value.dealType)} (만원)
-        </label>
-        <input
-          id="rc-f-price"
-          className="rc-input"
-          type="number"
-          inputMode="numeric"
-          value={value.price}
-          onChange={(e) => onChange({ price: e.target.value })}
-        />
-      </div>
+      {/* 사글세에는 월세·전세금·매매가가 없다. 선납 총액이 그 자리를 대신한다 */}
+      {value.dealType !== '사글세' && (
+        <div>
+          <label className="rc-fl" htmlFor="rc-f-price">
+            {priceLabel(value.dealType)} (만원)
+          </label>
+          <input
+            id="rc-f-price"
+            className="rc-input"
+            type="number"
+            inputMode="numeric"
+            value={value.price}
+            onChange={(e) => onChange({ price: e.target.value })}
+          />
+        </div>
+      )}
 
-      {value.dealType === '월세' && (
+      {hasDeposit(value.dealType) && (
         <div>
           <label className="rc-fl" htmlFor="rc-f-deposit">
             보증금 (만원)
@@ -269,6 +294,39 @@ export function PropertyFields({
             onChange={(e) => onChange({ deposit: e.target.value })}
           />
         </div>
+      )}
+
+      {value.dealType === '사글세' && (
+        <>
+          <div>
+            <label className="rc-fl" htmlFor="rc-f-prepaid-months">
+              선납 개월 수
+            </label>
+            <input
+              id="rc-f-prepaid-months"
+              className="rc-input"
+              type="number"
+              inputMode="numeric"
+              min="0"
+              value={value.prepaidMonths}
+              onChange={(e) => onChange({ prepaidMonths: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="rc-fl" htmlFor="rc-f-prepaid-total">
+              선납 총액 (만원)
+            </label>
+            <input
+              id="rc-f-prepaid-total"
+              className="rc-input"
+              type="number"
+              inputMode="numeric"
+              min="0"
+              value={value.prepaidTotal}
+              onChange={(e) => onChange({ prepaidTotal: e.target.value })}
+            />
+          </div>
+        </>
       )}
 
       <div>

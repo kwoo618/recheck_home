@@ -113,3 +113,35 @@ confirmed → recorded (확정 취소)
 - 링크 크롤링 — 약관 위반. 사용자가 직접 붙여넣은 텍스트 파싱만 허용
 - `lib/rules.ts` 등 순수 모듈에 부수효과 도입
 - MVP Won't 범위 임의 구현 (로그인, 사진 첨부, 공유 링크, 핀 클러스터링, 등기부 OCR)
+
+## 확인 없이 진행해도 되는 것 / 반드시 물어볼 것
+
+### 스스로 판단해서 진행한다
+- 구현 방식, 파일 분할, 변수명, 컴포넌트 구조
+- 기존 문서·코드 사이 불일치에서 어느 쪽이 최신인지 명백할 때
+  (커밋 이력·주석 날짜로 판단 가능한 경우)
+- 프로토타입과 lib/*.ts가 다를 때 → 항상 lib/*.ts가 단일 소스
+- PRD와 CLAUDE.md가 다를 때 → 항상 CLAUDE.md가 우선
+- 테스트 추가, 리팩터링, 타입 보강
+
+### 멈추고 사용자에게 묻는다
+- 추측한 사실을 코드·문구에 넣어야 할 때 (R8)
+- API 계약(PRD §8.4)을 바꿔야 할 때
+- lib/rules.ts·finance.ts·geo.ts·db/schema.ts의 값을 바꿔야 할 때
+- MVP 범위(Must/Should/Could/Won't)를 넘는 기능이 필요할 때
+- 상태 전이 규칙을 바꿔야 할 때
+- 다른 세션 담당 디렉터리를 건드려야 할 때
+
+### 보고 형식
+"판단 필요"와 "완료 보고"를 분리해서 쓴다.
+판단 필요 항목이 없으면 "판단 필요 없음"이라고 명시한다.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

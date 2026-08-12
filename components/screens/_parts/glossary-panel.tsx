@@ -20,8 +20,9 @@ export function GlossaryPanel({ terms }: { terms: readonly string[] }) {
 
   return (
     <details className="rc-qbank rc-glossary">
+      {/* 문구는 확정본이다. 바꾸면 tests/glossary.test.ts 의 단언도 함께 고칠 것 */}
       <summary>
-        이런 말이 나왔어요 <SourceBadge kind="rule" />
+        여기서 알아야 할 부동산 용어 <SourceBadge kind="rule" />
       </summary>
       <div className="rc-qbank-body">
         <dl className="rc-glossary-list">

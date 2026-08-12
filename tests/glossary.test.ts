@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, it, expect } from 'vitest';
 import { GLOSSARY, GLOSSARY_BY_SCREEN } from '@/components/screens/_parts/glossary';
 import { containsBanned } from '@/lib/rules';
@@ -75,6 +76,35 @@ describe('팀원 확정 문안 — 한 글자도 바뀌지 않았는지', () => 
 
   it.each(Object.entries(CONFIRMED))('"%s"', (term, desc) => {
     expect(GLOSSARY[term]).toBe(desc);
+  });
+});
+
+describe('화면에 나가는 확정 문구 — 조용히 바뀌지 않게 고정한다', () => {
+  /**
+   * 컴포넌트 소스에서 문자열을 직접 확인한다.
+   * 이 파일은 .ts 라 JSX 를 렌더할 수 없고, 렌더 테스트는 임시로 만들었다가 지우기 때문에
+   * (docs/HANDOFF-FRONT.md §5) 확정 문구가 커밋에 남는 단언 없이 방치되고 있었다.
+   */
+  const read = (p: string) => readFileSync(p, 'utf8');
+
+  it('용어 패널 열림 문구', () => {
+    expect(read('components/screens/_parts/glossary-panel.tsx')).toContain(
+      '여기서 알아야 할 부동산 용어',
+    );
+  });
+
+  it('전환 계산기 합의 안내 — 계산 결과가 계약 조건이 아니라는 말이다', () => {
+    const src = read('components/screens/_parts/compare-finance.tsx').replace(/\s+/g, ' ');
+    expect(src).toContain('보증금과 월세를 바꾸려면 임대인과 임차인의 합의가 필요해요.');
+    expect(src).toContain('계산 결과는 참고용이며, 실제 조건은 합의로 정해집니다.');
+  });
+
+  it('두 문구에 판정성 표현이 없다 (R1)', () => {
+    const phrases = [
+      '여기서 알아야 할 부동산 용어',
+      '보증금과 월세를 바꾸려면 임대인과 임차인의 합의가 필요해요. 계산 결과는 참고용이며, 실제 조건은 합의로 정해집니다.',
+    ].join(' ');
+    expect(containsBanned(phrases)).toBe(false);
   });
 });
 

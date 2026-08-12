@@ -10,7 +10,7 @@ import { containsBanned } from '@/lib/rules';
  * 순수 함수 — 네트워크·DB 없이 테스트한다.
  */
 
-const DEAL_TYPES: DealType[] = ['전세', '월세', '매매'];
+const DEAL_TYPES: DealType[] = ['전세', '월세', '매매', '사글세'];
 const HEATINGS: Heating[] = ['개별난방', '중앙난방', '지역난방', '모름'];
 
 /**

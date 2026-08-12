@@ -38,7 +38,7 @@ import type { PropertyDTO, VisitCheckDTO, QuestionDTO, ActionResult } from '@/li
  *   syncVisitChecks()가 복구하도록 설계했다.
  */
 
-const DEAL_TYPES: DealType[] = ['전세', '월세', '매매'];
+const DEAL_TYPES: DealType[] = ['전세', '월세', '매매', '사글세'];
 const HEATINGS: Heating[] = ['개별난방', '중앙난방', '지역난방', '모름'];
 
 /* ══════════════════════════════════════════════════════════════
@@ -70,6 +70,21 @@ function toFloat(v: unknown, fallback = 0): number {
 }
 
 /**
+ * 사글세 선납 값 전용 정규화 — **없으면 0이 아니라 null이다.**
+ *
+ * toInt는 못 읽은 값을 0으로 떨어뜨리는데, 여기서는 그러면 안 된다.
+ * 0은 "선납 없음"이고 null은 "아직 입력하지 않음"이다. 없는 값을 0으로 접으면
+ * 화면이 "월 0만원"이라는, 사용자가 넣지 않은 숫자를 만들어낸다 (R8).
+ * calcPrepaid도 그래서 값이 없으면 계산하지 않고 {ok:false}를 돌려준다.
+ */
+function toNullableInt(v: unknown): number | null {
+  if (v === null || v === undefined || v === '') return null;
+  const n = typeof v === 'string' ? Number(v.replace(/,/g, '')) : Number(v);
+  if (!Number.isFinite(n)) return null;
+  return Math.max(0, Math.trunc(n));
+}
+
+/**
  * 정규화가 끝난 값이 DB 상한을 넘는지 확인한다.
  * 넘으면 사용자가 무엇을 고쳐야 하는지 알 수 있게 필드 이름을 넣어 돌려준다.
  *
@@ -84,16 +99,24 @@ function checkLimits(v: {
   age?: number;
   area?: number;
   floor?: string;
+  /** 사글세 전용. null은 "입력 안 함"이라 검사 대상이 아니다 */
+  prepaidMonths?: number | null;
+  prepaidTotal?: number | null;
 }): string | null {
-  const overInt: [string, number | undefined][] = [
+  const overInt: [string, number | undefined | null][] = [
     ['보증금', v.deposit],
     ['가격(월세·전세금)', v.price],
     ['관리비', v.mgmtFee],
     ['연식', v.age],
+    // 새 숫자 필드를 추가하면 반드시 여기에 넣는다. 빠뜨리면 Postgres 예외가
+    // ActionResult 계약을 깨고 프론트가 흰 화면(에러 바운더리)을 만난다.
+    ['선납 개월 수', v.prepaidMonths],
+    ['선납 총액', v.prepaidTotal],
   ];
 
   for (const [label, value] of overInt) {
-    if (value !== undefined && value > INT4_MAX) {
+    // null(입력 안 함)과 undefined(이번 수정에 안 넘어옴)는 둘 다 검사 대상이 아니다
+    if (value != null && value > INT4_MAX) {
       return `${label} 입력값이 너무 큽니다. 다시 확인해주세요.`;
     }
   }
@@ -174,6 +197,9 @@ function toPropertyDTO(row: PropertyRow): PropertyDTO {
     price: row.price,
     deposit: row.deposit,
     mgmtFee: row.mgmtFee,
+    // 사글세 전용. null을 0으로 접지 않는다 — 0("선납 없음")과 null("모름")은 다르다
+    prepaidMonths: row.prepaidMonths,
+    prepaidTotal: row.prepaidTotal,
     // numeric 컬럼은 드라이버에서 string으로 온다 → number로 정규화
     area: Number(row.area),
     age: row.age,
@@ -271,6 +297,13 @@ export type CreatePropertyInput = {
   price?: number | string;
   deposit?: number | string;
   mgmtFee?: number | string;
+  /**
+   * 사글세 전용. dealType이 '사글세'가 아니면 넘겨도 무시하고 null로 저장한다 —
+   * 거래유형을 바꿨을 때 이전 유형의 값이 남아 있으면 계산이 조용히 틀어진다.
+   * 빈 문자열·undefined는 0이 아니라 null이 된다 ("모름").
+   */
+  prepaidMonths?: number | string | null;
+  prepaidTotal?: number | string | null;
   area?: number | string;
   age?: number | string;
   heating?: Heating;
@@ -294,7 +327,7 @@ export async function createProperty(
   if (!name) return { ok: false, error: '매물 별칭을 입력해주세요.' };
 
   if (!DEAL_TYPES.includes(input.dealType)) {
-    return { ok: false, error: '거래유형을 선택해주세요. (전세 / 월세 / 매매)' };
+    return { ok: false, error: '거래유형을 선택해주세요. (전세 / 월세 / 매매 / 사글세)' };
   }
 
   const heating: Heating = HEATINGS.includes(input.heating as Heating)
@@ -325,6 +358,9 @@ export async function createProperty(
     price: toInt(input.price),
     deposit: toInt(input.deposit),
     mgmtFee: toInt(input.mgmtFee),
+    // 사글세가 아니면 값이 와도 버린다 — 유형과 맞지 않는 선납값이 남으면 계산이 틀어진다
+    prepaidMonths: input.dealType === '사글세' ? toNullableInt(input.prepaidMonths) : null,
+    prepaidTotal: input.dealType === '사글세' ? toNullableInt(input.prepaidTotal) : null,
     area: String(toFloat(input.area)), // numeric 컬럼은 string으로 넣는다
     age: toInt(input.age),
     heating,
@@ -342,6 +378,8 @@ export async function createProperty(
     age: values.age,
     area: Number(values.area),
     floor: values.floor,
+    prepaidMonths: values.prepaidMonths,
+    prepaidTotal: values.prepaidTotal,
   });
   if (limitError) return { ok: false, error: limitError };
 
@@ -402,7 +440,7 @@ export async function updateProperty(
 
   if (input.dealType !== undefined) {
     if (!DEAL_TYPES.includes(input.dealType)) {
-      return { ok: false, error: '거래유형을 선택해주세요. (전세 / 월세 / 매매)' };
+      return { ok: false, error: '거래유형을 선택해주세요. (전세 / 월세 / 매매 / 사글세)' };
     }
     patch.dealType = input.dealType;
   }
@@ -415,6 +453,22 @@ export async function updateProperty(
   if (input.price !== undefined) patch.price = toInt(input.price);
   if (input.deposit !== undefined) patch.deposit = toInt(input.deposit);
   if (input.mgmtFee !== undefined) patch.mgmtFee = toInt(input.mgmtFee);
+
+  /*
+   * ── 사글세 선납값 ──
+   * 수정 후의 거래유형(넘어왔으면 그것, 아니면 기존값)을 기준으로 판단한다.
+   * 사글세가 아니게 되면 남아 있던 선납값을 지운다 — 유형과 맞지 않는 값이 남으면
+   * 나중에 다시 사글세로 되돌렸을 때 옛 값이 되살아나 사용자가 넣지 않은 숫자가 계산에 들어간다.
+   */
+  const nextDealType = patch.dealType ?? current.dealType;
+
+  if (nextDealType !== '사글세') {
+    if (current.prepaidMonths !== null) patch.prepaidMonths = null;
+    if (current.prepaidTotal !== null) patch.prepaidTotal = null;
+  } else {
+    if (input.prepaidMonths !== undefined) patch.prepaidMonths = toNullableInt(input.prepaidMonths);
+    if (input.prepaidTotal !== undefined) patch.prepaidTotal = toNullableInt(input.prepaidTotal);
+  }
   if (input.area !== undefined) patch.area = String(toFloat(input.area));
   if (input.age !== undefined) patch.age = toInt(input.age);
   if (input.floor !== undefined) patch.floor = toText(input.floor);
@@ -455,6 +509,8 @@ export async function updateProperty(
     age: patch.age,
     area: patch.area === undefined ? undefined : Number(patch.area),
     floor: patch.floor,
+    prepaidMonths: patch.prepaidMonths,
+    prepaidTotal: patch.prepaidTotal,
   });
   if (limitError) return { ok: false, error: limitError };
 

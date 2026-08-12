@@ -54,6 +54,18 @@ export type PropertyDTO = {
   price: number;
   deposit: number;
   mgmtFee: number;
+
+  /**
+   * 사글세 전용 (2026-08-12 추가). 그 외 거래유형에서는 항상 null이다.
+   *
+   * ★ `number | null`이지 `number`가 아니다. **0과 null은 다르다** —
+   *   0은 "선납 없음", null은 "아직 입력하지 않음"이다.
+   *   null을 0으로 접어 표시하면 서비스가 "월 0원"이라는 숫자를 만들어낸 것이 된다 (R8).
+   * ★ 값이 있어도 다른 거래유형과 같은 기준으로 환산하지 않는다 — §사글세 참조.
+   */
+  prepaidMonths: number | null;
+  prepaidTotal: number | null;
+
   area: number;
   age: number;
   heating: Heating;

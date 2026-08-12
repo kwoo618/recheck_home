@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   calcFinance,
   calcConversion,
+  calcPrepaid,
   negotiationQuestion,
   FINANCE_DISCLAIMER,
   FINANCE_ASSUMPTIONS,
@@ -218,5 +219,102 @@ describe('R1 가드레일 — 금융 모듈은 판정성 표현을 만들지 않
     expect(FINANCE_DISCLAIMER).toContain('투자자문이 아닙니다');
     expect(FINANCE_ASSUMPTIONS).toContain('이자만 상환');
     expect(CONVERSION_NOTICE).toContain('강제력');
+  });
+});
+
+/* ══════════════════════════════════════════════════════════════
+   사글세 (2026-08-12 추가)
+
+   계산은 사용자 입력값의 나눗셈·덧셈 둘뿐이다. 재계약 가정·중개보수·공과금 추정을
+   넣지 않는다 — 넣는 순간 서비스가 기준을 제시한 것이 된다 (R1·R8).
+
+   ★ 단언 값을 손으로 계산해 적지 않는다. fixtures와 순수 함수에서 얻은 값으로 검증한다.
+     손계산을 적으면 함수가 틀렸을 때 테스트도 같이 틀리는 일이 생긴다.
+   ══════════════════════════════════════════════════════════════ */
+
+describe('calcPrepaid — 사글세', () => {
+  /** 팀원 테스트 안내문에 쓰는 값과 같은 규모 (보증금 100 / 6개월 300만원) */
+  const base = { dealType: '사글세' as const, price: 0, deposit: 100, mgmtFee: 5 };
+
+  it('월 환산액은 선납총액 ÷ 선납개월이다', () => {
+    const months = 6;
+    const total = 300;
+    const r = calcPrepaid({ ...base, prepaidMonths: months, prepaidTotal: total });
+
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.monthlyEquivalent).toBe(total / months);
+  });
+
+  it('처음 드는 돈은 보증금 + 선납총액이다', () => {
+    const deposit = 100;
+    const total = 300;
+    const r = calcPrepaid({ ...base, deposit, prepaidMonths: 6, prepaidTotal: total });
+
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.initialCash).toBe(deposit + total);
+  });
+
+  it('나누어떨어지지 않으면 소수 첫째 자리에서 반올림한다 (다른 계산과 같은 규칙)', () => {
+    const r = calcPrepaid({ ...base, prepaidMonths: 7, prepaidTotal: 300 });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.monthlyEquivalent).toBe(Math.round((300 / 7) * 10) / 10);
+  });
+
+  /**
+   * ★ 값이 없으면 0으로 채워 계산하지 않는다.
+   *   "월 0만원"은 사용자가 넣은 값이 아니라 우리가 만들어낸 숫자이고,
+   *   화면에 뜬 숫자는 "서비스가 알려준 값"으로 읽힌다 (R8).
+   */
+  it('선납 개월이 없거나 0이면 계산하지 않고 값으로 실패를 돌려준다', () => {
+    for (const months of [null, undefined, 0]) {
+      const r = calcPrepaid({ ...base, prepaidMonths: months, prepaidTotal: 300 });
+      expect(r).toEqual({ ok: false, reason: 'months_missing' });
+    }
+  });
+
+  it('선납 총액이 없거나 0이면 계산하지 않고 값으로 실패를 돌려준다', () => {
+    for (const total of [null, undefined, 0]) {
+      const r = calcPrepaid({ ...base, prepaidMonths: 6, prepaidTotal: total });
+      expect(r).toEqual({ ok: false, reason: 'total_missing' });
+    }
+  });
+
+  it('사글세가 아닌 매물에는 적용되지 않는다', () => {
+    for (const dealType of ['전세', '월세', '매매'] as const) {
+      const r = calcPrepaid({ dealType, price: 500, deposit: 100, mgmtFee: 5, prepaidMonths: 6, prepaidTotal: 300 });
+      expect(r).toEqual({ ok: false, reason: 'not_prepaid' });
+    }
+  });
+
+  it('예외를 던지지 않는다 — 실패는 항상 값이다 (calcConversion과 같은 규약)', () => {
+    expect(() => calcPrepaid({ ...base, prepaidMonths: 0, prepaidTotal: 0 })).not.toThrow();
+  });
+});
+
+describe('calcFinance — 사글세는 대출·이자 모델에 얹지 않는다', () => {
+  /**
+   * 선납금을 대출로 마련하는지, 그 금리가 얼마인지는 우리가 아는 사실이 아니다.
+   * 여기서 대출·이자를 지어내면 가정이 계산에 섞인다 (R8).
+   */
+  it('applicable:false 와 prepaid_separate 를 돌려준다', () => {
+    const r = calcFinance(
+      { dealType: '사글세', price: 0, deposit: 100, mgmtFee: 5, prepaidMonths: 6, prepaidTotal: 300 },
+      { cash: 500, loanCap: 1000, rate: 4 },
+    );
+    expect(r).toEqual({ applicable: false, reason: 'prepaid_separate' });
+  });
+});
+
+describe('사글세 안내 문구', () => {
+  it('가정 문구가 "환산하지 않는다"는 사실을 밝힌다 — 계산이 무엇을 하지 않는지 적어야 한다', () => {
+    expect(FINANCE_ASSUMPTIONS).toContain('사글세');
+    expect(FINANCE_ASSUMPTIONS).toContain('환산하지 않습니다');
+  });
+
+  it('사글세 관련 문구에도 판정성 표현이 없다 (R1)', () => {
+    expect(containsBanned(FINANCE_ASSUMPTIONS)).toBe(false);
   });
 });

@@ -1,4 +1,5 @@
 import { listProperties } from '@/lib/actions/properties';
+import { startNewSession } from '@/lib/actions/session';
 import { HomeScreen } from '@/components/screens/home-screen';
 import { PropertyMapPanel, toMapProperties } from '@/components/map';
 import { hrefFor } from './_lib/nav';
@@ -21,6 +22,8 @@ export default async function HomePage() {
       properties={properties}
       hrefFor={hrefFor}
       map={<PropertyMapPanel properties={toMapProperties(properties)} height={360} />}
+      // 데이터를 지우지 않는다 — 쿠키만 새 UUID로 바꿔 접근 경로를 끊는다 (lib/actions/session.ts)
+      onResetSession={startNewSession}
     />
   );
 }

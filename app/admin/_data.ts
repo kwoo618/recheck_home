@@ -20,17 +20,12 @@ import type { PropertyStatus, DealType } from '@/db/schema';
  */
 
 /**
- * 시연용 세션 식별 규약.
- *
- * users.id는 uuid 컬럼이라 'demo-…' 같은 문자열을 넣을 수 없다.
- * 그래서 **UUID 앞부분을 예약**해 구분한다. 시드 데이터는 이 접두사로 만든다.
- * 컬럼을 추가하면 마이그레이션이 되므로 규약으로 푼다.
+ * 시연용 세션 식별 규약은 `lib/demo-session.ts` 가 단일 소스다.
+ * 시딩 스크립트가 번들러 없이 임포트할 수 있어야 해서 의존성 없는 파일로 떼어 뒀다.
  */
-export const DEMO_SESSION_PREFIX = 'de100000';
+import { isDemoSession } from '@/lib/demo-session';
 
-export function isDemoSession(userId: string): boolean {
-  return userId.startsWith(DEMO_SESSION_PREFIX);
-}
+export { DEMO_SESSION_PREFIX, isDemoSession } from '@/lib/demo-session';
 
 /* ══════════════════════════════════════════════════════════════
    순수 헬퍼 — 무엇을 세는지가 여기서 결정된다

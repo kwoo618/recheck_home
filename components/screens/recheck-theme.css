@@ -355,113 +355,467 @@
    홈 랜딩 (매물 0건일 때만) — components/screens/_parts/home-landing.tsx
 
    ★ 새 CSS 파일을 만들지 않는다. 토큰이 갈라지면 랜딩과 제품의 색이 달라진다.
-   ★ 360px 우선. 넓은 화면은 min-width 로 얹는다.
-   ★ 애니메이션·라이브러리 없음. 여기 있는 것은 전부 정적 레이아웃이다.
+   ★ 랜딩 전용 토큰(--lp-*)은 .rc-lp 스코프 안에만 둔다. :root 를 건드리지 않는다.
+   ★ 360px 우선. 장식은 720px 이상에서만 얹는다.
+   ★ 모션은 진입 1회뿐이다. prefers-reduced-motion 에서 전부 꺼진다.
+
+   근거·판단은 docs/LANDING-REDESIGN.md 에 있다. 되돌리기 전에 그 문서를 볼 것.
    ══════════════════════════════════════════════════════════════ */
-.rc-lp-hero { padding: 24px 0 32px; }
-.rc-lp-title {
+
+.rc-lp {
+  --lp-deep: #14171c;
+  --lp-deep-line: #3a4049;
+  --lp-teal-deep: #0b3d38;
+  --lp-teal-bright: #9fe1cb;
+  --lp-rule: #dcd8cd;
+  --lp-mark: #c98a2e;
+  --lp-mark-hi: #e8a94a;
+  --lp-check: #b23a3a;
+  position: relative;
+}
+
+/* ══ 단계 레일 ════════════════════════════════════════════════
+   히어로 최상단. 이 페이지가 '찾기' 다음이고 '계약' 앞이라는 것을
+   글이 아니라 위치로 말한다. 순서가 있는 내용이라 ol 이다.
+   480px 미만에서는 세로로 쌓는다 — 가로로 세 칸이면 라벨이 접힌다. */
+.rc-lp-rail {
+  list-style: none;
+  margin: 0 0 26px;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.rc-lp-rail-item {
+  padding: 10px 13px;
+  border: 1px solid var(--rc-line);
+  border-radius: 8px;
+  background: var(--rc-surface);
+}
+.rc-lp-rail-n {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  margin-bottom: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.rc-lp-rail-label { display: block; font-size: 13px; }
+
+.rc-lp-rail-done { background: #efeee9; }
+.rc-lp-rail-done .rc-lp-rail-n { color: var(--rc-ink-faint); }
+.rc-lp-rail-done .rc-lp-rail-label {
+  color: var(--rc-ink-faint);
+  text-decoration: line-through;
+  text-decoration-color: var(--rc-line-strong);
+}
+
+.rc-lp-rail-now { background: var(--rc-teal); border-color: var(--rc-teal); }
+.rc-lp-rail-now .rc-lp-rail-n { color: var(--lp-teal-bright); }
+.rc-lp-rail-now .rc-lp-rail-label { color: #fff; font-weight: 800; }
+
+.rc-lp-rail-next {
+  background: repeating-linear-gradient(45deg, var(--rc-surface) 0 6px, #faf9f6 6px 12px);
+  border-style: dashed;
+  border-color: var(--rc-line-strong);
+}
+.rc-lp-rail-next .rc-lp-rail-n,
+.rc-lp-rail-next .rc-lp-rail-label { color: var(--rc-line-strong); }
+
+@media (min-width: 480px) {
+  .rc-lp-rail {
+    grid-template-columns: 1fr 1.15fr 1fr;
+    gap: 0;
+    border: 1px solid var(--rc-line);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .rc-lp-rail-item {
+    border: 0;
+    border-right: 1px solid var(--rc-line);
+    border-radius: 0;
+  }
+  .rc-lp-rail-item:last-child { border-right: 0; }
+}
+
+/* ══ 진입 모션 (히어로 · 로드 직후) ═══════════════════════════ */
+@keyframes rc-lp-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes rc-lp-draw {
+  from { stroke-dashoffset: 260; }
+  to   { stroke-dashoffset: 0; }
+}
+.rc-lp-rise {
+  opacity: 0;
+  animation: rc-lp-rise 0.62s cubic-bezier(0.16, 0.84, 0.36, 1) forwards;
+}
+.rc-lp-d1 { animation-delay: 0.05s; }
+.rc-lp-d2 { animation-delay: 0.18s; }
+.rc-lp-d3 { animation-delay: 0.31s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rc-lp-rise { opacity: 1; animation: none; }
+  .rc-lp-underline path { animation: none; stroke-dashoffset: 0; }
+}
+
+/* ══ 히어로 ═══════════════════════════════════════════════════ */
+.rc-lp-hero { position: relative; padding: 30px 0 40px; isolation: isolate; }
+
+/* 배경 조사지 — 720px 이상에서만. 좁은 화면에서는 본문과 겹친다 */
+.rc-lp-sheet {
+  display: none;
+  position: absolute;
+  z-index: -1;
   /*
-    360px 에서 "계약 전에 다시 확인하세요"(12자)가 한 줄에 들어가야 <br> 이 의도대로 접힌다.
-    6vw → 360px 에서 21.6px 이므로 22px 이 되고, 12자 × 22 + 여백 ≈ 278px < 328px(본문 폭)이다.
+    ★ right 를 음수로 고정하지 말 것. 원안은 -34px 였는데 768px 에서 가로 스크롤 14px 이 생겼다
+      (러너 실측: svg.rc-lp-sheet right=782 / vw=768).
+      .rc-wrap 은 max-width 940 + 좌우 20 = 980px 이 되어야 화면 가장자리에 여백이 생긴다.
+      그 아래에서는 본문 폭이 곧 화면 폭이라 조사지가 밖으로 나갈 자리가 없다.
+      그래서 여백이 생기는 1024px 부터만 삐져나가게 한다 — 넓은 화면의 의도는 그대로다.
   */
-  font-size: clamp(22px, 6vw, 30px);
+  right: 0;
+  top: 92px;
+  width: 268px;
+  opacity: 0.62;
+  pointer-events: none;
+  transition: transform 0.5s cubic-bezier(0.16, 0.84, 0.36, 1);
+}
+@media (min-width: 720px) {
+  .rc-lp-sheet { display: block; }
+  .rc-lp-hero { padding: 44px 0 56px; min-height: 400px; }
+  /* 레일은 전폭을 쓴다. 나머지 본문만 좁혀서 조사지 자리를 만든다 */
+  .rc-lp-hero > *:not(.rc-lp-sheet):not(.rc-lp-rail) { max-width: 62%; }
+}
+/* .rc-wrap 이 max-width(940+40)에 닿아 화면 가장자리에 여백이 생기는 폭부터만 밖으로 뺀다 */
+@media (min-width: 1024px) {
+  .rc-lp-sheet { right: -34px; }
+}
+.rc-lp-hero:hover .rc-lp-sheet { transform: translateY(-6px) rotate(1.2deg); }
+
+.rc-lp-eyebrow-top {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  color: var(--rc-teal);
+  margin-bottom: 14px;
+}
+.rc-lp-eyebrow-top::before { content: ''; width: 22px; height: 2px; background: var(--rc-teal); }
+
+.rc-lp-title {
+  font-size: clamp(26px, 7.4vw, 44px);
+  font-weight: 800;
+  letter-spacing: -1.2px;
+  line-height: 1.22;
+}
+/* 손으로 그은 밑줄 — 제목에서 유일하게 강조하는 두 단어 */
+.rc-lp-mark { position: relative; display: inline-block; }
+.rc-lp-underline {
+  position: absolute;
+  left: -3%;
+  bottom: -0.22em;
+  width: 106%;
+  height: 0.32em;
+  overflow: visible;
+  pointer-events: none;
+}
+/*
+  stroke-width: 9 는 실측으로 정한 값이다 (원안 7 → 9, 문서 §8-2).
+
+  preserveAspectRatio="none" 이라 가로는 글자 폭만큼 늘어나고, 세로는 viewBox(14) 대비
+  height(0.32em)로 눌린다. 그래서 화면에 보이는 두께가 뷰포트 폭이 아니라 **제목 글자 크기**를
+  따라간다 — 390px(제목 28.9px)에서 1440px(44px)의 약 66% 두께로 저절로 줄어든다.
+  덕분에 한 값으로 두 폭을 다 덮는다.
+
+  7 은 1440px 에서 실처럼 얇아 손으로 그은 강조로 읽히지 않았다. 9 는 1440 에서 또렷하고
+  390 에서도 과하지 않다. 11 이상은 글자 아랫부분을 침범한다.
+  ※ path 의 getBoundingClientRect() 로는 이 차이가 안 잡힌다(비균등 스케일이라 bbox 가
+    stroke 를 반영하지 않는다). 값을 바꿀 때는 반드시 렌더 이미지로 볼 것.
+*/
+.rc-lp-underline path {
+  fill: none;
+  stroke: var(--lp-mark);
+  stroke-width: 9;
+  stroke-linecap: round;
+  stroke-dasharray: 260;
+  stroke-dashoffset: 260;
+  animation: rc-lp-draw 0.9s ease-out 0.55s forwards;
+}
+
+.rc-lp-lead { font-size: 15.5px; color: var(--rc-ink-soft); line-height: 1.72; margin-top: 16px; }
+@media (min-width: 720px) { .rc-lp-lead { font-size: 16.5px; } }
+
+.rc-lp-cta { margin-top: 22px; }
+.rc-lp-cta.rc-btn-primary {
+  padding: 13px 26px;
+  font-size: 15px;
+  border-radius: 12px;
+  transition: transform 0.16s ease, background 0.16s ease;
+}
+.rc-lp-cta.rc-btn-primary:hover { transform: translateY(-2px); }
+.rc-lp-cta.rc-btn-primary::after {
+  content: '→';
+  display: inline-block;
+  margin-left: 2px;
+  transition: transform 0.2s ease;
+}
+.rc-lp-cta.rc-btn-primary:hover::after { transform: translateX(4px); }
+.rc-lp-note { font-size: 12.5px; color: var(--rc-ink-faint); margin-top: 11px; }
+
+/* ══ 섹션 공통 ════════════════════════════════════════════════ */
+.rc-lp-sec { padding: 38px 0 32px; border-top: 1px solid var(--rc-line); }
+.rc-lp-h2 {
+  font-size: clamp(19px, 5.2vw, 26px);
   font-weight: 800;
   letter-spacing: -0.6px;
-  line-height: 1.3;
+  line-height: 1.36;
 }
-.rc-lp-lead {
-  font-size: 15px;
-  color: var(--rc-ink-soft);
-  line-height: 1.65;
-  margin-top: 12px;
-}
-.rc-lp-cta { margin-top: 18px; }
-.rc-lp-note { font-size: 12.5px; color: var(--rc-ink-faint); margin-top: 10px; }
+.rc-lp-sec-lead { font-size: 14px; color: var(--rc-ink-soft); line-height: 1.68; margin-top: 10px; }
 
-.rc-lp-sec { padding: 30px 0; border-top: 1px solid var(--rc-line); }
-.rc-lp-h2 {
-  font-size: clamp(18px, 4.8vw, 22px);
-  font-weight: 800;
-  letter-spacing: -0.3px;
-  line-height: 1.4;
-}
-.rc-lp-sec-lead {
-  font-size: 13.5px;
-  color: var(--rc-ink-soft);
-  line-height: 1.6;
-  margin-top: 8px;
-}
-
-.rc-lp-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
-  margin-top: 16px;
+/* ══ 3단계 — 카드가 아니라 타임라인 ══════════════════════════
+   순서가 있는 내용이라 선과 번호가 정보다. 장식이 아니다.
+   마지막 항목의 점만 비어 있다(rc-lp-open) — 여기서 끝나지 않는다는 뜻이다. */
+ol.rc-lp-grid {
   list-style: none;
-  padding: 0;
+  padding: 0 0 0 30px;
+  margin: 24px 0 0;
+  display: grid;
+  gap: 0;
+  position: relative;
 }
-/* 240px 아래로는 카드 안이 읽히지 않는다 — 그 전까지는 한 칸으로 둔다 */
-@media (min-width: 720px) {
-  .rc-lp-grid { grid-template-columns: repeat(3, 1fr); }
-  .rc-lp-grid-2 { grid-template-columns: repeat(2, 1fr); }
+ol.rc-lp-grid::before {
+  content: '';
+  position: absolute;
+  left: 9px;
+  top: 12px;
+  bottom: 30px;
+  width: 2px;
+  background: repeating-linear-gradient(to bottom, var(--rc-line-strong) 0 5px, transparent 5px 11px);
 }
-.rc-lp-card {
-  background: var(--rc-surface);
-  border: 1px solid var(--rc-line);
-  border-radius: 14px;
-  padding: 16px;
+ol.rc-lp-grid > .rc-lp-card {
+  position: relative;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  padding: 0 0 28px;
 }
+ol.rc-lp-grid > .rc-lp-card:last-child { padding-bottom: 4px; }
+ol.rc-lp-grid > .rc-lp-card::before {
+  content: '';
+  position: absolute;
+  left: -30px;
+  top: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--rc-paper);
+  border: 2px solid var(--rc-teal);
+  box-sizing: border-box;
+}
+ol.rc-lp-grid > .rc-lp-card::after {
+  content: '';
+  position: absolute;
+  left: -24px;
+  top: 10px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--rc-teal);
+  transition: transform 0.2s ease;
+}
+ol.rc-lp-grid > .rc-lp-card:hover::after { transform: scale(1.5); }
+/* 마지막 단계 — 속이 빈 점선 원. 결정은 사용자 몫이라 타임라인이 닫히지 않는다 */
+ol.rc-lp-grid > .rc-lp-open::before { border-style: dashed; border-color: var(--rc-line-strong); }
+ol.rc-lp-grid > .rc-lp-open::after { display: none; }
+
+.rc-lp-step-head { display: flex; align-items: flex-start; gap: 12px; }
+.rc-lp-step-icon { flex-shrink: 0; width: 32px; height: 32px; color: var(--rc-teal); opacity: 0.9; }
+@media (max-width: 419px) { .rc-lp-step-icon { display: none; } }
+
 .rc-lp-eyebrow {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   flex-wrap: wrap;
-  margin-bottom: 8px;
+  margin-bottom: 5px;
   min-height: 20px;
 }
 .rc-lp-step-n {
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.6px;
+  letter-spacing: 1.1px;
   color: var(--rc-teal);
+  font-variant-numeric: tabular-nums;
 }
-.rc-lp-step-when { font-size: 11.5px; color: var(--rc-ink-faint); }
-.rc-lp-card-title { font-size: 15px; font-weight: 700; letter-spacing: -0.2px; }
+.rc-lp-step-when {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--rc-ink-faint);
+  background: var(--rc-surface);
+  border: 1px solid var(--rc-line);
+  border-radius: 20px;
+  padding: 3px 10px;
+}
+.rc-lp-card-title { font-size: 17px; font-weight: 700; letter-spacing: -0.4px; }
 .rc-lp-card-body {
   display: block;
-  font-size: 13.5px;
+  font-size: 14px;
   color: var(--rc-ink-soft);
-  line-height: 1.65;
+  line-height: 1.7;
   margin-top: 6px;
 }
 
-/* '하지 않는 것' — 카드가 아니라 목록이다. 세로 길이를 아끼되 접지는 않는다 */
-.rc-lp-limits { list-style: none; padding: 0; margin: 16px 0 0; }
+/* ══ 규칙과 AI — 배지 색을 카드 전체로 확장한다 ════════════════ */
+.rc-lp-grid-2 { display: grid; grid-template-columns: 1fr; gap: 12px; margin-top: 22px; }
+@media (min-width: 640px) { .rc-lp-grid-2 { grid-template-columns: 1fr 1fr; gap: 14px; } }
+
+.rc-lp-grid-2 .rc-lp-card {
+  position: relative;
+  border: 0;
+  border-radius: 16px;
+  padding: 20px 20px 22px;
+  overflow: hidden;
+  transition: transform 0.18s ease;
+}
+.rc-lp-grid-2 .rc-lp-card:hover { transform: translateY(-3px); }
+.rc-lp-grid-2 .rc-lp-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  border: 1px solid rgb(0 0 0 / 7%);
+  pointer-events: none;
+}
+.rc-lp-card-rule { background: var(--rc-teal-soft); }
+.rc-lp-card-ai { background: var(--rc-violet-soft); }
+.rc-lp-card-rule .rc-lp-card-title { color: var(--lp-teal-deep); }
+.rc-lp-card-ai .rc-lp-card-title { color: var(--rc-violet); }
+.rc-lp-card-rule .rc-lp-card-body,
+.rc-lp-card-ai .rc-lp-card-body { color: var(--rc-ink); opacity: 0.78; }
+
+/* ══ 하지 않는 것 — 반전 블록 ═════════════════════════════════
+   페이지에서 유일한 다크 면이다. 제품의 논지가 여기 있어서 시선을 여기 세운다.
+   발표 논지 ② 의 주 사진(landing-*-limits.png)이 잘리는 자리이기도 하다. */
+.rc-lp-sec-dark {
+  background: var(--lp-deep);
+  border: 0;
+  border-radius: 20px;
+  padding: 36px 22px 32px;
+  margin-top: 32px;
+  color: #f2f0ea;
+  position: relative;
+  overflow: hidden;
+}
+@media (min-width: 720px) { .rc-lp-sec-dark { padding: 52px 42px 46px; } }
+.rc-lp-sec-dark::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(to bottom, transparent 0 33px, var(--lp-deep-line) 33px 34px);
+  opacity: 0.34;
+  pointer-events: none;
+}
+.rc-lp-sec-dark > * { position: relative; }
+.rc-lp-sec-dark .rc-lp-h2 { color: #fff; }
+.rc-lp-sec-dark .rc-lp-sec-lead { color: #b3b8c0; }
+.rc-lp-sec-dark .rc-lp-card-body { color: #a9aeb7; font-size: 13.5px; }
+
+.rc-lp-limits { list-style: none; padding: 0; margin: 24px 0 0; }
 .rc-lp-limit {
   display: flex;
-  gap: 12px;
-  padding: 14px 0;
-  border-top: 1px dashed var(--rc-line-strong);
+  gap: 16px;
+  padding: 17px 0;
+  border-top: 1px solid var(--lp-deep-line);
+  transition: transform 0.22s ease;
 }
+.rc-lp-limit:hover { transform: translateX(5px); }
 .rc-lp-limit-n {
-  font-size: 12px;
+  font-size: 26px;
   font-weight: 800;
-  color: var(--rc-ink-faint);
+  line-height: 1;
+  color: var(--lp-mark);
   flex-shrink: 0;
-  padding-top: 2px;
+  width: 34px;
   font-variant-numeric: tabular-nums;
+  letter-spacing: -1px;
+  transition: color 0.22s ease, transform 0.22s ease;
 }
+.rc-lp-limit:hover .rc-lp-limit-n { color: var(--lp-mark-hi); transform: scale(1.1); }
 .rc-lp-limit-text { min-width: 0; }
-.rc-lp-limit-title { display: block; font-size: 14px; font-weight: 700; }
-
-.rc-lp-final {
-  margin-top: 30px;
-  padding: 28px 20px 30px;
-  border-radius: 14px;
-  background: var(--rc-teal-soft);
-  text-align: center;
+.rc-lp-limit-title {
+  display: block;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: #fff;
 }
-.rc-lp-final .rc-lp-sec-lead { color: var(--rc-teal); }
+
+/* ══ 마지막 CTA ═══════════════════════════════════════════════ */
+.rc-lp-final {
+  margin-top: 26px;
+  padding: 40px 22px 42px;
+  border-radius: 20px;
+  background: var(--rc-teal);
+  text-align: center;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+.rc-lp-final::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(-45deg, rgb(255 255 255 / 5%) 0 2px, transparent 2px 12px);
+  pointer-events: none;
+}
+.rc-lp-final > * { position: relative; }
+.rc-lp-final .rc-lp-h2 { color: #fff; }
+.rc-lp-final .rc-lp-sec-lead { color: rgb(255 255 255 / 82%); }
+/* 틸 바닥 위에서는 흰 버튼이 대비가 가장 크다 */
+.rc-lp-final .rc-lp-cta.rc-btn-primary {
+  background: #fff;
+  border-color: #fff;
+  color: var(--rc-teal);
+  margin-top: 20px;
+}
+.rc-lp-final .rc-lp-cta.rc-btn-primary:hover { background: #fff; color: var(--lp-teal-deep); }
+
+/* ══ 스크롤 진입 ══════════════════════════════════════════════
+   .rc-lp-js 는 ScrollReveal 이 마운트될 때만 붙는다.
+   ★ JS 실패 · 봇 · reduced-motion 에서는 이 블록이 통째로 적용되지 않아 전부 그냥 보인다.
+     숨기는 CSS 를 .rc-lp-js 안에만 둔 이유다 — 스크립트가 안 돌 때 백지가 되면 안 된다. */
+.rc-lp-js [data-reveal] {
+  opacity: 0;
+  transform: translateY(20px);
+  transition:
+    opacity 0.72s cubic-bezier(0.16, 0.84, 0.36, 1),
+    transform 0.72s cubic-bezier(0.16, 0.84, 0.36, 1);
+  will-change: opacity, transform;
+}
+.rc-lp-js [data-reveal].rc-in { opacity: 1; transform: none; }
+.rc-lp-js [data-delay='1'] { transition-delay: 0.1s; }
+.rc-lp-js [data-delay='2'] { transition-delay: 0.2s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .rc-lp-js [data-reveal] { opacity: 1; transform: none; transition: none; }
+  .rc-lp-sheet,
+  .rc-lp-limit,
+  .rc-lp-limit-n,
+  .rc-lp-cta.rc-btn-primary::after { transition: none; }
+}
+
+/* 터치 기기에서는 호버가 '눌린 채 남는' 상태가 된다 — 전부 끈다 */
+@media (hover: none) {
+  .rc-lp-hero:hover .rc-lp-sheet { transform: none; }
+  .rc-lp-limit:hover { transform: none; }
+  .rc-lp-limit:hover .rc-lp-limit-n { color: var(--lp-mark); transform: none; }
+  .rc-lp-grid-2 .rc-lp-card:hover { transform: none; }
+  .rc-lp-cta.rc-btn-primary:hover { transform: none; }
+}
+
 
 /* ── 섹션 제목 ──────────────────────────────────────────────── */
 .rc-h2 { font-size: 19px; font-weight: 800; letter-spacing: -0.2px; }

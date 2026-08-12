@@ -234,6 +234,13 @@ async function shootViewport(browser: Awaited<ReturnType<typeof chromium.launch>
     viewport: { width: vp.width, height: vp.height },
     locale: 'ko-KR',
     timezoneId: 'Asia/Seoul',
+    /*
+      ★ 지우지 말 것. 랜딩의 스크롤 진입 효과가 화면 밖 섹션을 opacity:0 으로 두는데,
+        러너는 스크롤하지 않고 fullPage 로 한 번에 찍는다. 이 옵션이 없으면 첫 화면 아래가
+        전부 백지로 찍힌다 — 특히 다크 블록은 발표 논지 ②의 주 사진이다.
+        ScrollReveal 이 이 설정을 보고 아예 빠지므로(.rc-lp-js 가 안 붙는다) 전부 보이는 상태가 된다.
+    */
+    reducedMotion: 'reduce',
   });
 
   // 세션 쿠키를 직접 심는다. proxy.ts가 UUID 형식만 보고 통과시킨다.

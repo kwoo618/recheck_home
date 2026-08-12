@@ -57,6 +57,9 @@ type Fixture = {
   safetyChecks?: Record<string, boolean>;
   /** 좌표를 조회하지 않고 null로 둔다 ("위치 미지정" 그룹 확인용) */
   skipGeocode?: boolean;
+  /** 사글세 전용. 그 외 유형은 넣지 않는다 (null로 저장된다) */
+  prepaidMonths?: number;
+  prepaidTotal?: number;
 };
 
 const FIXTURES: Fixture[] = [
@@ -123,6 +126,25 @@ const FIXTURES: Fixture[] = [
     floor: '11',
     status: 'prep',
     skipGeocode: true,
+  },
+  {
+    // 대구대 인근 자취방 상당수가 사글세다. 화면이 이 유형을 어떻게 그리는지 봐야 한다.
+    id: QA_PROPERTY_IDS.prepaid,
+    name: '사글세 E · 대구대로',
+    address: '경상북도 경산시 진량읍 대구대로 216',
+    addressDetail: '',
+    dealType: '사글세',
+    price: 0,          // 차임을 선납하므로 월세액이 없다
+    deposit: 100,
+    mgmtFee: 5,
+    area: 19,
+    age: 22,
+    heating: '개별난방',
+    floor: '3',
+    // 안전 점검 화면은 방문 기록 이후에 열린다 — 사글세 전용 5항목을 보려면 recorded 여야 한다
+    status: 'recorded',
+    prepaidMonths: 6,
+    prepaidTotal: 300, // 월 환산 50만원 · 처음 드는 돈 400만원
   },
 ];
 
@@ -221,6 +243,9 @@ async function seed(): Promise<void> {
       price: f.price,
       deposit: f.deposit,
       mgmtFee: f.mgmtFee,
+      // 사글세가 아니면 null이다. 0("선납 없음")과 null("해당 없음")은 다르다
+      prepaidMonths: f.prepaidMonths ?? null,
+      prepaidTotal: f.prepaidTotal ?? null,
       area: String(f.area), // numeric 컬럼은 드라이버에 string으로 넘긴다
       age: f.age,
       heating: f.heating,

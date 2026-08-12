@@ -62,6 +62,20 @@ const logs: LogEntry[] = [];
 const failures: Failure[] = [];
 const overflows: Overflow[] = [];
 
+/**
+ * 보고서에 적을 경로에서 쿼리스트링 **값**을 지운다.
+ *
+ * `/admin?key=…`의 토큰이 그대로 적히면 **커밋되는 파일(`console-errors.md`)에 비밀값이 남는다.**
+ * 경로는 실패 목록에만 찍히므로 평소에는 드러나지 않다가, 어느 날 /admin이 한 번 실패하는
+ * 순간 토큰이 저장소로 들어간다. 값을 아예 만들지 않는 편이 확실하다.
+ */
+function maskPath(path: string): string {
+  const q = path.indexOf('?');
+  if (q === -1) return path;
+  const keys = [...new URLSearchParams(path.slice(q + 1)).keys()];
+  return `${path.slice(0, q)}?${keys.map((k) => `${k}=***`).join('&')}`;
+}
+
 /** 브라우저가 내는 잡음 중 우리 코드와 무관한 것 — 보고서에서 뺀다. */
 const NOISE = [
   'Download the React DevTools',
@@ -75,7 +89,7 @@ function isNoise(text: string): boolean {
 function attachListeners(page: Page, viewport: string, target: Target): void {
   const record = (kind: LogEntry['kind'], text: string) => {
     if (isNoise(text)) return;
-    logs.push({ viewport, target: target.name, path: target.path, kind, text: text.slice(0, 500) });
+    logs.push({ viewport, target: target.name, path: maskPath(target.path), kind, text: text.slice(0, 500) });
   };
 
   page.on('console', (msg: ConsoleMessage) => {
@@ -249,12 +263,12 @@ async function shootViewport(browser: Awaited<ReturnType<typeof chromium.launch>
       const status = response?.status() ?? 0;
 
       if (!response) {
-        failures.push({ viewport: vp.name, target: target.name, path: target.path, reason: '응답 없음' });
+        failures.push({ viewport: vp.name, target: target.name, path: maskPath(target.path), reason: '응답 없음' });
       } else if (status !== expected) {
         failures.push({
           viewport: vp.name,
           target: target.name,
-          path: target.path,
+          path: maskPath(target.path),
           reason: `HTTP ${status} (기대 ${expected})`,
         });
       }
@@ -269,7 +283,7 @@ async function shootViewport(browser: Awaited<ReturnType<typeof chromium.launch>
       failures.push({
         viewport: vp.name,
         target: target.name,
-        path: target.path,
+        path: maskPath(target.path),
         reason: `로드 실패: ${(err as Error).message.split('\n')[0]}`,
       });
     } finally {
@@ -322,7 +336,7 @@ async function shootPdfs(browser: Awaited<ReturnType<typeof chromium.launch>>) {
       failures.push({
         viewport: 'pdf',
         target: target.name,
-        path: target.path,
+        path: maskPath(target.path),
         reason: `PDF 실패: ${(err as Error).message.split('\n')[0]}`,
       });
     } finally {
@@ -401,10 +415,10 @@ function buildReport(timings: Record<string, number>): string {
     lines.push('없음.');
   } else {
     // 같은 메시지가 뷰포트마다 반복되므로 메시지 기준으로 묶는다.
-    const grouped = new Map<string, { kind: string; where: Set<string>; count: number }>();
+    const grouped = new Map<string, { kind: string; text: string; where: Set<string>; count: number }>();
     for (const l of logs) {
-      const key = `${l.kind} ${l.text}`;
-      const g = grouped.get(key) ?? { kind: l.kind, where: new Set<string>(), count: 0 };
+      const key = JSON.stringify([l.kind, l.text]);
+      const g = grouped.get(key) ?? { kind: l.kind, text: l.text, where: new Set<string>(), count: 0 };
       g.where.add(`${l.target}@${l.viewport}`);
       g.count += 1;
       grouped.set(key, g);
@@ -412,12 +426,11 @@ function buildReport(timings: Record<string, number>): string {
 
     lines.push(`총 ${logs.length}건 / 서로 다른 메시지 ${grouped.size}종.`);
     lines.push('');
-    for (const [key, g] of grouped) {
-      const text = key.split(' ')[1];
+    for (const g of grouped.values()) {
       lines.push(`### \`${g.kind}\` × ${g.count}`);
       lines.push('');
       lines.push('```');
-      lines.push(text);
+      lines.push(g.text);
       lines.push('```');
       lines.push('');
       lines.push(`발생 위치: ${[...g.where].join(', ')}`);

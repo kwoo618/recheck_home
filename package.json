@@ -12,7 +12,7 @@
     "test:watch": "vitest",
     "qa:seed": "node --conditions=react-server --env-file=.env.local tests/e2e/seed.mts",
     "qa:clean": "node --conditions=react-server --env-file=.env.local tests/e2e/seed.mts --clean",
-    "qa:shoot": "node tests/e2e/shoot.mts",
+    "qa:shoot": "node --env-file=.env.local tests/e2e/shoot.mts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio"

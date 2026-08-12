@@ -26,6 +26,8 @@ export const QA_PROPERTY_IDS = {
   empty: '5c1e0a7e-0003-4000-8000-000000000003',
   /** ④ 공백 없는 30자 이름 + 좌표 없음 — 넘침·"위치 미지정" 확인용 */
   overflow: '5c1e0a7e-0004-4000-8000-000000000004',
+  /** ⑤ 사글세 — 대구대 인근 자취방 상당수가 이 유형이다 (2026-08-12 추가) */
+  prepaid: '5c1e0a7e-0005-4000-8000-000000000005',
 } as const;
 
 export const BASE_URL = process.env.QA_BASE_URL ?? 'http://localhost:3000';
@@ -64,7 +66,21 @@ export const TARGETS: Target[] = [
   { name: '08-safety-monthly', path: `/property/${P.monthly}/safety`, note: '안전 점검 — 필수 일부 미확인(경고 배너)' },
   { name: '09-contract-monthly', path: `/property/${P.monthly}/contract`, note: '계약 당일·계약 후' },
   { name: '10-sheet-overflow', path: `/property/${P.overflow}/sheet`, note: '조사지 — 30자 공백 없는 이름(넘침 확인)' },
+  { name: '10b-confirm-prepaid', path: `/property/${P.prepaid}/confirm`, note: '정보 확인 — 사글세' },
+  { name: '10c-safety-prepaid', path: `/property/${P.prepaid}/safety`, note: '안전 점검 — 사글세 전용 5항목' },
   { name: '11-not-found', path: '/no-such-route', expectStatus: 404, note: '404' },
+  /*
+   * /admin 은 ADMIN_TOKEN 이 있을 때만 찍는다.
+   * 토큰이 없으면 페이지가 notFound() 로 막히는 것이 정상이라 404 를 실패로 보지 않는다.
+   * 발표 후 토큰을 지우면 이 대상은 자동으로 목록에서 빠진다.
+   */
+  ...(process.env.ADMIN_TOKEN
+    ? [{
+        name: '12-admin',
+        path: `/admin?key=${encodeURIComponent(process.env.ADMIN_TOKEN)}`,
+        note: '집계 대시보드 (발표용 임시 인증)',
+      }]
+    : []),
 ];
 
 /** 인쇄 레이아웃 2종 — 별도 라우트가 없고 화면 안에서 window.print()로 띄운다. */

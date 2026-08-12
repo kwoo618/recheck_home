@@ -14,6 +14,8 @@ import {
 import type { ActionResult, PropertyDTO } from '@/lib/types';
 import { SourceBadge } from './source-badge';
 import { PREPAID_MONTHLY_NOTE, formatPrepaidMonthly } from './format';
+import { GlossaryPanel } from './glossary-panel';
+import { GLOSSARY_BY_SCREEN } from './glossary';
 
 /**
  * 비교 ③ 금융·현금흐름 + 보증금↔월세 전환 계산기 (PRD §6)
@@ -403,6 +405,9 @@ export function CompareFinance({
             <li>{CONVERSION_NOTICE}</li>
           </ul>
         </div>
+
+        {/* 전세가율·전월세전환율·기회비용은 이 화면과 계산 가정 문구에 그대로 나온다 */}
+        <GlossaryPanel terms={GLOSSARY_BY_SCREEN.finance} />
       </div>
     </section>
   );

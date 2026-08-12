@@ -10,6 +10,8 @@ import type { CheckGroup } from '@/lib/actions/checks';
 import { ScreenShell } from './_parts/screen-shell';
 import { PropertyHeader } from './_parts/property-header';
 import { SourceBadge } from './_parts/source-badge';
+import { GlossaryPanel } from './_parts/glossary-panel';
+import { GLOSSARY_BY_SCREEN } from './_parts/glossary';
 import { useMutations } from './_parts/use-mutations';
 import { SaveStatus } from './_parts/save-status';
 import { SafetyPrint } from './safety-print';
@@ -131,6 +133,12 @@ export function ContractScreen({ property: p, hrefFor, onToggleCheck, onSetStatu
           전입신고와 확정일자는 보증금 보호(대항력·우선변제권)의 핵심이에요. 입주 당일 바로 처리하는
           것을 권장합니다.
         </p>
+        {/*
+          위 문장이 대항력·우선변제권을 설명 없이 괄호 안에 던지고 있었다.
+          절차 항목(AFTER_STEPS)에는 description 필드가 없어 규칙 쪽에 설명을 붙일 자리가 없다 —
+          화면이 보조 설명을 덧붙이는 것이 유일한 경로다. (HANDOFF-FRONT §7.3)
+        */}
+        <GlossaryPanel terms={GLOSSARY_BY_SCREEN.contract} />
 
         {/* 확정하면 비교에서 빠지므로, 잘못 눌렀을 때 되돌아갈 길을 아래쪽에도 둔다 */}
         <div className="rc-next-step">

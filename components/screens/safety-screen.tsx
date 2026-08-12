@@ -154,9 +154,12 @@ export function SafetyScreen({ property: p, hrefFor, onToggleCheck, onSetStatus 
                   disabled={isBusy(`safety-${r.id}`)}
                   onChange={(e) => toggle(r.id, e.target.checked)}
                 />
-                <span>
+                {/* <label> 의 내용 모델은 phrasing content 라 <div> 를 쓸 수 없다.
+                    제목·설명의 줄바꿈은 .rc-chk-t/.rc-chk-d 의 display:block 이 맡는다 */}
+                <span className="rc-chk-body">
                   <span className="rc-chk-t">
-                    {r.title} {r.critical && <span className="rc-required">필수</span>}
+                    {r.title}
+                    {r.critical && <span className="rc-required">필수</span>}
                   </span>
                   <span className="rc-chk-d">{r.description}</span>
                 </span>

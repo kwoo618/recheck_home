@@ -144,6 +144,25 @@ function PropertyCard({ property: p, hrefFor }: { property: PropertyDTO; hrefFor
         >
           {action}
         </Link>
+        {/*
+          조사지를 완성한 뒤에는 홈에서 조사지로 가는 길이 없었다. 국면 A 스텝은 정보 확인으로 가고,
+          카드의 주 행동은 방문 기록이라, 다시 인쇄만 하려는 사람이 방문 기록 화면을 거쳐야 했다.
+
+          ★ 주 행동을 가리지 않도록 ghost 로 두고 주 버튼 뒤에 놓는다. 라벨도 짧게 잡아 좁은 폭에서
+            주 버튼과 같은 줄에 남게 한다 — 360px 기준 카드 안쪽 296px 에 상태 배지(약 72px) +
+            주 버튼(최대 약 115px, '안전 점검 하기') + 이것(약 70px) + 여백 16px ≈ 273px.
+            넘치더라도 .rc-prop-actions 는 flex-wrap 이라 줄이 바뀔 뿐 넘치지 않는다.
+          ★ prep 에는 두지 않는다 — 아직 조사지를 완성하지 않았고, 주 행동(정보 확인)이 그리로 간다.
+        */}
+        {(p.status === 'ready' || p.status === 'recorded' || p.status === 'confirmed') && (
+          <Link
+            href={hrefFor('sheet', p.id)}
+            className="rc-btn rc-btn-sm rc-btn-ghost"
+            aria-label={`${p.name} 조사지 다시 보기·인쇄`}
+          >
+            조사지
+          </Link>
+        )}
       </div>
       {/*
         제외한 매물은 되살릴 수 있는데(excluded → prep) 그 길이 정보 확인 화면 안에 숨어 있다.

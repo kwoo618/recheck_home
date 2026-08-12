@@ -220,7 +220,7 @@ export function SurveySheetScreen({
                 <h3 className="rc-group-label">{category}</h3>
                 {items.map((v) => (
                   <div key={v.id} className="rc-chk-item">
-                    <div>
+                    <div className="rc-chk-body">
                       <div className="rc-chk-t">{v.title}</div>
                       {v.description && <div className="rc-chk-d">{v.description}</div>}
                     </div>
@@ -289,7 +289,7 @@ export function SurveySheetScreen({
                           disabled={isBusy(`bank-${text}`)}
                           onChange={(e) => run(`bank-${text}`, () => onToggleBankQuestion(p.id, text, e.target.checked))}
                         />
-                        <span className="rc-chk-t" style={{ fontWeight: 500 }}>
+                        <span className="rc-chk-t rc-chk-body" style={{ fontWeight: 500 }}>
                           {text}
                         </span>
                       </label>
@@ -342,7 +342,7 @@ export function SurveySheetScreen({
               disabled={isBusy('no-concern')}
               onChange={(e) => run('no-concern', () => onSetNoConcern(p.id, e.target.checked))}
             />
-            <span className="rc-chk-t" style={{ fontWeight: 500 }}>
+            <span className="rc-chk-t rc-chk-body" style={{ fontWeight: 500 }}>
               따로 걱정되는 건 없어요
             </span>
           </label>

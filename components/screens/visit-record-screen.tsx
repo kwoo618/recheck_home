@@ -231,16 +231,22 @@ export function VisitRecordScreen({
                       </button>
                     </div>
                   ) : (
-                    <p className="rc-field-note">
-                      답을 듣지 못함{' '}
+                    /*
+                      상태와 동작을 형태로 가른다 (FB-03).
+                      전에는 둘 다 rc-field-note / rc-linkish 라 글꼴·크기·색이 같아 폰에서 둘 다
+                      버튼으로 보였다. 상태는 테두리 없는 알약, 동작은 테두리 있는 버튼이다.
+                    */
+                    <div className="rc-noanswer">
+                      <span className="rc-state-pill">답을 듣지 못함</span>
                       <button
                         type="button"
-                        className="rc-linkish"
+                        className="rc-btn rc-btn-sm rc-btn-danger"
+                        aria-label={`${q.text} — 답을 듣지 못함 취소`}
                         onClick={() => setNoAnswers((prev) => ({ ...prev, [q.id]: false }))}
                       >
                         취소
                       </button>
-                    </p>
+                    </div>
                   )}
                 </div>
               );

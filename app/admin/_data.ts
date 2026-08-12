@@ -3,6 +3,7 @@ import 'server-only';
 import { db } from '@/db';
 import { properties, users, questions, visitChecks, aiLogs } from '@/db/schema';
 import { calcPrepaid } from '@/lib/finance';
+import { selectSafetyRules } from '@/lib/rules';
 import type { PropertyStatus, DealType } from '@/db/schema';
 
 /**
@@ -114,6 +115,7 @@ export async function loadAdminStats() {
   const [propRows, userRows, questionRows, checkRows, logRows] = await Promise.all([
     db
       .select({
+        id: properties.id,
         userId: properties.userId,
         status: properties.status,
         dealType: properties.dealType,
@@ -124,6 +126,10 @@ export async function loadAdminStats() {
         prepaidTotal: properties.prepaidTotal,
         latitude: properties.latitude,
         address: properties.address,
+        // 안전 점검 항목 수는 규칙에 태워 센다 — 저장 테이블이 없고 체크맵만 있다
+        age: properties.age,
+        heating: properties.heating,
+        floor: properties.floor,
       })
       .from(properties),
     db.select({ id: users.id }).from(users),
@@ -270,14 +276,67 @@ export async function loadAdminStats() {
     byFeature: aiByFeature,
   };
 
-  /* ── 8. 규칙 항목 수 vs AI 질문 수 ── */
-  const bankQuestions = questionRows.filter((q) => q.source === 'bank').length;
-  const aiQuestions = questionRows.filter((q) => q.source === 'ai').length;
+  /* ── 8. 규칙 vs AI ──
+     ★ 절대값만 보면 데이터가 늘 때마다 숫자가 흔들리고, 시연용이 섞이면
+       "실제로는 몇 건인가요"에 답하기 곤란해진다.
+       그래서 **매물 1건당**으로 정규화한 값을 함께 낸다 — 데이터가 늘어도 흔들리지 않고
+       시연용/실사용을 섞어도 의미가 유지된다.
+     ★ 안전 점검 항목은 저장 테이블이 없고 체크맵(JSONB)만 있으므로,
+       규칙에 매물 조건을 태워 **몇 개가 선정됐는지** 센다. 조사지 항목은 저장된 행을 센다
+       (사용자가 추가·삭제할 수 있어 규칙 결과와 다를 수 있다). */
+  const checksByProperty = new Map<string, number>();
+  for (const c of checkRows) {
+    checksByProperty.set(c.propertyId, (checksByProperty.get(c.propertyId) ?? 0) + 1);
+  }
+
+  const questionsByProperty = new Map<string, { bank: number; ai: number }>();
+  for (const q of questionRows) {
+    const cur = questionsByProperty.get(q.propertyId) ?? { bank: 0, ai: 0 };
+    if (q.source === 'ai') cur.ai += 1;
+    else cur.bank += 1;
+    questionsByProperty.set(q.propertyId, cur);
+  }
+
+  const acc = {
+    real: { visit: 0, safety: 0, bank: 0, ai: 0, count: 0 },
+    demo: { visit: 0, safety: 0, bank: 0, ai: 0, count: 0 },
+  };
+
+  for (const p of props) {
+    const side = p.demo ? acc.demo : acc.real;
+    const q = questionsByProperty.get(p.id) ?? { bank: 0, ai: 0 };
+
+    side.count += 1;
+    side.visit += checksByProperty.get(p.id) ?? 0;
+    side.safety += selectSafetyRules({
+      dealType: p.dealType as DealType,
+      age: p.age,
+      heating: p.heating,
+      floor: p.floor,
+      deposit: p.deposit,
+    }).length;
+    side.bank += q.bank;
+    side.ai += q.ai;
+  }
+
+  const totalCount = acc.real.count + acc.demo.count;
+  const ruleTotal = acc.real.visit + acc.real.safety + acc.demo.visit + acc.demo.safety;
+  const aiQuestionTotal = acc.real.ai + acc.demo.ai;
+
+  const per = (n: number, d: number) => (d === 0 ? null : Math.round((n / d) * 10) / 10);
+
   const ruleVsAi = {
-    ruleChecks: checkRows.length,
-    bankQuestions,
-    aiQuestions,
-    ruleTotal: checkRows.length + bankQuestions,
+    real: acc.real,
+    demo: acc.demo,
+    /** 매물 1건당 규칙 항목 수 = (조사지 + 안전 점검) ÷ 매물 수 */
+    rulePerProperty: per(ruleTotal, totalCount),
+    /** 매물 1건당 AI 생성 질문 수 */
+    aiPerProperty: per(aiQuestionTotal, totalCount),
+    /** 규칙 : AI — 데이터가 늘어도 흔들리지 않는 숫자 */
+    ratio: aiQuestionTotal === 0 ? null : Math.round((ruleTotal / aiQuestionTotal) * 10) / 10,
+    ruleTotal,
+    aiTotal: aiQuestionTotal,
+    totalCount,
   };
 
   return {

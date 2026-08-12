@@ -60,8 +60,16 @@
     가로 스크롤이 생긴다. break-word 는 "넘칠 때만" 끊으므로 정상 폭에서 keep-all 의 의도를 해치지 않는다.
 
     ★ 전역은 break-word 다. anywhere 는 min-content 폭 계산까지 바꿔 표 열 너비·flex/grid 트랙이
-      함께 움직이므로, 그것이 실제로 필요한 자리에만 개별로 건다(.rc-cmp th / .rc-modal .rc-card-title /
-      .rc-prop-name). 전역에 anywhere 를 걸면 안 된다.
+      함께 움직이므로, 그것이 실제로 필요한 자리에만 개별로 건다. 전역에 anywhere 를 걸면 안 된다.
+
+    ★ 개별 anywhere 예외 (지우기 전에 이유를 볼 것):
+        .rc-cmp th               표 열 너비가 min-content 에 묶인다
+        .rc-modal .rc-card-title flex 컨테이너라 min-content 아래로 줄지 않는다
+        .rc-prop-name            inline-flex 상자라 위와 같다
+        .rc-detail-head h1/h2    러너 실측으로 되돌린 것 — 아래 주석 참조
+        .rc-choice-name          h1 과 같은 판단
+      블록 요소라고 해서 break-word 로 충분하다고 단정하지 말 것. 상속된 word-break: keep-all 이
+      한글의 분리 기회를 없애 놓으면 break-word 가 강제 분리를 만들지 못하는 경우가 있다.
   */
   overflow-wrap: break-word;
 }
@@ -522,6 +530,19 @@
 
 .rc-row { display: flex; gap: 8px; }
 .rc-row .rc-input { flex: 1; min-width: 0; }
+/* 옆 칸이 여러 줄로 자랄 때 — 기본값(stretch)이면 44px 버튼이 입력칸 높이만큼 늘어난다 */
+.rc-row-top { align-items: flex-start; }
+
+/*
+  방문 기록의 답변·메모 칸.
+  한 줄짜리 <input> 이면 "작년 1월에 14만원 정도 나왔다고 하셨…"에서 잘려 방금 쓴 내용을
+  확인할 수 없다. 현장에서 폰으로 쓰는 화면이라 확인이 안 되면 다시 물어볼 수도 없다.
+  .rc-input 의 테두리·여백·44px 을 그대로 쓰고 여러 줄 관련만 얹는다.
+*/
+.rc-answer-input {
+  line-height: 1.5;
+  resize: vertical; /* 답이 길면 사용자가 늘릴 수 있게 둔다. 가로는 레이아웃이 깨져서 막는다 */
+}
 
 .rc-field-note { font-size: 12.5px; color: var(--rc-ink-soft); margin-top: 6px; line-height: 1.5; }
 .rc-geo-box:not(:empty) { margin-top: 2px; }
@@ -567,10 +588,23 @@
 /* flex 자식의 기본 min-width 는 auto 라 내용보다 작아지지 않는다.
    공백 없는 긴 매물 별칭이 들어오면 헤더가 넘치므로 줄어들 수 있게 열어둔다 */
 .rc-detail-text { min-width: 0; }
-/* 매물 별칭이 그대로 들어오는 자리지만, 블록 요소라 .rc-app 의 전역 break-word 로 충분하다.
-   (부모 .rc-detail-text 에 min-width:0 이 있어 폭이 줄어들고, 블록은 min-content 에 묶이지 않는다) */
+/*
+  ★ anywhere 다. break-word 로 낮추지 말 것 — 한 번 그렇게 했다가 되돌렸다.
+    "블록 요소라 전역 break-word 로 충분하다"고 판단했는데, 스크린샷 러너가 390px 조사지에서
+    이 h1 의 scrollWidth 543px, 페이지 폭 625px(+235)을 잡았다. 근거는 계산이 아니라 실측이다.
+
+    원인으로 보이는 것: 상속된 word-break: keep-all 이 한글 연속열의 분리 기회를 전부 없애는데,
+    그 상태에서 overflow-wrap: break-word 는 브라우저에 따라 강제 분리를 만들지 않는다.
+    anywhere 는 만든다. 여기서 min-content 가 낮아져 곤란한 것은 없다 —
+    부모 .rc-detail-text 에 min-width:0 이 있어 어차피 줄어드는 자리다.
+*/
 .rc-detail-head h1,
-.rc-detail-head h2 { font-size: 20px; font-weight: 800; letter-spacing: -0.3px; }
+.rc-detail-head h2 {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  overflow-wrap: anywhere;
+}
 .rc-detail-head .rc-meta { font-size: 12.5px; color: var(--rc-ink-soft); }
 .rc-phases { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
 .rc-ph {
@@ -866,8 +900,10 @@
   border-radius: 10px;
   padding: 12px;
 }
-/* 블록 요소라 전역 break-word 로 충분하다 */
-.rc-choice-name { font-weight: 700; margin-bottom: 2px; }
+/* h1 과 같은 이유로 anywhere 를 되돌린다(§.rc-detail-head). 매물 별칭이 들어오는 자리이고,
+   여기는 grid 트랙 안이라 min-content 가 낮아지는 편이 오히려 안전하다.
+   ※ 러너가 실제로 잡은 것은 조사지 h1 뿐이다 — 이쪽은 같은 판단을 되돌린 것이지 실측은 아니다 */
+.rc-choice-name { font-weight: 700; margin-bottom: 2px; overflow-wrap: anywhere; }
 
 .rc-report-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
 @media (min-width: 640px) {

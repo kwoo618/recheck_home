@@ -1051,6 +1051,9 @@
   .rc-print .rc-foot { margin-top: 14px; font-size: 10px; color: #666; }
 }
 
+/* 세션 재시작 — 주 행동이 아니다. 쿠키 안내 바로 아래에 조용히 붙는다 */
+.rc-session-reset { margin: -4px 0 16px; }
+
 /* 홈 카드 하단 보조 안내 (제외 매물 복구 경로 등) */
 .rc-prop-hint {
   width: 100%;

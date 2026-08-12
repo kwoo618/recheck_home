@@ -19,11 +19,20 @@ const geistMono = Geist_Mono({
  *
  * ★ metadataBase 가 없으면 OG 이미지 URL 이 상대경로로 나가 카카오톡·슬랙 같은
  *   외부 미리보기에서 이미지가 뜨지 않는다. 배포 도메인을 기준으로 잡는다.
- *   (Vercel 프리뷰에서도 동작하도록 VERCEL_URL 을 먼저 본다)
+ *
+ * ★ VERCEL_URL 을 그냥 쓰면 안 된다 — 그건 배포마다 바뀌는 **immutable 배포 URL**
+ *   (recheck-home-qkj6ot0um-….vercel.app)이지 공유하는 주소가 아니다.
+ *   실제로 처음엔 og:image 가 그 주소로 나갔다. 배포 보호가 켜지면 크롤러가 못 읽고,
+ *   켜져 있지 않아도 링크마다 다른 도메인을 가리키게 된다.
+ *   → 운영에서는 VERCEL_PROJECT_PRODUCTION_URL(고정 도메인)을 쓰고,
+ *     프리뷰에서만 VERCEL_URL 로 떨어진다.
  */
-const siteUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : "https://recheck-home.vercel.app";
+const siteUrl =
+  process.env.VERCEL_ENV === "production" && process.env.VERCEL_PROJECT_PRODUCTION_URL
+    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+    : process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "https://recheck-home.vercel.app";
 
 const title = "리:체크 — 계약 전 2차 검증";
 const description =

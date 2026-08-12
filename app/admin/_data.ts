@@ -3,6 +3,7 @@ import 'server-only';
 import { db } from '@/db';
 import { properties, users, questions, visitChecks, aiLogs } from '@/db/schema';
 import { calcPrepaid } from '@/lib/finance';
+import { selectSafetyRules } from '@/lib/rules';
 import type { PropertyStatus, DealType } from '@/db/schema';
 
 /**
@@ -20,17 +21,12 @@ import type { PropertyStatus, DealType } from '@/db/schema';
  */
 
 /**
- * 시연용 세션 식별 규약.
- *
- * users.id는 uuid 컬럼이라 'demo-…' 같은 문자열을 넣을 수 없다.
- * 그래서 **UUID 앞부분을 예약**해 구분한다. 시드 데이터는 이 접두사로 만든다.
- * 컬럼을 추가하면 마이그레이션이 되므로 규약으로 푼다.
+ * 시연용 세션 식별 규약은 `lib/demo-session.ts` 가 단일 소스다.
+ * 시딩 스크립트가 번들러 없이 임포트할 수 있어야 해서 의존성 없는 파일로 떼어 뒀다.
  */
-export const DEMO_SESSION_PREFIX = 'de100000';
+import { isDemoSession } from '@/lib/demo-session';
 
-export function isDemoSession(userId: string): boolean {
-  return userId.startsWith(DEMO_SESSION_PREFIX);
-}
+export { DEMO_SESSION_PREFIX, isDemoSession } from '@/lib/demo-session';
 
 /* ══════════════════════════════════════════════════════════════
    순수 헬퍼 — 무엇을 세는지가 여기서 결정된다
@@ -119,6 +115,7 @@ export async function loadAdminStats() {
   const [propRows, userRows, questionRows, checkRows, logRows] = await Promise.all([
     db
       .select({
+        id: properties.id,
         userId: properties.userId,
         status: properties.status,
         dealType: properties.dealType,
@@ -129,6 +126,10 @@ export async function loadAdminStats() {
         prepaidTotal: properties.prepaidTotal,
         latitude: properties.latitude,
         address: properties.address,
+        // 안전 점검 항목 수는 규칙에 태워 센다 — 저장 테이블이 없고 체크맵만 있다
+        age: properties.age,
+        heating: properties.heating,
+        floor: properties.floor,
       })
       .from(properties),
     db.select({ id: users.id }).from(users),
@@ -169,15 +170,22 @@ export async function loadAdminStats() {
 
   /* ── 2. 퍼널 — 상태 모델이 곧 퍼널이다 ──
      status는 "현재 위치"라 그대로 세면 계단이 아니라 분포가 된다.
-     뒤 단계에 있는 건은 앞 단계를 이미 지나온 것이므로 누적으로 센다. */
-  const count = (s: PropertyStatus) => props.filter((p) => p.status === s).length;
+     뒤 단계에 있는 건은 앞 단계를 이미 지나온 것이므로 누적으로 센다.
+
+     ★ **실사용 데이터만 센다.** 시연용 시드는 전부 같은 상태로 들어가므로 섞으면
+       전환율이 시드 쪽으로 끌려간다 — 실사용 78.6%가 시드에 희석되면 그 숫자는
+       더 이상 사람들이 실제로 어디까지 갔는지를 말해주지 않는다.
+       만든 데이터로 전환율을 그리지 않는다. 시연용에 배지를 다는 것과 같은 원칙이다.
+     ★ 지역·금액·좌표·AI 분포는 합산해도 의미가 흐려지지 않아 그대로 둔다. */
+  const realProps = props.filter((p) => !p.demo);
+  const count = (s: PropertyStatus) => realProps.filter((p) => p.status === s).length;
   /*
    * 등록 단계에는 제외된 매물도 들어간다 — 제외됐어도 등록은 된 것이다.
    * 다만 **제외 시점의 진행 단계를 기록하지 않으므로** 이후 단계에서는 빠진다.
    * (제외 전에 조사지를 완성했더라도 지금 status가 excluded면 세지 못한다)
    * 그래서 뒤 단계 전환율은 실제보다 낮게 나올 수 있다. 화면에 그렇게 적는다.
    */
-  const reachedPrep = props.length;
+  const reachedPrep = realProps.length;
   const reachedReady = count('ready') + count('recorded') + count('confirmed');
   const reachedRecorded = count('recorded') + count('confirmed');
   const reachedConfirmed = count('confirmed');
@@ -191,10 +199,19 @@ export async function loadAdminStats() {
     { status: 'confirmed', label: '계약 확정', reached: reachedConfirmed, rate: rate(reachedConfirmed, reachedRecorded) },
   ];
 
-  /* ── 3. 상태 분포 (excluded 포함) ── */
-  const statusDist = tally(ALL_STATUSES, props.map((p) => p.status)).map((r) => ({
-    ...r,
-    label: STATUS_LABEL[r.key],
+  /* ── 3. 상태 분포 (excluded 포함) ──
+     퍼널이 실사용 기준이므로 여기서 실사용/시연용을 나눠 보여준다.
+     같은 화면에서 두 지표가 다른 모집단을 쓰는데 그게 안 보이면 숫자를 잘못 읽게 된다. */
+  const demoProps = props.filter((p) => p.demo);
+  const realTally = tally(ALL_STATUSES, realProps.map((p) => p.status));
+  const demoTally = tally(ALL_STATUSES, demoProps.map((p) => p.status));
+
+  const statusDist = ALL_STATUSES.map((key, i) => ({
+    key,
+    label: STATUS_LABEL[key],
+    real: realTally[i].count,
+    demo: demoTally[i].count,
+    count: realTally[i].count + demoTally[i].count,
   }));
 
   /* ── 4. 지역 분포 ── */
@@ -259,14 +276,67 @@ export async function loadAdminStats() {
     byFeature: aiByFeature,
   };
 
-  /* ── 8. 규칙 항목 수 vs AI 질문 수 ── */
-  const bankQuestions = questionRows.filter((q) => q.source === 'bank').length;
-  const aiQuestions = questionRows.filter((q) => q.source === 'ai').length;
+  /* ── 8. 규칙 vs AI ──
+     ★ 절대값만 보면 데이터가 늘 때마다 숫자가 흔들리고, 시연용이 섞이면
+       "실제로는 몇 건인가요"에 답하기 곤란해진다.
+       그래서 **매물 1건당**으로 정규화한 값을 함께 낸다 — 데이터가 늘어도 흔들리지 않고
+       시연용/실사용을 섞어도 의미가 유지된다.
+     ★ 안전 점검 항목은 저장 테이블이 없고 체크맵(JSONB)만 있으므로,
+       규칙에 매물 조건을 태워 **몇 개가 선정됐는지** 센다. 조사지 항목은 저장된 행을 센다
+       (사용자가 추가·삭제할 수 있어 규칙 결과와 다를 수 있다). */
+  const checksByProperty = new Map<string, number>();
+  for (const c of checkRows) {
+    checksByProperty.set(c.propertyId, (checksByProperty.get(c.propertyId) ?? 0) + 1);
+  }
+
+  const questionsByProperty = new Map<string, { bank: number; ai: number }>();
+  for (const q of questionRows) {
+    const cur = questionsByProperty.get(q.propertyId) ?? { bank: 0, ai: 0 };
+    if (q.source === 'ai') cur.ai += 1;
+    else cur.bank += 1;
+    questionsByProperty.set(q.propertyId, cur);
+  }
+
+  const acc = {
+    real: { visit: 0, safety: 0, bank: 0, ai: 0, count: 0 },
+    demo: { visit: 0, safety: 0, bank: 0, ai: 0, count: 0 },
+  };
+
+  for (const p of props) {
+    const side = p.demo ? acc.demo : acc.real;
+    const q = questionsByProperty.get(p.id) ?? { bank: 0, ai: 0 };
+
+    side.count += 1;
+    side.visit += checksByProperty.get(p.id) ?? 0;
+    side.safety += selectSafetyRules({
+      dealType: p.dealType as DealType,
+      age: p.age,
+      heating: p.heating,
+      floor: p.floor,
+      deposit: p.deposit,
+    }).length;
+    side.bank += q.bank;
+    side.ai += q.ai;
+  }
+
+  const totalCount = acc.real.count + acc.demo.count;
+  const ruleTotal = acc.real.visit + acc.real.safety + acc.demo.visit + acc.demo.safety;
+  const aiQuestionTotal = acc.real.ai + acc.demo.ai;
+
+  const per = (n: number, d: number) => (d === 0 ? null : Math.round((n / d) * 10) / 10);
+
   const ruleVsAi = {
-    ruleChecks: checkRows.length,
-    bankQuestions,
-    aiQuestions,
-    ruleTotal: checkRows.length + bankQuestions,
+    real: acc.real,
+    demo: acc.demo,
+    /** 매물 1건당 규칙 항목 수 = (조사지 + 안전 점검) ÷ 매물 수 */
+    rulePerProperty: per(ruleTotal, totalCount),
+    /** 매물 1건당 AI 생성 질문 수 */
+    aiPerProperty: per(aiQuestionTotal, totalCount),
+    /** 규칙 : AI — 데이터가 늘어도 흔들리지 않는 숫자 */
+    ratio: aiQuestionTotal === 0 ? null : Math.round((ruleTotal / aiQuestionTotal) * 10) / 10,
+    ruleTotal,
+    aiTotal: aiQuestionTotal,
+    totalCount,
   };
 
   return {

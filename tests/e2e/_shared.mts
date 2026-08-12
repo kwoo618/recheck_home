@@ -69,19 +69,19 @@ export const TARGETS: Target[] = [
   { name: '10b-confirm-prepaid', path: `/property/${P.prepaid}/confirm`, note: '정보 확인 — 사글세' },
   { name: '10c-safety-prepaid', path: `/property/${P.prepaid}/safety`, note: '안전 점검 — 사글세 전용 5항목' },
   { name: '11-not-found', path: '/no-such-route', expectStatus: 404, note: '404' },
-  /*
-   * /admin 은 ADMIN_TOKEN 이 있을 때만 찍는다.
-   * 토큰이 없으면 페이지가 notFound() 로 막히는 것이 정상이라 404 를 실패로 보지 않는다.
-   * 발표 후 토큰을 지우면 이 대상은 자동으로 목록에서 빠진다.
-   */
-  ...(process.env.ADMIN_TOKEN
-    ? [{
-        name: '12-admin',
-        path: `/admin?key=${encodeURIComponent(process.env.ADMIN_TOKEN)}`,
-        note: '집계 대시보드 (발표용 임시 인증)',
-      }]
-    : []),
 ];
+
+/*
+ * ⚠ `/admin`은 이 목록에 넣지 않는다.
+ *
+ * 토큰을 URL 에 실어야 하는데, 그러면 러너가 남기는 산출물(`console-errors.md`는 커밋된다)에
+ * 토큰이 들어갈 경로가 생긴다. `maskPath()`로 값을 가리긴 하지만, **애초에 토큰을 러너에
+ * 통과시키지 않는 편이 확실하다** — 가리는 코드는 언젠가 빠뜨리게 된다.
+ *
+ * /admin 화면을 봐야 할 때는 로컬 `.env.local` 값으로 **수동 1회** 찍는다:
+ *   npx playwright screenshot --full-page "http://localhost:3000/admin?key=<토큰>" out.png
+ * 찍은 파일은 `docs/qa/shots/` 아래(= .gitignore 대상)에 두거나 저장소 밖에 둔다.
+ */
 
 /** 인쇄 레이아웃 2종 — 별도 라우트가 없고 화면 안에서 window.print()로 띄운다. */
 export const PDF_TARGETS: Target[] = [

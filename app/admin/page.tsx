@@ -135,8 +135,8 @@ export default async function AdminPage({
       {/* ── 2. 퍼널 ── */}
       <Section
         n={2}
-        title="퍼널"
-        why="상태 모델이 곧 퍼널입니다. 뒤 단계에 있는 매물은 앞 단계를 이미 지나온 것이므로 누적으로 셉니다."
+        title={`퍼널 — 실사용 ${s.demo.real}건 기준`}
+        why="상태 모델이 곧 퍼널입니다. 뒤 단계에 있는 매물은 앞 단계를 이미 지나온 것이므로 누적으로 셉니다. 시연용 데이터는 전부 같은 상태로 들어가 전환율을 끌어당기므로 여기서는 빼고 셉니다 — 만든 데이터로 전환율을 그리지 않습니다."
       >
         <div className="flex flex-col gap-1.5">
           {s.funnel.map((f) => {
@@ -169,9 +169,32 @@ export default async function AdminPage({
         </p>
       </Section>
 
-      {/* ── 3. 상태 분포 ── */}
-      <Section n={3} title="상태 분포">
-        <Bars rows={s.statusDist.map((r) => ({ label: `${r.label} (${r.key})`, count: r.count }))} />
+      {/* ── 3. 상태 분포 ──
+          퍼널이 실사용 기준이라 여기서 모집단을 갈라 보여준다.
+          같은 화면의 두 지표가 다른 모집단을 쓰는데 그게 안 보이면 숫자를 잘못 읽는다. */}
+      <Section n={3} title="상태 분포" why="퍼널이 어느 모집단을 쓰는지 여기서 확인할 수 있습니다.">
+        <table className="w-full text-[12.5px]">
+          <thead>
+            <tr className="border-b border-[var(--rc-line)] text-left text-[var(--rc-ink-soft)]">
+              <th className="py-1 font-medium">상태</th>
+              <th className="py-1 text-right font-medium">실사용</th>
+              <th className="py-1 text-right font-medium">시연용</th>
+              <th className="py-1 text-right font-medium">합계</th>
+            </tr>
+          </thead>
+          <tbody>
+            {s.statusDist.map((r) => (
+              <tr key={r.key} className="border-b border-[var(--rc-line)]">
+                <td className="py-1.5 text-[var(--rc-ink)]">
+                  {r.label} <span className="text-[var(--rc-ink-faint)]">({r.key})</span>
+                </td>
+                <td className="py-1.5 text-right tabular-nums text-[var(--rc-ink)]">{r.real}</td>
+                <td className="py-1.5 text-right tabular-nums text-[var(--rc-ink-soft)]">{r.demo}</td>
+                <td className="py-1.5 text-right tabular-nums text-[var(--rc-ink)]">{r.count}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </Section>
 
       {/* ── 4. 지역 분포 ── */}
@@ -252,17 +275,64 @@ export default async function AdminPage({
         title="규칙 항목 수 vs AI 질문 수"
         why="판정 가능한 것은 전부 규칙이 정합니다. AI는 자유 텍스트 이해가 꼭 필요한 지점에만 들어갑니다 (R2·R3)."
       >
-        <Bars
-          rows={[
-            { label: '규칙 — 조사지 항목', count: s.ruleVsAi.ruleChecks },
-            { label: '규칙 — 질문 은행', count: s.ruleVsAi.bankQuestions },
-            { label: 'AI — 우려 변환 질문', count: s.ruleVsAi.aiQuestions },
-          ]}
-        />
-        <p className="mt-2 text-[12px] text-[var(--rc-ink-soft)]">
-          규칙이 만든 항목 {s.ruleVsAi.ruleTotal.toLocaleString()}개 · AI가 만든 항목{' '}
-          {s.ruleVsAi.aiQuestions.toLocaleString()}개.
+        {/* 절대값은 데이터가 늘 때마다 흔들린다. 매물 1건당으로 정규화한 값을 앞에 둔다. */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <Card
+            label="매물 1건당 규칙 항목"
+            value={s.ruleVsAi.rulePerProperty ?? '—'}
+            sub="조사지 + 안전 점검"
+          />
+          <Card
+            label="매물 1건당 AI 질문"
+            value={s.ruleVsAi.aiPerProperty ?? '—'}
+            sub="우려 → 질문 변환"
+          />
+          <Card
+            label="규칙 : AI"
+            value={s.ruleVsAi.ratio === null ? '—' : `${s.ruleVsAi.ratio} : 1`}
+            sub="데이터가 늘어도 흔들리지 않는 값"
+          />
+        </div>
+
+        <p className="mt-3 text-[11.5px] text-[var(--rc-ink-soft)]">
+          계산: (조사지 항목 {(s.ruleVsAi.real.visit + s.ruleVsAi.demo.visit).toLocaleString()} +
+          안전 점검 항목 {(s.ruleVsAi.real.safety + s.ruleVsAi.demo.safety).toLocaleString()}) ÷
+          매물 {s.ruleVsAi.totalCount.toLocaleString()}건 = 매물당{' '}
+          {s.ruleVsAi.rulePerProperty ?? '—'}개.
+          AI 질문 {s.ruleVsAi.aiTotal.toLocaleString()}개 ÷ 매물 {s.ruleVsAi.totalCount.toLocaleString()}건 = 매물당{' '}
+          {s.ruleVsAi.aiPerProperty ?? '—'}개.
+          안전 점검은 저장 테이블이 없어 규칙에 매물 조건을 태워 셉니다.
         </p>
+
+        <h3 className="mt-5 text-[13px] font-semibold text-[var(--rc-ink)]">절대값</h3>
+        <table className="mt-2 w-full text-[12.5px]">
+          <thead>
+            <tr className="border-b border-[var(--rc-line)] text-left text-[var(--rc-ink-soft)]">
+              <th className="py-1 font-medium">항목</th>
+              <th className="py-1 text-right font-medium">실사용</th>
+              <th className="py-1 text-right font-medium">시연용</th>
+              <th className="py-1 text-right font-medium">합계</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[
+              { label: '규칙 — 조사지 항목', real: s.ruleVsAi.real.visit, demo: s.ruleVsAi.demo.visit },
+              { label: '규칙 — 안전 점검 항목', real: s.ruleVsAi.real.safety, demo: s.ruleVsAi.demo.safety },
+              { label: '규칙 — 질문 은행', real: s.ruleVsAi.real.bank, demo: s.ruleVsAi.demo.bank },
+              { label: 'AI — 우려 변환 질문', real: s.ruleVsAi.real.ai, demo: s.ruleVsAi.demo.ai },
+              { label: '매물 수', real: s.ruleVsAi.real.count, demo: s.ruleVsAi.demo.count },
+            ].map((r) => (
+              <tr key={r.label} className="border-b border-[var(--rc-line)]">
+                <td className="py-1.5 text-[var(--rc-ink)]">{r.label}</td>
+                <td className="py-1.5 text-right tabular-nums text-[var(--rc-ink)]">{r.real.toLocaleString()}</td>
+                <td className="py-1.5 text-right tabular-nums text-[var(--rc-ink-soft)]">{r.demo.toLocaleString()}</td>
+                <td className="py-1.5 text-right tabular-nums text-[var(--rc-ink)]">
+                  {(r.real + r.demo).toLocaleString()}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </Section>
 
       {/* ── 9. 질문 은행 (읽기 전용) ── */}

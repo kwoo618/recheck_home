@@ -62,9 +62,18 @@ export const VISIT_RULES: VisitRule[] = [
   { id: 'v-trash', category: '상세', title: '쓰레기 배출 장소·방식',
     description: '배출 요일과 위치 — 생활 편의에 직접 영향',
     cond: () => true },
+  /*
+   * 2026-08-12: 사글세를 추가했다. 사글세도 매달 관리비가 나가므로 현장에서 확인할 항목이다.
+   *
+   * ★ `!== '전세'`가 아니라 **명시 열거**로 둔다. 부정 조건으로 쓰면 나중에 거래유형이
+   *   늘었을 때 아무도 검토하지 않은 채 자동으로 포함된다. 항목 선정은 검토를 거쳐야 한다.
+   *
+   * 계약서 측면(선납액에 관리비가 포함인지)은 안전 점검의 s-prepaid-fee가 따로 덮는다.
+   * 여기는 현장에서 눈으로 확인하는 쪽이다.
+   */
   { id: 'v-mgmt', category: '가격', title: '관리비 포함 항목 현장 재확인',
     description: '수도·인터넷·청소비 포함 여부를 현장에서 다시 확인',
-    cond: (c) => c.dealType === '월세' },
+    cond: (c) => c.dealType === '월세' || c.dealType === '사글세' },
 ];
 
 export function selectVisitRules(c: RuleContext): VisitRule[] {

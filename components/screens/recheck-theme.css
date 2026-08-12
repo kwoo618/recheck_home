@@ -338,6 +338,118 @@
 }
 .rc-empty b { color: var(--rc-ink); font-size: 16.5px; display: block; margin-bottom: 6px; }
 
+/* ══════════════════════════════════════════════════════════════
+   홈 랜딩 (매물 0건일 때만) — components/screens/_parts/home-landing.tsx
+
+   ★ 새 CSS 파일을 만들지 않는다. 토큰이 갈라지면 랜딩과 제품의 색이 달라진다.
+   ★ 360px 우선. 넓은 화면은 min-width 로 얹는다.
+   ★ 애니메이션·라이브러리 없음. 여기 있는 것은 전부 정적 레이아웃이다.
+   ══════════════════════════════════════════════════════════════ */
+.rc-lp-hero { padding: 24px 0 32px; }
+.rc-lp-title {
+  /*
+    360px 에서 "계약 전에 다시 확인하세요"(12자)가 한 줄에 들어가야 <br> 이 의도대로 접힌다.
+    6vw → 360px 에서 21.6px 이므로 22px 이 되고, 12자 × 22 + 여백 ≈ 278px < 328px(본문 폭)이다.
+  */
+  font-size: clamp(22px, 6vw, 30px);
+  font-weight: 800;
+  letter-spacing: -0.6px;
+  line-height: 1.3;
+}
+.rc-lp-lead {
+  font-size: 15px;
+  color: var(--rc-ink-soft);
+  line-height: 1.65;
+  margin-top: 12px;
+}
+.rc-lp-cta { margin-top: 18px; }
+.rc-lp-note { font-size: 12.5px; color: var(--rc-ink-faint); margin-top: 10px; }
+
+.rc-lp-sec { padding: 30px 0; border-top: 1px solid var(--rc-line); }
+.rc-lp-h2 {
+  font-size: clamp(18px, 4.8vw, 22px);
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  line-height: 1.4;
+}
+.rc-lp-sec-lead {
+  font-size: 13.5px;
+  color: var(--rc-ink-soft);
+  line-height: 1.6;
+  margin-top: 8px;
+}
+
+.rc-lp-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 16px;
+  list-style: none;
+  padding: 0;
+}
+/* 240px 아래로는 카드 안이 읽히지 않는다 — 그 전까지는 한 칸으로 둔다 */
+@media (min-width: 720px) {
+  .rc-lp-grid { grid-template-columns: repeat(3, 1fr); }
+  .rc-lp-grid-2 { grid-template-columns: repeat(2, 1fr); }
+}
+.rc-lp-card {
+  background: var(--rc-surface);
+  border: 1px solid var(--rc-line);
+  border-radius: 14px;
+  padding: 16px;
+}
+.rc-lp-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+  min-height: 20px;
+}
+.rc-lp-step-n {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  color: var(--rc-teal);
+}
+.rc-lp-step-when { font-size: 11.5px; color: var(--rc-ink-faint); }
+.rc-lp-card-title { font-size: 15px; font-weight: 700; letter-spacing: -0.2px; }
+.rc-lp-card-body {
+  display: block;
+  font-size: 13.5px;
+  color: var(--rc-ink-soft);
+  line-height: 1.65;
+  margin-top: 6px;
+}
+
+/* '하지 않는 것' — 카드가 아니라 목록이다. 세로 길이를 아끼되 접지는 않는다 */
+.rc-lp-limits { list-style: none; padding: 0; margin: 16px 0 0; }
+.rc-lp-limit {
+  display: flex;
+  gap: 12px;
+  padding: 14px 0;
+  border-top: 1px dashed var(--rc-line-strong);
+}
+.rc-lp-limit-n {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--rc-ink-faint);
+  flex-shrink: 0;
+  padding-top: 2px;
+  font-variant-numeric: tabular-nums;
+}
+.rc-lp-limit-text { min-width: 0; }
+.rc-lp-limit-title { display: block; font-size: 14px; font-weight: 700; }
+
+.rc-lp-final {
+  margin-top: 30px;
+  padding: 28px 20px 30px;
+  border-radius: 14px;
+  background: var(--rc-teal-soft);
+  text-align: center;
+}
+.rc-lp-final .rc-lp-sec-lead { color: var(--rc-teal); }
+
 /* ── 섹션 제목 ──────────────────────────────────────────────── */
 .rc-h2 { font-size: 19px; font-weight: 800; letter-spacing: -0.2px; }
 .rc-group-label {

@@ -4,6 +4,7 @@ import { formatDistanceLabel } from '@/lib/geo';
 import type { PropertyDTO } from '@/lib/types';
 import { ScreenShell } from './_parts/screen-shell';
 import { HomeMapList } from './_parts/home-map-list';
+import { HomeLanding } from './_parts/home-landing';
 import { ProgressRing } from './_parts/progress-ring';
 import { formatSpecLine } from './_parts/format';
 import { isActive, statusInfo } from './_parts/status';
@@ -59,19 +60,47 @@ export function HomeScreen({ properties, hrefFor, map }: HomeScreenProps) {
     </>
   );
 
+  /*
+    로그인이 없다. proxy.ts 가 발급한 익명 UUID 쿠키(rc_session)로 사용자를 구분하고,
+    매물 자체는 서버 DB에 있다. 쿠키가 사라지면 데이터가 지워지는 것이 아니라 "찾아갈 열쇠"가
+    없어지는 것이라, 문구를 "브라우저에 저장된다"로 쓰면 사실과 다르다. (R8)
+    팀원 테스트 중 "매물이 사라졌어요"의 거의 유일한 원인이라 홈에 상시 노출한다.
+
+    ★ 0건일 때도 낸다. 쿠키가 지워진 사용자가 보게 되는 화면이 바로 랜딩(0건)이라,
+      "내 매물이 어디 갔지"에 답하는 자리가 여기다. 다만 히어로 위가 아니라 아래에 둔다.
+  */
+  const sessionNotice = (
+    <p className="rc-notice">
+      매물은 서버에 저장되지만, 로그인이 없어 <b>이 브라우저의 접속 정보(쿠키)</b>로 내 매물을
+      구분합니다. 쿠키·사이트 데이터를 지우거나 다른 브라우저·기기·시크릿 창으로 열면 등록한 매물이
+      보이지 않습니다.
+    </p>
+  );
+
+  /*
+    0건이면 랜딩만 그린다. 라우트는 그대로 `/` 다.
+    "내 매물" 제목과 헤더의 [+ 매물 추가]는 함께 감춘다 — 랜딩에 히어로 CTA와 마지막 CTA가
+    이미 있어서, 같은 곳으로 가는 버튼이 한 화면에 셋이 되고 제목이 히어로와 겹쳐 읽힌다.
+  */
+  if (total === 0) {
+    return (
+      <ScreenShell hrefFor={hrefFor}>
+        <HomeLanding hrefFor={hrefFor} />
+        {sessionNotice}
+      </ScreenShell>
+    );
+  }
+
   return (
     <ScreenShell hrefFor={hrefFor}>
       <div className="rc-home-head">
         <div>
           <h2 className="rc-h2">내 매물</h2>
-          {/* 빈 문자열을 렌더하면 <p>가 자리를 차지한 채 남는다 — 요소째 빼야 한다 */}
-          {total > 0 && (
-            <p className="rc-home-count">
-              {activeCount >= 2
-                ? `검토 중 ${activeCount}개 — 비교 모드를 쓸 수 있어요`
-                : `${total}개 등록됨`}
-            </p>
-          )}
+          <p className="rc-home-count">
+            {activeCount >= 2
+              ? `검토 중 ${activeCount}개 — 비교 모드를 쓸 수 있어요`
+              : `${total}개 등록됨`}
+          </p>
         </div>
         <div className="rc-home-actions">
           {activeCount >= 2 && (
@@ -79,38 +108,15 @@ export function HomeScreen({ properties, hrefFor, map }: HomeScreenProps) {
               매물 비교
             </Link>
           )}
-          {/* 빈 상태에서도 남긴다 — 큰 안내 카드와 헤더 중 어디를 눌러도 같은 곳으로 간다 */}
           <Link href={hrefFor('add')} className="rc-btn rc-btn-primary">
             + 매물 추가
           </Link>
         </div>
       </div>
 
-      {/*
-        로그인이 없다. proxy.ts 가 발급한 익명 UUID 쿠키(rc_session)로 사용자를 구분하고,
-        매물 자체는 서버 DB에 있다. 쿠키가 사라지면 데이터가 지워지는 것이 아니라 "찾아갈 열쇠"가
-        없어지는 것이라, 문구를 "브라우저에 저장된다"로 쓰면 사실과 다르다. (R8)
-        팀원 테스트 중 "매물이 사라졌어요"의 거의 유일한 원인이라 홈에 상시 노출한다.
-      */}
-      <p className="rc-notice">
-        매물은 서버에 저장되지만, 로그인이 없어 <b>이 브라우저의 접속 정보(쿠키)</b>로 내 매물을
-        구분합니다. 쿠키·사이트 데이터를 지우거나 다른 브라우저·기기·시크릿 창으로 열면 등록한 매물이
-        보이지 않습니다.
-      </p>
+      {sessionNotice}
 
-      {total === 0 ? (
-        <div className="rc-empty">
-          <b>방 보러 가기 전에, 조사지부터 만들어요</b>
-          직방·다방에서 찾은 매물을 등록하면
-          <br />
-          현장에서 확인할 것·물어볼 것을 정리해 드립니다.
-          <div style={{ marginTop: 16 }}>
-            <Link href={hrefFor('add')} className="rc-btn rc-btn-primary">
-              첫 매물 등록
-            </Link>
-          </div>
-        </div>
-      ) : map ? (
+      {map ? (
         <HomeMapList map={map}>{list}</HomeMapList>
       ) : (
         <div className="rc-home-body">

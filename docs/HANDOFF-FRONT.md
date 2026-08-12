@@ -31,7 +31,8 @@
 ## 2. 현재 상태
 
 ### 완료
-화면 9개 전부 포팅 완료. `docs/recheck-prototype-v4.html`에서 옮겼다.
+**화면 8개, 인쇄 레이아웃 2종** 전부 포팅 완료. `docs/recheck-prototype-v4.html`에서 옮겼다.
+(초기에 "9개 화면"으로 세던 기준과 다르다 — 발표 자료도 이 표기로 통일한다. `docs/PROJECT-STATUS.md` §4②)
 
 | 화면 | 파일 |
 |---|---|

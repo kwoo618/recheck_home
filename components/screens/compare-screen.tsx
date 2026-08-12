@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 import type { FinanceProfile, PropertyStatus, QuestionSource } from '@/db/schema';
-import { DISTANCE_NOTICE, SCHOOL_ORIGIN, formatDistance, formatDistanceLabel } from '@/lib/geo';
+import { DISTANCE_NOTICE, SCHOOL_ORIGIN, estimateWalkMinutes, formatDistance } from '@/lib/geo';
 import type { ActionResult, PropertyDTO } from '@/lib/types';
 import { ScreenShell } from './_parts/screen-shell';
 import { SourceBadge } from './_parts/source-badge';
@@ -21,8 +21,10 @@ import type { HrefFor } from './_parts/nav';
  * ★ 비교 대상은 활성 매물뿐이다 (status ∉ {confirmed, excluded}).
  * ★ ▲▼ 는 수치의 높낮이지 우열이 아니다. 범례를 표 아래에 반드시 둔다.
  *   순위를 매기거나 "이 매물이 낫다"는 표현을 만들지 않는다. (R1)
- * ★ 거리 문구는 formatDistanceLabel()·formatDistance() 를 쓴다. 좌표가 없으면
- *   0 이 아니라 "위치 미지정"이고, 표가 아니라 아래 별도 안내로 뺀다.
+ * ★ 거리 문구는 lib/geo 의 함수만 쓴다. 열이 좁은 표에서는 짧은 값(formatDistance·
+ *   estimateWalkMinutes)만 넣고, 기준점 이름과 "직선거리 기준 추정"은 표 밖 DISTANCE_NOTICE 에
+ *   한 번만 둔다 (components/screens/README.md §거리 문구). 좌표가 없으면 0 이 아니라
+ *   "위치 미지정"이고, 표가 아니라 아래 별도 안내로 뺀다.
  */
 export type CompareScreenProps = {
   properties: PropertyDTO[];
@@ -118,16 +120,27 @@ export function CompareScreen({
     setSummarizing(true);
     setSummaryFailed(false);
     void (async () => {
-      const result = onSummarize
-        ? await onSummarize(ps.map((p) => p.id))
-        : { ok: false, summary: undefined };
-      setSummarizing(false);
-      if (result.ok && result.summary) {
-        setSummary(result.summary);
-        return;
+      try {
+        const result = onSummarize
+          ? await onSummarize(ps.map((p) => p.id))
+          : { ok: false, summary: undefined };
+        if (result.ok && result.summary) {
+          setSummary(result.summary);
+          return;
+        }
+        setSummary(null);
+        setSummaryFailed(true);
+      } catch {
+        /*
+         * /api/ai/summary 는 실패해도 200 + {ok:false} 로 답하지만(R4), 네트워크 단절·타임아웃은
+         * fetch 자체를 reject 시킨다. 잡지 않으면 unhandled rejection 이 되고,
+         * setSummarizing(false) 에 도달하지 못해 스피너가 영원히 돈다.
+         */
+        setSummary(null);
+        setSummaryFailed(true);
+      } finally {
+        setSummarizing(false);
       }
-      setSummary(null);
-      setSummaryFailed(true);
     })();
   }
 
@@ -148,39 +161,57 @@ export function CompareScreen({
           ① 위치 <SourceBadge kind="rule" label="규칙 기반" />
         </h2>
         {map}
-        <div className="rc-cmp-scroll" style={{ marginTop: map ? 12 : 0 }}>
-          <table className="rc-cmp">
-            <thead>
-              <tr>
-                <th />
-                {located.map((p) => (
-                  <th key={p.id}>{p.name}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="rc-rowlabel">주소</td>
-                {located.map((p) => (
-                  <td key={p.id}>{p.address || '—'}</td>
-                ))}
-              </tr>
-              <tr>
-                <td className="rc-rowlabel">{SCHOOL_ORIGIN.name} 직선거리</td>
-                {located.map((p) => (
-                  <td key={p.id}>{formatDistance(p.distanceFromSchool)}</td>
-                ))}
-              </tr>
-              <tr>
-                <td className="rc-rowlabel">도보 추정</td>
-                {located.map((p) => (
-                  <td key={p.id}>{formatDistanceLabel(p.distanceFromSchool)}</td>
-                ))}
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        <p className="rc-legend">{DISTANCE_NOTICE}</p>
+        {/*
+          좌표를 얻은 매물이 하나도 없으면 표를 그리지 않는다.
+          그리면 빈 <th> 하나에 라벨 열만 남은 뼈대가 먼저 보이고, 정작 읽어야 할 안내는 그 아래에 있다.
+        */}
+        {located.length === 0 ? (
+          <p className="rc-field-note" style={{ marginTop: map ? 12 : 0 }}>
+            좌표를 얻은 매물이 없어 거리 비교를 표시할 수 없어요.
+          </p>
+        ) : (
+          <>
+            <div className="rc-cmp-scroll" style={{ marginTop: map ? 12 : 0 }}>
+              <table className="rc-cmp">
+                <thead>
+                  <tr>
+                    <th />
+                    {located.map((p) => (
+                      <th key={p.id}>{p.name}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="rc-rowlabel">주소</td>
+                    {located.map((p) => (
+                      <td key={p.id}>{p.address || '—'}</td>
+                    ))}
+                  </tr>
+                  <tr>
+                    <td className="rc-rowlabel">{SCHOOL_ORIGIN.name} 직선거리</td>
+                    {located.map((p) => (
+                      <td key={p.id}>{formatDistance(p.distanceFromSchool)}</td>
+                    ))}
+                  </tr>
+                  {/*
+                    formatDistanceLabel() 전문을 칸마다 넣지 않는다 (components/screens/README.md §거리 문구).
+                    기준점 이름과 "직선거리 기준 추정"이 매물 수만큼 반복되면서 표를 밀어내고,
+                    같은 정보가 바로 위 행·아래 DISTANCE_NOTICE 와 함께 세 번 나온다.
+                    열이 좁은 표에서는 짧은 값만 넣고 단서는 표 밖에 한 번만 둔다.
+                  */}
+                  <tr>
+                    <td className="rc-rowlabel">도보 추정</td>
+                    {located.map((p) => (
+                      <td key={p.id}>약 {estimateWalkMinutes(p.distanceFromSchool)}분</td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="rc-legend">{DISTANCE_NOTICE}</p>
+          </>
+        )}
         {unlocated.length > 0 && (
           <p className="rc-notice">
             위치 미지정 {unlocated.length}건: {unlocated.map((p) => p.name).join(', ')} — 좌표를 얻지
@@ -216,7 +247,13 @@ export function CompareScreen({
                 전세 8,500만과 월세 45만은 같은 축의 값이 아니라서, 화살표를 그리면
                 "전세가 189배 비싸다"로 읽힌다. 그건 사실이 아니다.
               */}
-              <NumberRow properties={ps} label="가격 (만원)" pick={(p) => p.price} marks={!mixedDeal} />
+              <NumberRow
+                properties={ps}
+                label="가격 (만원)"
+                pick={(p) => p.price}
+                marks={!mixedDeal}
+                blankZero
+              />
               {ps.some((p) => p.dealType === '월세') && (
                 <NumberRow
                   properties={ps}
@@ -225,6 +262,10 @@ export function CompareScreen({
                   marks={!mixedDeal}
                 />
               )}
+              {/*
+                관리비에는 blankZero 를 쓰지 않는다. 관리비가 실제로 0원인 매물이 있어서
+                0을 —("입력 안 함")로 적으면 사실과 다른 표기가 된다. (HANDOFF §3.8 · R8)
+              */}
               <NumberRow properties={ps} label="관리비 (만원)" pick={(p) => p.mgmtFee} />
               {/*
                 면적을 비워두면 서버가 0으로 저장한다. 스키마가 nullable 이 아니라
@@ -236,7 +277,7 @@ export function CompareScreen({
               {ps.some((p) => p.area > 0) && (
                 <NumberRow properties={ps} label="면적 (㎡)" pick={(p) => p.area} blankZero />
               )}
-              <NumberRow properties={ps} label="연식 (년차)" pick={(p) => p.age} />
+              <NumberRow properties={ps} label="연식 (년차)" pick={(p) => p.age} blankZero />
               <tr>
                 <td className="rc-rowlabel">난방</td>
                 {ps.map((p) => (
@@ -298,6 +339,8 @@ export function CompareScreen({
         finance={finance}
         onSaveFinance={onSaveFinance}
         onAddQuestion={onAddQuestion}
+        mutate={mutate}
+        isBusy={isBusy}
       />
 
       {/* ── ④ 질문-답변 상세 ─────────────────────────────────── */}

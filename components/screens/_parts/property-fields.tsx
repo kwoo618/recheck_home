@@ -147,10 +147,16 @@ export function PropertyFields({
         <label className="rc-fl" htmlFor="rc-f-name">
           매물 별칭
         </label>
+        {/*
+          maxLength 는 서버의 NAME_MAX_LENGTH(lib/actions/properties.ts)와 같은 60이다.
+          숫자를 새로 정하지 않고 이미 있는 서버 상한에 맞춘다 — 다르게 두면 화면에서는 통과한 값이
+          저장 단계에서 거부된다. 값을 바꾸려면 서버 상수부터 바꿔야 한다.
+        */}
         <input
           id="rc-f-name"
           className="rc-input"
           type="text"
+          maxLength={60}
           value={value.name}
           placeholder="예: 대구대 원룸 A"
           onChange={(e) => onChange({ name: e.target.value })}
@@ -306,6 +312,11 @@ export function PropertyFields({
           value={value.age}
           onChange={(e) => onChange({ age: e.target.value })}
         />
+        {/*
+          연식은 v-mold(10년~)·v-window/v-boiler(15년~) 항목 선정의 입력값이다.
+          비워두면 0으로 저장돼 그 항목들이 조용히 빠지므로, 막지는 않되 영향은 알린다.
+        */}
+        <p className="rc-field-note">연식을 입력하면 확인 항목이 더 정확해집니다.</p>
       </div>
 
       <div>

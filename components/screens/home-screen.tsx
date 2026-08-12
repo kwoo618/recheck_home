@@ -64,13 +64,14 @@ export function HomeScreen({ properties, hrefFor, map }: HomeScreenProps) {
       <div className="rc-home-head">
         <div>
           <h2 className="rc-h2">내 매물</h2>
-          <p className="rc-home-count">
-            {total === 0
-              ? ''
-              : activeCount >= 2
+          {/* 빈 문자열을 렌더하면 <p>가 자리를 차지한 채 남는다 — 요소째 빼야 한다 */}
+          {total > 0 && (
+            <p className="rc-home-count">
+              {activeCount >= 2
                 ? `검토 중 ${activeCount}개 — 비교 모드를 쓸 수 있어요`
                 : `${total}개 등록됨`}
-          </p>
+            </p>
+          )}
         </div>
         <div className="rc-home-actions">
           {activeCount >= 2 && (
@@ -84,6 +85,18 @@ export function HomeScreen({ properties, hrefFor, map }: HomeScreenProps) {
           </Link>
         </div>
       </div>
+
+      {/*
+        로그인이 없다. proxy.ts 가 발급한 익명 UUID 쿠키(rc_session)로 사용자를 구분하고,
+        매물 자체는 서버 DB에 있다. 쿠키가 사라지면 데이터가 지워지는 것이 아니라 "찾아갈 열쇠"가
+        없어지는 것이라, 문구를 "브라우저에 저장된다"로 쓰면 사실과 다르다. (R8)
+        팀원 테스트 중 "매물이 사라졌어요"의 거의 유일한 원인이라 홈에 상시 노출한다.
+      */}
+      <p className="rc-notice">
+        매물은 서버에 저장되지만, 로그인이 없어 <b>이 브라우저의 접속 정보(쿠키)</b>로 내 매물을
+        구분합니다. 쿠키·사이트 데이터를 지우거나 다른 브라우저·기기·시크릿 창으로 열면 등록한 매물이
+        보이지 않습니다.
+      </p>
 
       {total === 0 ? (
         <div className="rc-empty">

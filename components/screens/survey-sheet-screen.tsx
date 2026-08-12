@@ -113,59 +113,76 @@ export function SurveySheetScreen({
     setError('');
 
     void mutate('ask', async () => {
-      const result = onAskQuestions
-        ? await onAskQuestions(p.id, text)
-        : { ok: false, questions: [] as string[] };
+      try {
+        const result = onAskQuestions
+          ? await onAskQuestions(p.id, text)
+          : { ok: false, questions: [] as string[] };
 
-      /*
-       * selectedTexts 는 렌더 시점의 값이라 여기서는 이미 낡았을 수 있다.
-       * 응답 안의 중복(new Set)과 이미 있는 질문을 함께 걸러 같은 질문이 두 번
-       * 들어가지 않게 한다.
-       */
-      const questions = [...new Set(result.questions.map((q) => q.trim()))].filter(
-        (q) => q && !selectedTexts.has(q),
-      );
+        /*
+         * selectedTexts 는 렌더 시점의 값이라 여기서는 이미 낡았을 수 있다.
+         * 응답 안의 중복(new Set)과 이미 있는 질문을 함께 걸러 같은 질문이 두 번
+         * 들어가지 않게 한다.
+         */
+        const questions = [...new Set(result.questions.map((q) => q.trim()))].filter(
+          (q) => q && !selectedTexts.has(q),
+        );
 
-      if (questions.length === 0) {
-        setAsking(false);
-        setTemplateNote(!result.ok);
-        setError('추가할 질문을 만들지 못했어요. 아래 질문 은행에서 골라 보세요.');
-        return { ok: true as const, data: undefined };
-      }
-
-      // AI가 만든 것만 'ai'. 템플릿 폴백은 결정론 문구이므로 'bank'로 저장한다.
-      const source: QuestionSource = result.ok ? 'ai' : 'bank';
-      for (const q of questions) {
-        const added = await onAddQuestion(p.id, q, source);
-        if (!added.ok) {
-          setError(added.error);
-          break;
+        if (questions.length === 0) {
+          setTemplateNote(!result.ok);
+          setError('추가할 질문을 만들지 못했어요. 아래 질문 은행에서 골라 보세요.');
+          return { ok: true as const, data: undefined };
         }
-      }
 
-      setAsking(false);
-      setTemplateNote(!result.ok);
-      setConcern('');
-      router.refresh();
-      return { ok: true as const, data: undefined };
+        // AI가 만든 것만 'ai'. 템플릿 폴백은 결정론 문구이므로 'bank'로 저장한다.
+        const source: QuestionSource = result.ok ? 'ai' : 'bank';
+        for (const q of questions) {
+          const added = await onAddQuestion(p.id, q, source);
+          if (!added.ok) {
+            setError(added.error);
+            break;
+          }
+        }
+
+        setTemplateNote(!result.ok);
+        setConcern('');
+        router.refresh();
+        return { ok: true as const, data: undefined };
+      } finally {
+        /*
+         * 반드시 finally 에 둘 것.
+         * useMutations.run 의 catch 가 예외를 삼켜 {ok:false} 로 바꾸므로, 콜백 본문 끝에 두면
+         * onAskQuestions·onAddQuestion 이 reject 했을 때 도달하지 못한다. 그러면 스피너가
+         * 영원히 돌고 버튼이 영구 비활성이 되어 새로고침 말고는 복구할 길이 없다.
+         */
+        setAsking(false);
+      }
+    }).then((result) => {
+      // 같은 요청이 이미 돌고 있으면 mutate 가 콜백을 실행하지 않는다 — finally 도 돌지 않는다
+      if (!result) setAsking(false);
     });
   }
 
+  /**
+   * 조사지 완성 (prep → ready).
+   *
+   * ★ 여기서 window.print() 를 부르지 않는다.
+   *   prep → ready 는 저장소를 통틀어 이 한 곳에서만 일어난다. 전이와 인쇄를 한 버튼에 묶어두면
+   *   인쇄할 생각이 없는 사용자(프린터 없는 노트북·현장에서 폰만 쓰는 사람)는 그 버튼을 누르지
+   *   않고, 국면 B가 잠긴 채로 빠져나갈 길이 없어진다. 인쇄는 완성 뒤 별도 버튼으로 둔다.
+   *
+   * 두 번 누르면 setStatus 가 두 번 나가고 두 번째는 이미 ready 라 서버가 거부하므로
+   * mutate 의 키 잠금으로 막는다.
+   */
   function handleComplete() {
-    // 두 번 누르면 setStatus 가 두 번 나가고, 두 번째는 이미 ready 라 서버가 거부한다.
-    // 인쇄는 정상인데 화면에 전이 실패 에러만 남는 상황이 된다.
-    void (async () => {
-      if (p.status === 'prep') {
-        const result = await mutate('complete', () => onSetStatus(p.id, 'ready'));
-        if (!result) return;
-        if (!result.ok) {
-          setError(result.error);
-          return;
-        }
-        router.refresh();
+    void mutate('complete', () => onSetStatus(p.id, 'ready')).then((result) => {
+      if (!result) return; // 같은 작업이 이미 돌고 있었다
+      if (!result.ok) {
+        setError(result.error);
+        return;
       }
-      window.print();
-    })();
+      setError('');
+      router.refresh();
+    });
   }
 
   const canComplete = p.questions.length > 0 || p.noConcern;
@@ -185,9 +202,14 @@ export function SurveySheetScreen({
           <h2 className="rc-card-title">
             ① 직접 확인할 것 <SourceBadge kind="rule" />
           </h2>
+          {/*
+            입력하지 않은 필드(0)는 문장에서 뺀다.
+            "전세·0년차·개별난방"은 사용자가 말한 적 없는 조건이고, 규칙 선정의 근거를 잘못 알린다.
+          */}
           <p className="rc-card-sub">
-            이 매물 조건({p.dealType}·{p.age}년차·{p.heating})에 맞춰 자동 선정됐어요. 필요 없는 항목은
-            ×로 빼세요.
+            이 매물 조건(
+            {[p.dealType, p.age > 0 ? `${p.age}년차` : null, p.heating].filter(Boolean).join('·')})에
+            맞춰 자동 선정됐어요. 필요 없는 항목은 ×로 빼세요.
           </p>
 
           {p.visitChecks.length === 0 ? (
@@ -401,19 +423,37 @@ export function SurveySheetScreen({
 
         {error && <p className="rc-error">{error}</p>}
 
+        {/*
+          완성과 인쇄를 나눠 둔다. 인쇄는 선택이고, 완성은 국면 B로 넘어가는 유일한 관문이다.
+          둘을 한 버튼에 묶으면 인쇄하지 않을 사람이 국면 B에 못 들어간다.
+        */}
         <div className="rc-form-actions">
-          <button
-            type="button"
-            className="rc-btn rc-btn-primary"
-            disabled={!canComplete || isBusy('complete')}
-            onClick={handleComplete}
-          >
-            조사지 완성 — 인쇄 미리보기
-          </button>
-          {!canComplete && (
-            <span className="rc-field-note">
-              질문을 하나 이상 고르거나 &ldquo;따로 걱정되는 건 없어요&rdquo;를 선택하면 완성할 수 있어요.
-            </span>
+          {p.status === 'prep' ? (
+            <>
+              <button
+                type="button"
+                className="rc-btn rc-btn-primary"
+                disabled={!canComplete || isBusy('complete')}
+                onClick={handleComplete}
+              >
+                {isBusy('complete') ? '완성하는 중...' : '조사지 완성'}
+              </button>
+              {!canComplete && (
+                <span className="rc-field-note">
+                  질문을 하나 이상 고르거나 &ldquo;따로 걱정되는 건 없어요&rdquo;를 선택하면 완성할 수
+                  있어요.
+                </span>
+              )}
+            </>
+          ) : (
+            <>
+              <button type="button" className="rc-btn" onClick={() => window.print()}>
+                조사지 인쇄 미리보기
+              </button>
+              <span className="rc-field-note">
+                조사지를 완성했어요. 인쇄는 선택이고, 종이 없이 방문해도 방문 기록은 그대로 쓸 수 있어요.
+              </span>
+            </>
           )}
         </div>
 

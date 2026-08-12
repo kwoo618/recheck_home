@@ -272,7 +272,7 @@ export default async function AdminPage({
       {/* ── 8. 규칙 vs AI ── */}
       <Section
         n={8}
-        title="규칙 항목 수 vs AI 질문 수"
+        title={`규칙 : AI — 실사용 ${s.ruleVsAi.realCount}건 기준`}
         why="판정 가능한 것은 전부 규칙이 정합니다. AI는 자유 텍스트 이해가 꼭 필요한 지점에만 들어갑니다 (R2·R3)."
       >
         {/* 절대값은 데이터가 늘 때마다 흔들린다. 매물 1건당으로 정규화한 값을 앞에 둔다. */}
@@ -295,12 +295,15 @@ export default async function AdminPage({
         </div>
 
         <p className="mt-3 text-[11.5px] text-[var(--rc-ink-soft)]">
-          계산: (조사지 항목 {(s.ruleVsAi.real.visit + s.ruleVsAi.demo.visit).toLocaleString()} +
-          안전 점검 항목 {(s.ruleVsAi.real.safety + s.ruleVsAi.demo.safety).toLocaleString()}) ÷
-          매물 {s.ruleVsAi.totalCount.toLocaleString()}건 = 매물당{' '}
+          계산(실사용만): (조사지 항목 {s.ruleVsAi.real.visit.toLocaleString()} +
+          안전 점검 항목 {s.ruleVsAi.real.safety.toLocaleString()}) ÷
+          매물 {s.ruleVsAi.realCount.toLocaleString()}건 = 매물당{' '}
           {s.ruleVsAi.rulePerProperty ?? '—'}개.
-          AI 질문 {s.ruleVsAi.aiTotal.toLocaleString()}개 ÷ 매물 {s.ruleVsAi.totalCount.toLocaleString()}건 = 매물당{' '}
+          AI 질문 {s.ruleVsAi.aiReal.toLocaleString()}개 ÷ 매물 {s.ruleVsAi.realCount.toLocaleString()}건 = 매물당{' '}
           {s.ruleVsAi.aiPerProperty ?? '—'}개.
+          <br />
+          <b>시연용을 넣지 않는 이유</b>: 시드는 규칙 항목은 만들지만 AI 질문은 0건이라,
+          합산하면 분자에만 얹혀 비율이 시드 건수만큼 부풀려집니다. 데이터를 넣을수록 커지는 숫자는 지표가 아닙니다.
           안전 점검은 저장 테이블이 없어 규칙에 매물 조건을 태워 셉니다.
         </p>
 

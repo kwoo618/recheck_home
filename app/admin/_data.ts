@@ -319,24 +319,33 @@ export async function loadAdminStats() {
     side.ai += q.ai;
   }
 
-  const totalCount = acc.real.count + acc.demo.count;
-  const ruleTotal = acc.real.visit + acc.real.safety + acc.demo.visit + acc.demo.safety;
-  const aiQuestionTotal = acc.real.ai + acc.demo.ai;
+  /*
+   * ★ 비율은 **실사용만으로** 낸다.
+   *
+   *   시연용 시드는 규칙 항목은 만들지만 AI 질문은 0건이다 — 아무도 그 화면을 쓰지 않았으니까.
+   *   그래서 합산으로 계산하면 분자(규칙)에만 시드가 얹히고 분모(AI)는 실사용 그대로라
+   *   비율이 시드 건수만큼 부풀려진다. 데이터를 넣을수록 커지는 숫자는 지표가 아니다.
+   *
+   *   퍼널을 실사용 기준으로 계산한 것과 같은 문제이고 같은 해법이다.
+   *   절대값은 실사용/시연용/합계로 갈라 그대로 보여준다.
+   */
+  const ruleReal = acc.real.visit + acc.real.safety;
+  const aiReal = acc.real.ai;
 
   const per = (n: number, d: number) => (d === 0 ? null : Math.round((n / d) * 10) / 10);
 
   const ruleVsAi = {
     real: acc.real,
     demo: acc.demo,
-    /** 매물 1건당 규칙 항목 수 = (조사지 + 안전 점검) ÷ 매물 수 */
-    rulePerProperty: per(ruleTotal, totalCount),
-    /** 매물 1건당 AI 생성 질문 수 */
-    aiPerProperty: per(aiQuestionTotal, totalCount),
-    /** 규칙 : AI — 데이터가 늘어도 흔들리지 않는 숫자 */
-    ratio: aiQuestionTotal === 0 ? null : Math.round((ruleTotal / aiQuestionTotal) * 10) / 10,
-    ruleTotal,
-    aiTotal: aiQuestionTotal,
-    totalCount,
+    /** 매물 1건당 규칙 항목 수 = (조사지 + 안전 점검) ÷ 매물 수 — 실사용 기준 */
+    rulePerProperty: per(ruleReal, acc.real.count),
+    /** 매물 1건당 AI 생성 질문 수 — 실사용 기준 */
+    aiPerProperty: per(aiReal, acc.real.count),
+    /** 규칙 : AI — 실사용 기준. 데이터가 늘어도 흔들리지 않는다 */
+    ratio: aiReal === 0 ? null : Math.round((ruleReal / aiReal) * 10) / 10,
+    ruleReal,
+    aiReal,
+    realCount: acc.real.count,
   };
 
   return {

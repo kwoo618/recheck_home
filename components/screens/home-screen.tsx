@@ -1,10 +1,11 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { formatDistanceLabel } from '@/lib/geo';
-import type { PropertyDTO } from '@/lib/types';
+import type { ActionResult, PropertyDTO } from '@/lib/types';
 import { ScreenShell } from './_parts/screen-shell';
 import { HomeMapList } from './_parts/home-map-list';
 import { HomeLanding } from './_parts/home-landing';
+import { SessionReset } from './_parts/session-reset';
 import { ProgressRing } from './_parts/progress-ring';
 import { formatSpecLine } from './_parts/format';
 import { isActive, statusInfo } from './_parts/status';
@@ -29,9 +30,14 @@ export type HomeScreenProps = {
    * 패널이 직접 렌더하므로 여기서 다시 쓰지 않는다.
    */
   map?: ReactNode;
+  /**
+   * rc_session 쿠키를 새 UUID로 재발급하는 Server Action.
+   * 넘기지 않으면 버튼을 그리지 않는다 — 백엔드가 한 줄 연결하면 켜진다. (HANDOFF §3.14)
+   */
+  onResetSession?: () => Promise<ActionResult<void>>;
 };
 
-export function HomeScreen({ properties, hrefFor, map }: HomeScreenProps) {
+export function HomeScreen({ properties, hrefFor, map, onResetSession }: HomeScreenProps) {
   const total = properties.length;
   const activeCount = properties.filter((p) => isActive(p.status)).length;
   const located = properties.filter((p) => p.distanceFromSchool !== null);
@@ -115,6 +121,13 @@ export function HomeScreen({ properties, hrefFor, map }: HomeScreenProps) {
       </div>
 
       {sessionNotice}
+      {/*
+        쿠키 안내 바로 아래가 자리다 — "다른 브라우저로 열면 안 보인다"는 설명 다음에
+        "그럼 일부러 그렇게 하려면" 이 온다.
+        0건일 때는 위에서 랜딩으로 일찍 반환하므로 여기까지 오지 않는다. 새로 시작할 것이 없고,
+        랜딩 첫 화면에 이 문구가 뜨면 첫인상만 나빠진다.
+      */}
+      {onResetSession && <SessionReset onResetSession={onResetSession} />}
 
       {map ? (
         <HomeMapList map={map}>{list}</HomeMapList>

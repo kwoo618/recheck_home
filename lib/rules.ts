@@ -145,8 +145,17 @@ export const SAFETY_RULES: SafetyRule[] = [
   { id: 's-owner', critical: true, cond: () => true,
     title: '등기부등본 소유자 = 계약 상대방 확인',
     description: '임대인 신분증과 등기부 갑구 소유자를 대조' },
-  { id: 's-lien', critical: true,
-    cond: (c) => c.dealType !== '월세' || c.deposit >= 1000,
+  /*
+   * 2026-08-12: 조건 `dealType !== '월세' || deposit >= 1000`을 제거했다.
+   *
+   * 그 조건은 "보증금이 1,000만원 미만인 월세라면 근저당을 확인하지 않아도 된다"고
+   * 서비스가 말하는 것과 같았다. 1,000만원은 어디서 온 값도 아니고 우리가 정한 기준이며,
+   * 얼마부터 확인할 가치가 있는지는 판정이다 (R1·R8). PRD §5.7도 이 항목을 조건 없는 필수로 적는다.
+   *
+   * 보증금 500만원도 대학생에게는 큰 돈이고, 선순위 근저당이 있으면 경매에서 한 푼도
+   * 못 받을 수 있다는 사실은 금액과 무관하다. 확인 항목은 "확인하라"까지만 말하면 된다.
+   */
+  { id: 's-lien', critical: true, cond: () => true,
     title: '근저당·압류·가압류 확인',
     description: '등기부 을구의 선순위 권리 — 보증금 회수 순위에 직결' },
   { id: 's-bldg', critical: true, cond: () => true,

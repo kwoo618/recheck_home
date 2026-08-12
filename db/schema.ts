@@ -45,6 +45,21 @@ export const properties = pgTable(
     price: integer('price').default(0).notNull(),      // 만원 (월세면 월세액)
     deposit: integer('deposit').default(0).notNull(),  // 만원 (월세 보증금)
     mgmtFee: integer('mgmt_fee').default(0).notNull(), // 만원
+
+    /*
+     * ── 사글세 (2026-08-12 추가) ──────────────────────────────
+     * 대구대 인근 자취방 상당수가 사글세다. 이 두 칸이 없으면 해당 매물은 등록 자체가 안 된다.
+     *
+     * ★ nullable이다. 사글세가 아닌 매물은 null이고, 사글세여도 아직 입력하지 않았으면 null이다.
+     *   0과 null을 구분해야 한다 — 0은 "선납 없음"이고 null은 "모른다"다.
+     *   금액 필드를 0으로 채우면 화면이 "월 0원"처럼 서비스가 정한 숫자를 만들어낸다.
+     * ★ deal_type은 PG enum이 아니라 text라 '사글세' 추가에는 마이그레이션이 필요 없다.
+     *   실제로 DDL이 필요한 것은 이 두 칸뿐이고, 되돌리기는 DROP COLUMN 하나다.
+     */
+    /** 선납한 개월 수 (사글세 전용) */
+    prepaidMonths: integer('prepaid_months'),
+    /** 선납 총액, 만원 (사글세 전용) */
+    prepaidTotal: integer('prepaid_total'),
     area: numeric('area', { precision: 6, scale: 2 }).default('0').notNull(), // ㎡
     age: integer('age').default(0).notNull(),          // 년차
     heating: text('heating').$type<Heating>().default('모름').notNull(),
@@ -138,7 +153,13 @@ export const questionsRelations = relations(questions, ({ one }) => ({
 }));
 
 /* ── 타입 ────────────────────────────────────────────────────── */
-export type DealType = '전세' | '월세' | '매매';
+/**
+ * ★ 한글 표기를 그대로 값으로 쓴다. 영문 키로 바꾸지 않는다 —
+ *   DB에 이미 '전세'·'월세'·'매매'가 저장돼 있고, 배포본을 팀원들이 쓰는 중이라
+ *   키를 갈아끼우면 기존 행 전부를 옮기는 데이터 마이그레이션이 된다.
+ * ★ '사글세' 추가(2026-08-12): deal_type은 text 컬럼이라 DDL 변경이 필요 없다.
+ */
+export type DealType = '전세' | '월세' | '매매' | '사글세';
 export type Heating = '개별난방' | '중앙난방' | '지역난방' | '모름';
 export type PropertyStatus = 'prep' | 'ready' | 'recorded' | 'confirmed' | 'excluded';
 export type VisitResult = '' | 'good' | 'ok' | 'bad' | 'na';

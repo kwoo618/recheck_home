@@ -174,6 +174,9 @@ function toPropertyDTO(row: PropertyRow): PropertyDTO {
     price: row.price,
     deposit: row.deposit,
     mgmtFee: row.mgmtFee,
+    // 사글세 전용. null을 0으로 접지 않는다 — 0("선납 없음")과 null("모름")은 다르다
+    prepaidMonths: row.prepaidMonths,
+    prepaidTotal: row.prepaidTotal,
     // numeric 컬럼은 드라이버에서 string으로 온다 → number로 정규화
     area: Number(row.area),
     age: row.age,

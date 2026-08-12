@@ -8,6 +8,13 @@
       "when": 1786419787886,
       "tag": "0000_nosy_silhouette",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1786505728688,
+      "tag": "0001_lean_ink",
+      "breakpoints": true
     }
   ]
 }

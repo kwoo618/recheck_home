@@ -135,8 +135,8 @@ export default async function AdminPage({
       {/* ── 2. 퍼널 ── */}
       <Section
         n={2}
-        title="퍼널"
-        why="상태 모델이 곧 퍼널입니다. 뒤 단계에 있는 매물은 앞 단계를 이미 지나온 것이므로 누적으로 셉니다."
+        title={`퍼널 — 실사용 ${s.demo.real}건 기준`}
+        why="상태 모델이 곧 퍼널입니다. 뒤 단계에 있는 매물은 앞 단계를 이미 지나온 것이므로 누적으로 셉니다. 시연용 데이터는 전부 같은 상태로 들어가 전환율을 끌어당기므로 여기서는 빼고 셉니다 — 만든 데이터로 전환율을 그리지 않습니다."
       >
         <div className="flex flex-col gap-1.5">
           {s.funnel.map((f) => {
@@ -169,9 +169,32 @@ export default async function AdminPage({
         </p>
       </Section>
 
-      {/* ── 3. 상태 분포 ── */}
-      <Section n={3} title="상태 분포">
-        <Bars rows={s.statusDist.map((r) => ({ label: `${r.label} (${r.key})`, count: r.count }))} />
+      {/* ── 3. 상태 분포 ──
+          퍼널이 실사용 기준이라 여기서 모집단을 갈라 보여준다.
+          같은 화면의 두 지표가 다른 모집단을 쓰는데 그게 안 보이면 숫자를 잘못 읽는다. */}
+      <Section n={3} title="상태 분포" why="퍼널이 어느 모집단을 쓰는지 여기서 확인할 수 있습니다.">
+        <table className="w-full text-[12.5px]">
+          <thead>
+            <tr className="border-b border-[var(--rc-line)] text-left text-[var(--rc-ink-soft)]">
+              <th className="py-1 font-medium">상태</th>
+              <th className="py-1 text-right font-medium">실사용</th>
+              <th className="py-1 text-right font-medium">시연용</th>
+              <th className="py-1 text-right font-medium">합계</th>
+            </tr>
+          </thead>
+          <tbody>
+            {s.statusDist.map((r) => (
+              <tr key={r.key} className="border-b border-[var(--rc-line)]">
+                <td className="py-1.5 text-[var(--rc-ink)]">
+                  {r.label} <span className="text-[var(--rc-ink-faint)]">({r.key})</span>
+                </td>
+                <td className="py-1.5 text-right tabular-nums text-[var(--rc-ink)]">{r.real}</td>
+                <td className="py-1.5 text-right tabular-nums text-[var(--rc-ink-soft)]">{r.demo}</td>
+                <td className="py-1.5 text-right tabular-nums text-[var(--rc-ink)]">{r.count}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </Section>
 
       {/* ── 4. 지역 분포 ── */}

@@ -47,3 +47,11 @@ next-env.d.ts
 *.local.json
 *.local.mts
 .htmlcheck/
+
+# 스크린샷 러너 산출물 (tests/e2e)
+# 사진·PDF는 저장소에 넣지 않는다. 매 실행마다 통째로 바뀌는 바이너리라
+# 디프가 무의미하고 저장소만 무거워진다.
+# docs/qa/console-errors.md는 텍스트 보고서라 커밋한다 — 러너를 돌리지 않는
+# 사람도 마지막 실행에서 무엇이 나왔는지 읽을 수 있어야 한다.
+/docs/qa/shots/
+/docs/qa/pdf/

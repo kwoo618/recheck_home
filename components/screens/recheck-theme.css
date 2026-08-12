@@ -240,8 +240,13 @@
 .rc-home-tabs button.rc-on { color: var(--rc-ink); border-bottom-color: var(--rc-teal); }
 
 .rc-home-body { display: grid; grid-template-columns: 1fr; gap: 16px; }
-/* 모바일에서는 지도가 먼저 (§7.2). DOM 순서도 지도가 앞이다 */
-.rc-home-map { order: -1; }
+/*
+  모바일에서는 지도가 먼저 (§7.2). DOM 순서도 지도가 앞이다.
+  min-width:0 은 .rc-home-list 와 짝이다 — 그리드 자식의 기본 최소 폭은 min-content 라,
+  패널 안에 넓은 요소가 하나라도 있으면 그 폭이 트랙을 밀어 페이지에 가로 스크롤이 생긴다.
+  목록 쪽에만 걸려 있어 지도 쪽이 비어 있었다.
+*/
+.rc-home-map { order: -1; min-width: 0; }
 /* 카드가 뷰포트가 아니라 "자기가 놓인 컬럼" 폭에 반응하게 한다 */
 .rc-home-list { container-type: inline-size; min-width: 0; }
 

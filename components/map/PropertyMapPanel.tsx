@@ -73,7 +73,18 @@ export function PropertyMapPanel({
           </p>
           <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
             {unlocated.map((p) => (
-              <li key={p.id} className="text-[12.5px] text-[var(--rc-ink-soft)]">
+              /*
+                min-w-0 과 overflow-wrap:anywhere 가 둘 다 필요하다.
+                flex 자식의 기본 min-width 는 auto 라 자기 min-content 아래로 줄지 않는데,
+                공백 없는 긴 매물 별칭은 min-content 자체가 크다. flex-wrap 은 항목 "사이"에서만
+                접히므로 항목 "안"이 넓은 건 못 막는다. 그 폭이 ul → section → 그리드 트랙으로
+                전파돼 홈·비교 화면에 가로 스크롤을 만들었다(러너 실측 +26px / +29px).
+                전역 overflow-wrap: break-word 로는 부족하다 — min-content 를 낮추지 못한다.
+              */
+              <li
+                key={p.id}
+                className="min-w-0 [overflow-wrap:anywhere] text-[12.5px] text-[var(--rc-ink-soft)]"
+              >
                 {p.name}
                 <span className="ml-1 text-[var(--rc-ink-faint)]">
                   {formatDistance(p.distanceFromSchool)}

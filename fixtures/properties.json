@@ -578,6 +578,17 @@
         "result": "",
         "memo": "",
         "sort": 8
+      },
+      {
+        "id": "44444444-vc10",
+        "propertyId": "44444444-4444-4444-4444-444444444444",
+        "ruleId": "v-mgmt",
+        "category": "가격",
+        "title": "관리비 포함 항목 현장 재확인",
+        "description": "수도·인터넷·청소비 포함 여부를 현장에서 다시 확인",
+        "result": "",
+        "memo": "",
+        "sort": 9
       }
     ],
     "questions": [

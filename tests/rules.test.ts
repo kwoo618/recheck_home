@@ -240,9 +240,19 @@ describe('selectVisitRules', () => {
     expect(ids).not.toContain('v-elev');
   });
 
-  it('관리비 현장 재확인은 월세에만 나온다', () => {
+  /**
+   * 매달 관리비가 나가는 유형에만 붙는다 — 월세와 사글세.
+   *
+   * ★ 조건을 `!== '전세'` 같은 부정형으로 쓰지 않는다. 거래유형이 늘었을 때
+   *   아무도 검토하지 않은 채 자동으로 포함되기 때문이다. 이 테스트가 그 규약을 지킨다:
+   *   새 거래유형을 추가하면 여기서 실패하고, 넣을지 말지를 사람이 정하게 된다.
+   */
+  it('관리비 현장 재확인은 월세·사글세에만 나온다', () => {
     expect(selectVisitRules(ctx({ dealType: '월세' })).map((r) => r.id)).toContain('v-mgmt');
+    expect(selectVisitRules(ctx({ dealType: '사글세' })).map((r) => r.id)).toContain('v-mgmt');
+
     expect(selectVisitRules(ctx({ dealType: '전세' })).map((r) => r.id)).not.toContain('v-mgmt');
+    expect(selectVisitRules(ctx({ dealType: '매매' })).map((r) => r.id)).not.toContain('v-mgmt');
   });
 
   it('같은 입력이면 항상 같은 결과다 (순수 함수)', () => {

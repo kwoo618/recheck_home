@@ -10,6 +10,9 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "qa:seed": "node --conditions=react-server --env-file=.env.local tests/e2e/seed.mts",
+    "qa:clean": "node --conditions=react-server --env-file=.env.local tests/e2e/seed.mts --clean",
+    "qa:shoot": "node tests/e2e/shoot.mts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio"
@@ -40,6 +43,7 @@
     "drizzle-kit": "^0.31.10",
     "eslint": "^9",
     "eslint-config-next": "16.3.0",
+    "playwright": "^1.62.1",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.10"

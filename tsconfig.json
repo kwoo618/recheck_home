@@ -11,6 +11,12 @@
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
+    /*
+     * tests/e2e/*.mts는 번들러 없이 `node`가 직접 실행한다(Node 22의 타입 스트리핑).
+     * Node ESM은 확장자를 요구하므로 러너는 '../../lib/rules.ts'처럼 .ts를 붙여 임포트한다.
+     * noEmit 프로젝트에서만 켤 수 있는 옵션이고, 이 저장소는 noEmit이다.
+     */
+    "allowImportingTsExtensions": true,
     "jsx": "react-jsx",
     "incremental": true,
     "plugins": [

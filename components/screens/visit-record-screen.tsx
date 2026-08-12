@@ -190,10 +190,15 @@ export function VisitRecordScreen({
                     ))}
                   </div>
                   {showMemo && (
-                    <input
-                      className="rc-input"
+                    /*
+                      답변 칸과 같은 이유로 여러 줄이다 (지시에는 답변만 있었다).
+                      이 칸은 '문제있음'을 눌렀을 때 무엇이 문제였는지 적는 자리라 답변보다 길어지기
+                      쉽고, 같은 화면·같은 패턴이라 한쪽만 고치면 다음 사진에서 그대로 다시 걸린다.
+                    */
+                    <textarea
+                      className="rc-input rc-answer-input"
                       style={{ marginTop: 7 }}
-                      type="text"
+                      rows={2}
                       placeholder="메모 (선택)"
                       aria-label={`${v.title} 메모`}
                       value={memos[v.id] ?? ''}
@@ -230,10 +235,19 @@ export function VisitRecordScreen({
                     <QuestionBadge question={q} />
                   </div>
                   {heard ? (
-                    <div className="rc-row">
-                      <input
-                        className="rc-input"
-                        type="text"
+                    /*
+                      <input> 이 아니라 <textarea> 다. 중개사 답변은 한 줄에 안 들어가는 일이 흔한데,
+                      한 줄짜리 입력칸은 쓰는 즉시 앞부분이 가려져 무엇을 적었는지 확인할 수 없었다.
+                      (러너가 390px 사진에서 잡음)
+
+                      Enter 는 이 화면에서 원래도 저장이 아니다 — <form> 이 없고 저장 버튼은
+                      type="button" + onClick 이라 암묵적 제출 경로가 없다. 그래서 줄바꿈이 되어도
+                      저장 동선은 달라지지 않는다. (components/screens 전체에 form·onKeyDown·submit 없음)
+                    */
+                    <div className="rc-row rc-row-top">
+                      <textarea
+                        className="rc-input rc-answer-input"
+                        rows={2}
                         placeholder="받은 답변"
                         aria-label={`${q.text} 답변`}
                         value={answers[q.id] ?? ''}

@@ -20,6 +20,13 @@
 - [x] SQL Editor에서 `SELECT 1;` 정상 응답 확인
 - [x] 연결 문자열을 `.env.local`의 `DATABASE_URL`에 저장 — **앱 경유 연결 검증 완료** (2026-08-11)
 - [x] 마이그레이션 적용 확인 — 테이블 5개 생성됨: `ai_logs`, `properties`, `questions`, `users`, `visit_checks`
+- [x] **마이그레이션 2번째 적용 (2026-08-12)** — `0001_lean_ink.sql`, 사글세 칸 2개 추가
+  - 전문이 두 줄이다: `ALTER TABLE properties ADD COLUMN prepaid_months integer;` / `... prepaid_total integer;`
+  - `deal_type`은 PG enum이 아니라 **text**라 `'사글세'` 값 추가에는 DDL이 필요 없었다
+  - 적용 후 실측: 기존 13행 모두 두 칸 NULL, `deal_type` 분포 무변(전세 5 · 월세 8). 테이블 재작성 없음
+  - **되돌리기**: `ALTER TABLE properties DROP COLUMN prepaid_months;` + `... prepaid_total;` +
+    `DELETE FROM drizzle.__drizzle_migrations WHERE id = 2;` (현재 행은 id=1, 2 두 개)
+    → 되돌릴 때 잃는 것은 사글세 매물의 선납 정보뿐이다. **쌓이기 전에 되돌리면 손실 0**
 - [x] 인덱스 4개 생성 확인: `properties_user_idx` / `properties_status_idx` / `questions_prop_idx` / `visit_checks_prop_idx`
   - (이 문서에 2개로 적혀 있었으나 스키마상 properties 인덱스 2개가 추가로 있음)
 - [x] 실 서버 버전 확인: PostgreSQL 18.4 / `drizzle.__drizzle_migrations` 1건 적용

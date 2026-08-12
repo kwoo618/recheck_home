@@ -14,7 +14,7 @@ import { calcProgress, distanceFromSchool } from '@/lib/geo';
  * DB가 필요 없는 순수 검증이라 항상 돌린다.
  */
 
-const DEAL_TYPES = ['전세', '월세', '매매'];
+const DEAL_TYPES = ['전세', '월세', '매매', '사글세'];
 const HEATINGS = ['개별난방', '중앙난방', '지역난방', '모름'];
 const STATUSES = ['prep', 'ready', 'recorded', 'confirmed', 'excluded'];
 const RESULTS = ['', 'good', 'ok', 'bad', 'na'];
@@ -25,16 +25,41 @@ const BANK_TEXTS = new Set(Object.values(QUESTION_BANK).flat());
 /** PropertyDTO가 요구하는 최상위 키 (lib/types.ts와 동기화) */
 const REQUIRED_KEYS = [
   'id', 'name', 'address', 'addressDetail', 'latitude', 'longitude',
-  'distanceFromSchool', 'dealType', 'price', 'deposit', 'mgmtFee', 'area',
+  'distanceFromSchool', 'dealType', 'price', 'deposit', 'mgmtFee',
+  'prepaidMonths', 'prepaidTotal', 'area',
   'age', 'heating', 'floor', 'link', 'status', 'noConcern', 'progress',
   'visitChecks', 'questions', 'safetyChecks', 'contractChecks', 'afterChecks',
   'createdAt', 'updatedAt',
 ];
 
 describe('fixtures/properties.json — PropertyDTO 형태', () => {
-  it('매물 3건이 있다', () => {
+  it('매물 4건이 있다', () => {
     expect(Array.isArray(fixtures)).toBe(true);
-    expect(fixtures).toHaveLength(3);
+    expect(fixtures).toHaveLength(4);
+  });
+
+  /**
+   * 대구대 인근 자취방 상당수가 사글세다. 더미에 사글세가 없으면
+   * 프론트가 그 화면을 한 번도 못 보고 만들게 된다.
+   */
+  it('사글세 표본이 있고 선납 값이 채워져 있다', () => {
+    const prepaid = fixtures.filter((p) => p.dealType === '사글세');
+    expect(prepaid.length).toBeGreaterThan(0);
+
+    for (const p of prepaid) {
+      expect(typeof p.prepaidMonths).toBe('number');
+      expect(typeof p.prepaidTotal).toBe('number');
+      expect(p.prepaidMonths as number).toBeGreaterThan(0);
+      expect(p.prepaidTotal as number).toBeGreaterThan(0);
+    }
+  });
+
+  /** 사글세가 아닌 매물의 선납 칸은 0이 아니라 null이다 — "선납 없음"이 아니라 "해당 없음" */
+  it('사글세가 아닌 매물의 선납 값은 null이다', () => {
+    for (const p of fixtures.filter((x) => x.dealType !== '사글세')) {
+      expect(p.prepaidMonths, p.name as string).toBeNull();
+      expect(p.prepaidTotal, p.name as string).toBeNull();
+    }
   });
 
   it('모든 매물이 PropertyDTO의 키를 빠짐없이 갖는다', () => {
@@ -164,8 +189,15 @@ describe('fixtures — 불변 규칙 준수', () => {
 });
 
 describe('fixtures — 시연 시나리오', () => {
+  /**
+   * 개수가 아니라 "세 상태가 다 있는지"를 본다. 표본을 늘릴 때마다 목록을 고치게 하면
+   * 테스트가 의미 없이 깨지고, 정작 상태 하나가 빠져도 알아채기 어렵다.
+   */
   it('prep · ready · recorded 세 상태를 모두 보여준다', () => {
-    expect(fixtures.map((p) => p.status).sort()).toEqual(['prep', 'ready', 'recorded'].sort());
+    const statuses = new Set(fixtures.map((p) => p.status));
+    for (const s of ['prep', 'ready', 'recorded']) {
+      expect(statuses, s).toContain(s);
+    }
   });
 
   it('좌표가 있는 매물과 없는 매물이 함께 있다 (지도·리스트 폴백 확인용)', () => {

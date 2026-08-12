@@ -54,6 +54,8 @@ describe('규칙 id는 DB 키라 바뀌면 안 된다', () => {
       [
         's-agent', 's-bldg', 's-deal-price', 's-insure', 's-lien',
         's-movein', 's-owner', 's-ratio', 's-tax', 's-terms', 's-trust',
+        's-prepaid-split', 's-prepaid-refund', 's-prepaid-account',
+        's-prepaid-fee', 's-prepaid-renew',
       ].sort(),
     );
   });
@@ -147,7 +149,59 @@ describe('selectSafetyRules', () => {
     const critical = SAFETY_RULES.filter((r) => r.critical).map((r) => r.id);
     expect(critical).toEqual([
       's-owner', 's-lien', 's-bldg', 's-trust', 's-movein', 's-ratio', 's-deal-price',
+      's-prepaid-split', 's-prepaid-refund', 's-prepaid-account',
     ]);
+  });
+});
+
+/* ══════════════════════════════════════════════════════════════
+   사글세 (2026-08-12 추가)
+
+   선납금은 보증금이 아니라 차임 선납으로 취급되는 경우가 많아, 전입신고·확정일자를
+   해도 보증금처럼 보호받지 못할 수 있다. 그 간극을 계약서에서 메우게 하는 항목들이다.
+   ══════════════════════════════════════════════════════════════ */
+
+describe('사글세 안전 점검 항목', () => {
+  const PREPAID_IDS = [
+    's-prepaid-split', 's-prepaid-refund', 's-prepaid-account',
+    's-prepaid-fee', 's-prepaid-renew',
+  ];
+
+  it('사글세에서 5항목이 모두 선정된다', () => {
+    const ids = selectSafetyRules(ctx({ dealType: '사글세' })).map((r) => r.id);
+    for (const id of PREPAID_IDS) expect(ids, id).toContain(id);
+  });
+
+  it('사글세가 아닌 유형에서는 하나도 선정되지 않는다', () => {
+    for (const dealType of ['전세', '월세', '매매'] as const) {
+      const ids = selectSafetyRules(ctx({ dealType })).map((r) => r.id);
+      for (const id of PREPAID_IDS) expect(ids, `${dealType}/${id}`).not.toContain(id);
+    }
+  });
+
+  /**
+   * 필수 3 / 추천 2. 기존 기준 그대로다 —
+   * 필수는 보증금·권리 상실로 직결되는 것, 추천은 금액 예측·미래 조건에 관한 것.
+   */
+  it('필수 3 · 추천 2로 나뉜다', () => {
+    const byId = new Map(SAFETY_RULES.map((r) => [r.id, r]));
+    expect(byId.get('s-prepaid-split')?.critical).toBe(true);   // 돈의 성격을 정하는 기재
+    expect(byId.get('s-prepaid-refund')?.critical).toBe(true);  // 없으면 손실이 확정된다
+    expect(byId.get('s-prepaid-account')?.critical).toBe(true); // 큰 금액이 한 번에 나간다
+    expect(byId.get('s-prepaid-fee')?.critical).toBe(false);    // 금액 예측의 문제
+    expect(byId.get('s-prepaid-renew')?.critical).toBe(false);  // 미래 조건
+  });
+
+  it('사글세도 임차이므로 전입신고·세금 완납 확인이 함께 나온다', () => {
+    const ids = selectSafetyRules(ctx({ dealType: '사글세' })).map((r) => r.id);
+    expect(ids).toContain('s-movein');
+    expect(ids).toContain('s-tax');
+  });
+
+  it('전세 전용 항목(전세가율·반환보증)은 사글세에 나오지 않는다', () => {
+    const ids = selectSafetyRules(ctx({ dealType: '사글세' })).map((r) => r.id);
+    expect(ids).not.toContain('s-ratio');
+    expect(ids).not.toContain('s-insure');
   });
 });
 

@@ -173,9 +173,34 @@ export const SAFETY_RULES: SafetyRule[] = [
   { id: 's-deal-price', critical: true, cond: (c) => c.dealType === '매매',
     title: '실거래가 대비 매매가 확인',
     description: '동일 단지·평형의 최근 거래 내역 조회' },
+
+  /* ── 사글세 전용 (2026-08-12 추가) ────────────────────────────
+     사글세 선납금은 보증금이 아니라 **차임(월세)의 선납**으로 취급되는 경우가 많다.
+     그래서 전입신고·확정일자를 해도 선납금은 보증금처럼 보호받지 못할 수 있다.
+     아래 항목들은 그 간극을 계약서에서 메우게 하는 것이다.
+
+     필수/추천은 기존 기준을 그대로 따랐다 —
+       필수 = 보증금·권리 상실로 직결되는 것
+       추천 = 사고 시 구제 수단이거나 금액 예측에 관한 것
+     ───────────────────────────────────────────────────────────── */
+  { id: 's-prepaid-split', critical: true, cond: (c) => c.dealType === '사글세',
+    title: '보증금과 선납 사글세가 계약서에 구분 기재됐는지 확인',
+    description: '두 돈의 성격이 나뉘어 적혀 있어야 한다 — 선납금이 차임으로만 취급되면 보증금과 같은 보호를 받지 못할 수 있음' },
+  { id: 's-prepaid-refund', critical: true, cond: (c) => c.dealType === '사글세',
+    title: '중도 퇴실 시 남은 개월 수 환불 조건 확인',
+    description: '선납금은 이미 지급한 돈이다. 환불 조항이 계약서에 없으면 남은 개월치를 돌려받을 근거가 없음' },
+  { id: 's-prepaid-account', critical: true, cond: (c) => c.dealType === '사글세',
+    title: '선납금을 보낼 계좌가 등기부상 임대인 명의인지 확인',
+    description: '계약 시점에 큰 금액이 한 번에 나가므로 송금 전에 등기부 갑구 소유자와 예금주를 대조' },
   { id: 's-insure', critical: false, cond: (c) => c.dealType === '전세',
     title: '전세보증금 반환보증 가입 가능 여부 사전 조회',
     description: 'HUG·SGI에서 해당 매물의 가입 가능 여부를 미리 확인' },
+  { id: 's-prepaid-fee', critical: false, cond: (c) => c.dealType === '사글세',
+    title: '관리비·공과금이 선납액에 포함인지 별도인지 확인',
+    description: '선납으로 끝나는 줄 알았던 비용이 매달 따로 나갈 수 있음 — 계약서에 포함 범위를 명시' },
+  { id: 's-prepaid-renew', critical: false, cond: (c) => c.dealType === '사글세',
+    title: '재계약 시 금액 인상 조건이 정해져 있는지 확인',
+    description: '다음 기간 금액을 미리 정해두지 않으면 재계약 시점에 조건을 처음부터 다시 협의하게 됨' },
   { id: 's-agent', critical: false, cond: () => true,
     title: '공인중개사 정등록 여부 확인',
     description: '국가공간정보포털 조회 — 무등록 중개는 사고 시 공제 보상을 받기 어려움' },

@@ -39,9 +39,6 @@
 
 ### 즉시
 - [ ] **팀원 테스트 연락** — 문구는 `WORKFLOW.md` §5에 있음
-- [ ] `docs/HANDOFF-FRONT.md`를 `main`에 병합 (현재 `feat/screens`에만 있음)
-- [ ] 로컬 3000 서버 종료
-- [ ] `next.config.ts`에 `agentRules: false` — `next dev`가 `CLAUDE.md`를 자동 수정하는 것 차단
 
 ### 발표 전
 - [ ] 발표 논지 정리 (팀에 위임했으나 아래 3개는 강우가 답할 수 있어야 함)

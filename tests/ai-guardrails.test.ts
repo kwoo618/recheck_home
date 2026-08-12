@@ -6,7 +6,7 @@ import {
   SUMMARY_SYSTEM,
   wrapUserInput,
 } from '@/lib/ai/prompts';
-import { normalizeParsed, normalizeQuestions, parseJson } from '@/lib/ai/normalize';
+import { normalizeParsed, normalizeQuestions, parseJson, parseJsonDetailed } from '@/lib/ai/normalize';
 import { GEMINI_MODEL, GEMINI_FALLBACK_MODEL, GEMINI_MODEL_CHAIN, GEMINI_TIMEOUT_MS } from '@/lib/ai/models';
 import { fallbackQuestions, containsBanned } from '@/lib/rules';
 
@@ -101,7 +101,7 @@ describe('parseJson — 모델이 주는 JSON은 깔끔하지 않다', () => {
     });
   });
 
-  it('잘린 응답은 null이다 — 반쪽 데이터를 통과시키지 않는다', () => {
+  it('문자열 도중에 잘리면 null이다 — 어디서 끊겼는지 알 수 없다', () => {
     expect(parseJson('{"name":"원룸","addr')).toBeNull();
     expect(parseJson('["질문1","질문')).toBeNull();
   });
@@ -109,6 +109,93 @@ describe('parseJson — 모델이 주는 JSON은 깔끔하지 않다', () => {
   it('JSON이 없으면 null이다', () => {
     expect(parseJson('그냥 문장입니다')).toBeNull();
     expect(parseJson('')).toBeNull();
+  });
+});
+
+/* ══════════════════════════════════════════════════════════════
+   닫는 괄호 보충 (2026-08-12 추가)
+
+   실측 사례: 모델이 10개 필드를 전부 맞게 뽑고도 마지막 `}` 하나를 빠뜨려
+   응답 전체가 버려졌다. `finishReason`은 `STOP`이라 상위 가드에도 걸리지 않았다.
+   같은 입력으로 3회 모두 재현됐다.
+
+   ★ 채우는 것은 **닫는 괄호뿐**이다. 값을 지어내거나 콤마를 손보지 않는다.
+   ══════════════════════════════════════════════════════════════ */
+
+describe('parseJsonDetailed — 잘린 JSON 복구', () => {
+  it('정상 JSON은 복구 없이 통과한다', () => {
+    expect(parseJsonDetailed('{"a":1}')).toEqual({ value: { a: 1 }, recovered: false });
+    expect(parseJsonDetailed('[1,2]')).toEqual({ value: [1, 2], recovered: false });
+  });
+
+  /** 실제로 관측된 응답 그대로 — 마지막 `}` 만 없다 */
+  it('닫는 중괄호가 없으면 보충해 살린다', () => {
+    const truncated = [
+      '{',
+      '  "name": "제네시스",',
+      '  "address": "대구대로 294-1, 201호",',
+      '  "dealType": "월세",',
+      '  "price": 45,',
+      '  "deposit": 20,',
+      '  "mgmtFee": 0,',
+      '  "area": 62,',
+      '  "age": 15,',
+      '  "heating": "개별난방",',
+      '  "floor": "3"',
+    ].join('\n');
+
+    const r = parseJsonDetailed<Record<string, unknown>>(truncated);
+    expect(r.recovered).toBe(true);
+    expect(r.value).toMatchObject({ name: '제네시스', price: 45, deposit: 20, floor: '3' });
+  });
+
+  it('닫는 대괄호가 없어도 보충한다', () => {
+    const r = parseJsonDetailed<string[]>('["질문1","질문2"');
+    expect(r.recovered).toBe(true);
+    expect(r.value).toEqual(['질문1', '질문2']);
+  });
+
+  it('중첩된 괄호도 안쪽부터 순서대로 채운다', () => {
+    const r = parseJsonDetailed<Record<string, unknown>>('{"a":{"b":[1,2');
+    expect(r.recovered).toBe(true);
+    expect(r.value).toEqual({ a: { b: [1, 2] } });
+  });
+
+  /**
+   * 여는 괄호가 없는 것은 "잘렸다"가 아니라 "구조가 깨졌다"이다.
+   * 앞부분이 어떤 모양이었는지 알 수 없으므로 복구하지 않는다.
+   */
+  it('여는 괄호가 없으면 복구하지 않는다', () => {
+    expect(parseJsonDetailed('"name":"원룸"}')).toEqual({ value: null, recovered: false });
+    expect(parseJsonDetailed('1,2]')).toEqual({ value: null, recovered: false });
+  });
+
+  /** 문자열 안의 괄호를 세면 엉뚱한 곳을 닫게 된다 */
+  it('문자열 안의 괄호는 세지 않는다', () => {
+    const r = parseJsonDetailed<Record<string, string>>('{"note":"여기 } 괄호가 있다"');
+    expect(r.recovered).toBe(true);
+    expect(r.value).toEqual({ note: '여기 } 괄호가 있다' });
+
+    // 이스케이프된 따옴표도 문자열 경계로 오해하지 않는다
+    const q = parseJsonDetailed<Record<string, string>>('{"q":"그가 \\"안녕 { 이라\\" 했다"');
+    expect(q.recovered).toBe(true);
+    expect(q.value).toEqual({ q: '그가 "안녕 { 이라" 했다' });
+  });
+
+  it('문자열이 끝나지 않은 채 잘리면 복구하지 않는다', () => {
+    expect(parseJsonDetailed('{"name":"원룸","addr')).toEqual({ value: null, recovered: false });
+  });
+
+  /** 기존 방어선(남는 괄호 잘라내기)을 건드리지 않았는지 — 반대 사례 회귀 */
+  it('닫는 괄호가 남는 경우는 예전처럼 잘라내고, 복구로 세지 않는다', () => {
+    const r = parseJsonDetailed<Record<string, unknown>>('{\n "name": "원룸",\n "price": 45\n}\n}');
+    expect(r.recovered).toBe(false);
+    expect(r.value).toEqual({ name: '원룸', price: 45 });
+  });
+
+  it('보충해도 파싱이 안 되면 그대로 실패다 — 억지로 살리지 않는다', () => {
+    // 콤마로 끝나 값이 비어 있다. 괄호를 채워도 유효한 JSON이 아니다.
+    expect(parseJsonDetailed('{"a":1,')).toEqual({ value: null, recovered: false });
   });
 });
 

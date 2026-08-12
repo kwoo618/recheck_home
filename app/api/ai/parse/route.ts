@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { generate, logAi } from '@/lib/ai/gemini';
-import { normalizeParsed, parseJson, type ParsedProperty } from '@/lib/ai/normalize';
+import { normalizeParsed, parseJsonDetailed, RECOVERY_MARK, type ParsedProperty } from '@/lib/ai/normalize';
 import { PARSE_SYSTEM, wrapUserInput } from '@/lib/ai/prompts';
 import { readSessionId } from '@/lib/session';
 
@@ -58,9 +58,16 @@ export async function POST(request: Request) {
     return fail('구조화에 실패했습니다. 직접 입력해주세요.');
   }
 
-  const data = normalizeParsed(parseJson(result.text));
+  const parsed = parseJsonDetailed<unknown>(result.text);
+  const data = normalizeParsed(parsed.value);
 
-  await logAi('parse', clipped, result.text, false);
+  // 괄호를 보충해 살려낸 경우 표시를 남긴다 — 얼마나 자주 나는지 알아야 한다.
+  await logAi(
+    'parse',
+    clipped,
+    parsed.recovered ? `${RECOVERY_MARK}\n${result.text}` : result.text,
+    false,
+  );
 
   // 아는 필드를 하나도 못 뽑았으면 성공이라 할 수 없다.
   if (Object.keys(data).length === 0) {

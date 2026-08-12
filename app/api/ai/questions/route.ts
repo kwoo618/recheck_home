@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 import { generate, logAi } from '@/lib/ai/gemini';
-import { normalizeQuestions, parseJson } from '@/lib/ai/normalize';
+import { normalizeQuestions, parseJsonDetailed, RECOVERY_MARK } from '@/lib/ai/normalize';
 import { QUESTIONS_SYSTEM, wrapUserInput } from '@/lib/ai/prompts';
 import { fallbackQuestions } from '@/lib/rules';
 import { readSessionId } from '@/lib/session';
@@ -79,9 +79,15 @@ export async function POST(request: Request) {
     return template(clipped, 'AI 변환에 실패해 질문 은행에서 골랐습니다.');
   }
 
-  const questions = normalizeQuestions(parseJson(result.text));
+  const parsed = parseJsonDetailed<unknown>(result.text);
+  const questions = normalizeQuestions(parsed.value);
 
-  await logAi('questions', clipped, result.text, false);
+  await logAi(
+    'questions',
+    clipped,
+    parsed.recovered ? `${RECOVERY_MARK}\n${result.text}` : result.text,
+    false,
+  );
 
   // 형식은 맞았지만 쓸 만한 질문이 없으면 폴백이 낫다.
   if (questions.length === 0) {

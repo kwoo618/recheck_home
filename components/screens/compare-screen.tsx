@@ -5,13 +5,18 @@ import { useRouter } from 'next/navigation';
 import { useState, type ReactNode } from 'react';
 import type { FinanceProfile, PropertyStatus, QuestionSource } from '@/db/schema';
 import { DISTANCE_NOTICE, SCHOOL_ORIGIN, estimateWalkMinutes, formatDistance } from '@/lib/geo';
+import { calcPrepaid, type PrepaidResult } from '@/lib/finance';
 import type { ActionResult, PropertyDTO } from '@/lib/types';
 import { ScreenShell } from './_parts/screen-shell';
 import { SourceBadge } from './_parts/source-badge';
 import { useMutations } from './_parts/use-mutations';
 import { SaveStatus } from './_parts/save-status';
 import { CompareFinance } from './_parts/compare-finance';
-import { formatPrice } from './_parts/format';
+import {
+  PREPAID_MONTHLY_NOTE,
+  formatPrepaidMonthlyShort,
+  formatPrice,
+} from './_parts/format';
 import { isActive } from './_parts/status';
 import type { HrefFor } from './_parts/nav';
 
@@ -95,6 +100,14 @@ export function CompareScreen({
   // 거래유형이 섞이면 원시 가격은 같은 축의 값이 아니게 된다
   const dealTypes = new Set(ps.map((p) => p.dealType));
   const mixedDeal = dealTypes.size > 1;
+  /*
+    사글세 — 주 시나리오는 "사글세끼리" 비교다.
+    전부 사글세일 때만 처음 드는 돈·월 환산액으로 견준다. 유형이 섞이면 환산하지 않는다.
+    환산에는 재계약 횟수나 기간 가정이 반드시 끼어들고, 그 순간 서비스가 기준을 제시한 것이 된다. (R8)
+  */
+  const allPrepaid = ps.every((p) => p.dealType === '사글세');
+  const anyPrepaid = ps.some((p) => p.dealType === '사글세');
+  const prepaidResults = new Map(ps.map((p) => [p.id, calcPrepaid(p)]));
   const hasRecords = ps.some(
     (p) => p.visitChecks.some((v) => v.result !== '') || p.questions.some((q) => q.answer !== ''),
   );
@@ -247,20 +260,59 @@ export function CompareScreen({
                 전세 8,500만과 월세 45만은 같은 축의 값이 아니라서, 화살표를 그리면
                 "전세가 189배 비싸다"로 읽힌다. 그건 사실이 아니다.
               */}
-              <NumberRow
-                properties={ps}
-                label="가격 (만원)"
-                pick={(p) => p.price}
-                marks={!mixedDeal}
-                blankZero
-              />
-              {ps.some((p) => p.dealType === '월세') && (
+              {/* 사글세끼리면 price 가 전부 0이라 —만 늘어선 행이 된다. 선납 총액이 그 자리다 */}
+              {!allPrepaid && (
+                <NumberRow
+                  properties={ps}
+                  label="가격 (만원)"
+                  pick={(p) => p.price}
+                  marks={!mixedDeal}
+                  blankZero
+                />
+              )}
+              {/* 사글세도 보증금이 따로 있다 — 월세일 때만 보여주면 사글세 매물의 보증금이 사라진다 */}
+              {ps.some((p) => p.dealType === '월세' || p.dealType === '사글세') && (
                 <NumberRow
                   properties={ps}
                   label="보증금 (만원)"
                   pick={(p) => p.deposit}
                   marks={!mixedDeal}
                 />
+              )}
+
+              {/*
+                선납 정보. null("아직 입력하지 않음")은 칸을 비우고, 0("선납 없음")은 —로 적는다.
+                사글세가 아닌 매물에는 "해당 없음"이라고 쓴다 — 빈칸이면 미입력과 구분되지 않는다.
+              */}
+              {anyPrepaid && (
+                <>
+                  <PrepaidRawRow properties={ps} label="선납 총액 (만원)" pick={(p) => p.prepaidTotal} />
+                  <PrepaidRawRow properties={ps} label="선납 개월" pick={(p) => p.prepaidMonths} unit="개월" />
+                </>
+              )}
+
+              {/*
+                아래 두 행은 사글세끼리일 때만 그린다. 유형이 섞이면 같은 축의 값이 아니다.
+                월 환산액에는 기간을 반드시 붙인다 — "50만"만 적으면 6개월과 12개월이 같아 보이고
+                총액이 다르다는 사실이 숨는다.
+              */}
+              {allPrepaid && (
+                <>
+                  <PrepaidCalcRow
+                    properties={ps}
+                    results={prepaidResults}
+                    label="처음 드는 돈 (만원)"
+                    pick={(r) => r.initialCash}
+                    render={(r) => r.initialCash.toLocaleString()}
+                  />
+                  <PrepaidCalcRow
+                    properties={ps}
+                    results={prepaidResults}
+                    label="월 환산액"
+                    pick={(r) => r.monthlyEquivalent}
+                    render={(r) => formatPrepaidMonthlyShort(r.monthlyEquivalent, r.months)}
+                  />
+                </>
               )}
               {/*
                 관리비에는 blankZero 를 쓰지 않는다. 관리비가 실제로 0원인 매물이 있어서
@@ -325,18 +377,34 @@ export function CompareScreen({
           <br />
           노란 칸 = 미확인 · 빨간 글씨 = 사용자가 &lsquo;문제있음&rsquo;으로 기록한 항목. 둘 다 입력한
           기록을 그대로 옮긴 것이고, 서비스가 판정한 결과가 아닙니다.
+          {/* 월 환산액을 보여주는 곳에는 각주를 반드시 함께 둔다 — 없으면 월세로 읽힌다 */}
+          {allPrepaid && (
+            <>
+              <br />
+              {PREPAID_MONTHLY_NOTE}
+            </>
+          )}
         </p>
 
+        {/* ★ 사글세끼리면 이 안내가 뜨면 안 된다 — 환산하지 않은 것이 아니라 같은 축으로 비교한 것이다 */}
         {mixedDeal && (
           <p className="rc-notice rc-notice-info">
-            <b>{[...dealTypes].join('·')}가 섞여 있어 가격·보증금은 직접 비교할 수 없습니다.</b> 전세금과
-            월세는 성격이 다른 금액이라 높낮이를 견주는 것이 의미가 없어서, 두 행에는 ▲▼를 붙이지
-            않았습니다.
+            <b>계약 유형이 다르면 같은 기준으로 환산하지 않았습니다.</b> ({[...dealTypes].join('·')})
+            성격이 다른 금액이라 높낮이를 견주는 것이 의미가 없어서, 가격·보증금 행에는 ▲▼를 붙이지
+            않고 입력한 값을 그대로 두었습니다.
+            {anyPrepaid && (
+              <>
+                {' '}
+                사글세를 다른 유형과 같은 기간 기준으로 바꾸려면 재계약 횟수를 가정해야 하는데, 그
+                가정은 사용자가 넣은 값이 아닙니다.
+              </>
+            )}
             <br />
             거래유형이 달라도 견줄 수 있는 축은 아래 <b>③ 금융·현금흐름</b>의{' '}
             <b>월 주거비</b>(월세 + 관리비 + 월이자)와 <b>초기 필요자금</b>이에요. 자금 조건을 입력하면
             계산됩니다.
             {dealTypes.has('매매') && ' 매매는 상환 구조가 달라 이 계산에서 빠집니다.'}
+            {dealTypes.has('사글세') && ' 사글세는 선납금을 ③에서 따로 계산합니다.'}
             {dealTypes.has('월세') && ' 보증금과 월세를 맞바꾸면 어떻게 되는지는 ③의 전환 계산기에서 확인할 수 있어요.'}
           </p>
         )}
@@ -506,6 +574,116 @@ export function CompareScreen({
 
       {error && <p className="rc-error">{error}</p>}
     </ScreenShell>
+  );
+}
+
+/**
+ * 사글세 선납 원본값 행 — 사용자가 입력한 값을 그대로 옮긴다. 계산하지 않는다.
+ *
+ * ★ null 과 0 을 다르게 그린다. null 은 "아직 입력하지 않음"이라 빈 칸으로 두고,
+ *   0 은 "선납 없음"이라 —로 적는다. 둘을 같게 그리면 사용자가 넣지 않은 사실이 생긴다. (R8)
+ * ★ 사글세가 아닌 매물은 "해당 없음"이다 — 빈 칸이면 미입력과 구분되지 않는다.
+ * ▲▼ 를 붙이지 않는다. 선납 총액은 기간이 다르면 같은 축의 값이 아니다.
+ */
+function PrepaidRawRow({
+  properties,
+  label,
+  pick,
+  unit = '',
+}: {
+  properties: PropertyDTO[];
+  label: string;
+  pick: (p: PropertyDTO) => number | null;
+  unit?: string;
+}) {
+  return (
+    <tr>
+      <td className="rc-rowlabel">{label}</td>
+      {properties.map((p) => {
+        if (p.dealType !== '사글세') {
+          return (
+            <td key={p.id} style={{ color: 'var(--rc-ink-faint)' }}>
+              해당 없음
+            </td>
+          );
+        }
+        const v = pick(p);
+        if (v === null) return <td key={p.id} className="rc-miss">미입력</td>;
+        if (v === 0) {
+          return (
+            <td key={p.id} style={{ color: 'var(--rc-ink-faint)' }}>
+              —
+            </td>
+          );
+        }
+        return (
+          <td key={p.id}>
+            {v.toLocaleString()}
+            {unit}
+          </td>
+        );
+      })}
+    </tr>
+  );
+}
+
+/**
+ * 사글세 계산 행 — calcPrepaid 결과만 쓴다. 화면에서 다시 계산하지 않는다.
+ *
+ * 사글세끼리일 때만 그리므로 ▲▼ 를 붙인다(같은 축의 값이다).
+ * ok:false 면 계산 결과를 렌더하지 않고 무엇을 넣어야 하는지만 적는다 — #9(금리 미입력)와 같은 방식.
+ */
+const PREPAID_MISSING: Record<string, string> = {
+  months_missing: '선납 개월 수 미입력',
+  total_missing: '선납 총액 미입력',
+  not_prepaid: '해당 없음',
+};
+
+function PrepaidCalcRow({
+  properties,
+  results,
+  label,
+  pick,
+  render,
+}: {
+  properties: PropertyDTO[];
+  results: Map<string, PrepaidResult>;
+  label: string;
+  pick: (r: Extract<PrepaidResult, { ok: true }>) => number;
+  render: (r: Extract<PrepaidResult, { ok: true }>) => string;
+}) {
+  const ok = properties
+    .map((p) => results.get(p.id))
+    .filter((r): r is Extract<PrepaidResult, { ok: true }> => r?.ok === true);
+  const values = ok.map(pick);
+  const max = values.length ? Math.max(...values) : 0;
+  const min = values.length ? Math.min(...values) : 0;
+  const varied = values.length > 1 && max !== min;
+
+  return (
+    <tr className="rc-key-row">
+      <td className="rc-rowlabel">
+        <b>{label}</b>
+      </td>
+      {properties.map((p) => {
+        const r = results.get(p.id);
+        if (!r || !r.ok) {
+          return (
+            <td key={p.id} className="rc-miss">
+              {PREPAID_MISSING[r?.reason ?? 'not_prepaid'] ?? '해당 없음'}
+            </td>
+          );
+        }
+        const v = pick(r);
+        return (
+          <td key={p.id}>
+            <b>{render(r)}</b>
+            {varied && v === max && <span className="rc-arr-hi"> ▲</span>}
+            {varied && v === min && <span className="rc-arr-lo"> ▼</span>}
+          </td>
+        );
+      })}
+    </tr>
   );
 }
 

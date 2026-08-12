@@ -8,10 +8,12 @@ import {
   FINANCE_DISCLAIMER,
   calcConversion,
   calcFinance,
+  calcPrepaid,
   negotiationQuestion,
 } from '@/lib/finance';
 import type { ActionResult, PropertyDTO } from '@/lib/types';
 import { SourceBadge } from './source-badge';
+import { PREPAID_MONTHLY_NOTE, formatPrepaidMonthly } from './format';
 
 /**
  * 비교 ③ 금융·현금흐름 + 보증금↔월세 전환 계산기 (PRD §6)
@@ -45,6 +47,13 @@ export type CompareFinanceProps = {
 };
 
 const num = (v: string) => (v.trim() === '' ? undefined : Number(v));
+
+/** calcPrepaid 가 실패로 돌려준 사유 → 무엇을 넣어야 하는지. 계산 결과는 렌더하지 않는다 (#9와 같은 방식) */
+const PREPAID_MISSING: Record<string, string> = {
+  months_missing: '선납 개월 수를 입력하면 월 환산액이 계산됩니다.',
+  total_missing: '선납 총액을 입력하면 월 환산액이 계산됩니다.',
+  not_prepaid: '',
+};
 
 /** 금융 프로필을 값으로 비교하기 위한 키. 서버 렌더마다 새 객체가 오므로 참조로는 볼 수 없다 */
 const profileKey = (p: FinanceProfile) =>
@@ -116,6 +125,8 @@ export function CompareFinance({
 
   const hasInput = cash.trim() !== '' || loanCap.trim() !== '';
   const results = properties.map((p) => ({ property: p, finance: calcFinance(p, profile) }));
+  // calcFinance 가 prepaid_separate 를 돌려주는 매물 — 대출·이자 대신 선납 계산을 보여준다
+  const prepaidProperties = properties.filter((p) => p.dealType === '사글세');
 
   /* ── 전환 계산 ─────────────────────────────────────────────── */
   const cvProperty = properties.find((p) => p.id === cvPropertyId);
@@ -232,6 +243,41 @@ export function CompareFinance({
         </>
       ) : (
         <p className="rc-notice">자금 조건을 입력하면 매물별 월 주거비가 계산돼요.</p>
+      )}
+
+      {/*
+        ── 사글세 선납 ────────────────────────────────────────────
+        calcFinance 가 prepaid_separate 를 돌려주는 매물이다. 대출·이자 모델을 얹지 않고
+        calcPrepaid 로 따로 계산한다 — 사용자가 넣은 값의 나눗셈·덧셈뿐이다.
+        ok:false 면 계산 결과를 렌더하지 않고 무엇을 넣어야 하는지만 알린다.
+      */}
+      {prepaidProperties.length > 0 && (
+        <div className="rc-subsection">
+          <h3 className="rc-subsection-title">
+            사글세 선납 계산 <SourceBadge kind="rule" label="결정론 계산" />
+          </h3>
+          {prepaidProperties.map((p) => {
+            const r = calcPrepaid(p);
+            return (
+              <div key={p.id} className="rc-notice">
+                <b>{p.name}</b>
+                <br />
+                {r.ok ? (
+                  <>
+                    처음 드는 돈 <b>{r.initialCash.toLocaleString()}만</b> (보증금{' '}
+                    {r.deposit.toLocaleString()}만 + 선납 {r.prepaidTotal.toLocaleString()}만)
+                    <br />
+                    월 환산액 <b>{formatPrepaidMonthly(r.monthlyEquivalent, r.months)}</b>
+                  </>
+                ) : (
+                  PREPAID_MISSING[r.reason]
+                )}
+              </div>
+            );
+          })}
+          {/* 환산액이 화면에 있으면 각주도 반드시 있어야 한다 */}
+          <p className="rc-legend">{PREPAID_MONTHLY_NOTE}</p>
+        </div>
       )}
 
       {/*
@@ -385,7 +431,10 @@ function FinanceRow({
           {finance.applicable ? (
             cell(finance, property)
           ) : (
-            <span style={{ color: 'var(--rc-ink-faint)' }}>매매 — 계산 제외</span>
+            /* 사유를 구분해 적는다. 사글세를 "매매 — 계산 제외"로 쓰면 사실이 아니다 */
+            <span style={{ color: 'var(--rc-ink-faint)' }}>
+              {finance.reason === 'prepaid_separate' ? '사글세 — 아래 따로 계산' : '매매 — 계산 제외'}
+            </span>
           )}
         </td>
       ))}

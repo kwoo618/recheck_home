@@ -55,6 +55,12 @@ function toFormValue(p: PropertyDTO): PropertyFormValue {
     price: String(p.price ?? ''),
     deposit: String(p.deposit ?? ''),
     mgmtFee: String(p.mgmtFee ?? ''),
+    /*
+      null("아직 입력하지 않음")은 빈 칸으로, 0("선납 없음")은 "0"으로 되돌린다.
+      String(null) 은 "null" 이 되고 `?? ''` 만 쓰면 0 이 살아남지 못하므로 명시적으로 가른다.
+    */
+    prepaidMonths: p.prepaidMonths === null ? '' : String(p.prepaidMonths),
+    prepaidTotal: p.prepaidTotal === null ? '' : String(p.prepaidTotal),
     area: p.area ? String(p.area) : '',
     age: String(p.age ?? ''),
     heating: p.heating,

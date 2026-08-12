@@ -1065,4 +1065,11 @@
   .rc-phases { gap: 6px; }
   .rc-ph { padding: 6px 9px; font-size: 12px; gap: 5px; }
   .rc-lock-note { font-size: 10.5px; }
+  /*
+    거래 유형이 4종(전세·월세·매매·사글세)이 되면서 .rc-seg 가 길어졌다.
+    이 요소는 overflow:hidden 이고 flex-wrap 이 없어 넘치면 스크롤이 아니라 잘린다.
+    360px 에서는 패딩 18px 로도 들어가지만(실측 258.8px / 카드 안쪽 294px) 320px 화면에서는 넘친다.
+    좁은 화면에서만 좌우 패딩을 줄여 잘림을 막는다.
+  */
+  .rc-seg button { padding: 8px 14px; }
 }

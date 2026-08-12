@@ -116,6 +116,22 @@ export function PropertyAddScreen({
       price: data.price !== undefined ? String(data.price) : prev.price,
       deposit: data.deposit !== undefined ? String(data.deposit) : prev.deposit,
       mgmtFee: data.mgmtFee !== undefined ? String(data.mgmtFee) : prev.mgmtFee,
+      /*
+        지금 AI 파서는 선납 값을 추출하지 않는다(lib/ai/normalize.ts). 나중에 추가되면
+        여기서 조용히 버려지지 않도록 미리 받아둔다. null 은 "입력 안 함"이라 빈 문자열로 옮긴다.
+      */
+      prepaidMonths:
+        data.prepaidMonths !== undefined
+          ? data.prepaidMonths === null
+            ? ''
+            : String(data.prepaidMonths)
+          : prev.prepaidMonths,
+      prepaidTotal:
+        data.prepaidTotal !== undefined
+          ? data.prepaidTotal === null
+            ? ''
+            : String(data.prepaidTotal)
+          : prev.prepaidTotal,
       area: data.area !== undefined ? String(data.area) : prev.area,
       age: data.age !== undefined ? String(data.age) : prev.age,
       heating: data.heating ?? prev.heating,

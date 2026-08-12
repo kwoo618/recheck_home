@@ -33,9 +33,22 @@ export type CompareFinanceProps = {
     text: string,
     source: QuestionSource,
   ) => Promise<ActionResult<{ id: string }>>;
+  /**
+   * 부모(CompareScreen)의 useMutations 를 그대로 쓴다 — 직접 await 하면 중복 요청 차단·예외 흡수·
+   * 저장 표시가 전부 빠진다. SaveStatus 가 부모에 있으므로 훅도 부모 것을 공유해야 한다.
+   */
+  mutate: <T>(
+    key: string,
+    action: () => Promise<ActionResult<T>>,
+  ) => Promise<ActionResult<T> | null>;
+  isBusy: (key: string) => boolean;
 };
 
 const num = (v: string) => (v.trim() === '' ? undefined : Number(v));
+
+/** 금융 프로필을 값으로 비교하기 위한 키. 서버 렌더마다 새 객체가 오므로 참조로는 볼 수 없다 */
+const profileKey = (p: FinanceProfile) =>
+  [p.cash, p.loanCap, p.rate, p.cvRate].map((v) => v ?? '').join('|');
 
 /*
  * 가정 문구는 한 덩어리 상수라 그대로 두면 모바일에서 6~7줄이 된다.
@@ -52,6 +65,8 @@ export function CompareFinance({
   finance,
   onSaveFinance,
   onAddQuestion,
+  mutate,
+  isBusy,
 }: CompareFinanceProps) {
   const [cash, setCash] = useState(finance.cash?.toString() ?? '');
   const [loanCap, setLoanCap] = useState(finance.loanCap?.toString() ?? '');
@@ -67,9 +82,7 @@ export function CompareFinance({
    * 객체 참조가 아니라 값으로 비교한다 — 서버 렌더마다 새 객체가 오므로 참조로 보면
    * 새로고침 때마다 입력 중인 값을 덮어쓴다.
    */
-  const financeKey = [finance.cash, finance.loanCap, finance.rate, finance.cvRate]
-    .map((v) => v ?? '')
-    .join('|');
+  const financeKey = profileKey(finance);
   const [syncedKey, setSyncedKey] = useState(financeKey);
   if (financeKey !== syncedKey) {
     setSyncedKey(financeKey);
@@ -92,8 +105,13 @@ export function CompareFinance({
     cvRate: num(cvRate),
   };
 
+  /*
+   * 결과를 버리면 저장 실패가 화면 어디에도 나타나지 않는다. mutate 를 거쳐 SaveStatus 로 알린다.
+   * 키에 payload 를 넣어 "같은 값의 중복 저장"만 막는다 — 키를 고정하면 앞선 저장이 끝나기 전에
+   * 다른 칸을 빠져나올 때 그 값이 조용히 버려진다.
+   */
   function persist() {
-    void onSaveFinance(profile);
+    void mutate(`finance-${profileKey(profile)}`, () => onSaveFinance(profile));
   }
 
   const hasInput = cash.trim() !== '' || loanCap.trim() !== '';
@@ -102,6 +120,13 @@ export function CompareFinance({
   /* ── 전환 계산 ─────────────────────────────────────────────── */
   const cvProperty = properties.find((p) => p.id === cvPropertyId);
   const monthlyProperties = properties.filter((p) => p.dealType === '월세');
+  /*
+   * ★ 금리를 넣지 않았으면 이자·순변화를 화면에 내지 않는다.
+   *   0 으로 계산해 보여주면 "이자가 0원"이라는, 사용자가 말한 적 없는 전제를 서비스가 제시한 것이
+   *   된다. 월세 감소분이 전액 이득으로 읽힌다. (R8 — cvRate 미입력 처리와 같은 패턴)
+   *   추가 보증금·새 보증금은 금리와 무관하므로 그대로 보여준다.
+   */
+  const hasRate = profile.rate !== undefined;
   const conversion =
     cvProperty && cvRate.trim() !== '' && targetRent.trim() !== ''
       ? calcConversion(
@@ -109,9 +134,15 @@ export function CompareFinance({
           Number(targetRent),
           Number(cvRate),
           cvProperty.deposit,
-          profile.rate ?? 0,
+          profile.rate ?? 0, // hasRate 가 false 면 아래에서 이자·순변화를 렌더하지 않는다
         )
       : null;
+
+  // 중복 추가를 막는 키. 값이 바뀌면 다른 질문이므로 키도 함께 바뀐다
+  const negotiationText = conversion?.ok
+    ? negotiationQuestion(conversion.newDeposit, Number(targetRent))
+    : '';
+  const negotiationKey = `negotiation-${cvPropertyId}-${negotiationText}`;
 
   return (
     <section className="rc-card">
@@ -232,7 +263,7 @@ export function CompareFinance({
               <div>
                 <label className="rc-fl" htmlFor="rc-cv-prop">대상 매물 (월세)</label>
                 <select id="rc-cv-prop" className="rc-select" value={cvPropertyId}
-                  onChange={(e) => setCvPropertyId(e.target.value)}>
+                  onChange={(e) => { setCvPropertyId(e.target.value); setAdded(null); }}>
                   {monthlyProperties.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name} — 현재 월 {p.price}만
@@ -242,15 +273,18 @@ export function CompareFinance({
               </div>
               <div>
                 <label className="rc-fl" htmlFor="rc-cv-target">목표 월세 (만원)</label>
+                {/* 예시 숫자를 placeholder 에 넣지 않는다 — 그 숫자가 서비스가 제시한 기준으로 읽힌다 */}
                 <input id="rc-cv-target" className="rc-input" type="number" inputMode="numeric"
-                  value={targetRent} placeholder="예: 20"
-                  onChange={(e) => setTargetRent(e.target.value)} />
+                  min="0" step="1"
+                  value={targetRent} placeholder="직접 입력"
+                  onChange={(e) => { setTargetRent(e.target.value); setAdded(null); }} />
               </div>
               <div>
                 <label className="rc-fl" htmlFor="rc-cv-rate">전환율 (연 %)</label>
-                <input id="rc-cv-rate" className="rc-input" type="number" inputMode="decimal" step="0.1"
+                <input id="rc-cv-rate" className="rc-input" type="number" inputMode="decimal"
+                  min="0" step="0.1"
                   value={cvRate} placeholder="직접 입력"
-                  onChange={(e) => setCvRate(e.target.value)} onBlur={persist} />
+                  onChange={(e) => { setCvRate(e.target.value); setAdded(null); }} onBlur={persist} />
               </div>
             </div>
 
@@ -270,20 +304,39 @@ export function CompareFinance({
                   월세 {cvProperty!.price}만 → {targetRent}만으로 낮추려면 보증금 약{' '}
                   <b>{conversion.additionalDeposit.toLocaleString()}만원 추가</b> (
                   {cvProperty!.deposit.toLocaleString()}만 → {conversion.newDeposit.toLocaleString()}만)
-                  수준이 참고 기준이에요.
+                  수준이 참고 기준이에요.{' '}
+                  {/* 사용자가 넣은 값을 다시 보여준다. 값의 타당성은 판정하지 않는다 (R1·R8) */}
+                  <b>전환율 {cvRate}% 기준</b>
                   <br />
-                  월세 {conversion.rentReduction}만 감소 · 추가 보증금을 전액 대출로 마련한다고 가정하면
-                  월이자 {conversion.addedMonthlyInterest}만 증가 (차이 {conversion.netMonthlyChange}만)
+                  월세 {conversion.rentReduction}만 감소
+                  {hasRate && (
+                    <>
+                      {' '}· 추가 보증금을 전액 대출로 마련한다고 가정하면 월이자{' '}
+                      {conversion.addedMonthlyInterest}만 증가 (차이 {conversion.netMonthlyChange}만)
+                    </>
+                  )}
                 </p>
+                {!hasRate && (
+                  <p className="rc-notice">
+                    예상 대출 금리를 입력하면 월 부담 변화가 계산됩니다.
+                  </p>
+                )}
                 <div className="rc-notice">
                   협상 질문 예시 <SourceBadge kind="template" />
                   <br />
-                  &ldquo;{negotiationQuestion(conversion.newDeposit, Number(targetRent))}&rdquo;
+                  &ldquo;{negotiationText}&rdquo;
                   <div style={{ marginTop: 6 }}>
                     <button type="button" className="rc-btn rc-btn-sm"
+                      disabled={isBusy(negotiationKey)}
                       onClick={() => {
-                        const text = negotiationQuestion(conversion.newDeposit, Number(targetRent));
-                        void onAddQuestion(cvProperty!.id, text, 'bank').then((r) => {
+                        /*
+                         * 직접 await 하면 빠른 더블클릭에 질문이 두 건 들어간다 (HANDOFF §3.2 의 실제 사고).
+                         * disabled 는 다음 렌더에야 걸리므로 mutate 의 ref 잠금을 거친다.
+                         */
+                        void mutate(negotiationKey, () =>
+                          onAddQuestion(cvPropertyId, negotiationText, 'bank'),
+                        ).then((r) => {
+                          if (!r) return; // 같은 질문이 이미 추가되는 중이었다
                           setAdded(r.ok ? '질문 목록에 추가했어요.' : r.error);
                         });
                       }}>

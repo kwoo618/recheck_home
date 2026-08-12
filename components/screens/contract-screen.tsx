@@ -90,7 +90,7 @@ export function ContractScreen({ property: p, hrefFor, onToggleCheck, onSetStatu
                   disabled={isBusy(`contract-${c.id}`)}
                   onChange={(e) => toggle('contract', c.id, e.target.checked)}
                 />
-                <span className="rc-chk-t">{c.title}</span>
+                <span className="rc-chk-t rc-chk-body">{c.title}</span>
               </label>
             );
           })}
@@ -118,7 +118,7 @@ export function ContractScreen({ property: p, hrefFor, onToggleCheck, onSetStatu
                     disabled={isBusy(`after-${item.id}`)}
                     onChange={(e) => toggle('after', item.id, e.target.checked)}
                   />
-                  <span className="rc-chk-t">{item.title}</span>
+                  <span className="rc-chk-t rc-chk-body">{item.title}</span>
                 </label>
               );
             })}

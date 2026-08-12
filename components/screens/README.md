@@ -24,7 +24,7 @@ v0로 만든 화면 컴포넌트를 여기에 넣습니다.
 | 위치 | 요구사항 |
 |---|---|
 | 모든 데이터 섹션 제목 옆 | 출처 배지 — `규칙 기반`(틸) / `AI`(보라) / `직접 입력`(회색) |
-| 거리 표기 | 기준점은 **"대구대 경산캠퍼스"**. "정문"이라 쓰지 않습니다 — 아래 "거리 문구" 항목 참조 |
+| 거리 표기 | 기준점 이름은 `SCHOOL_ORIGIN.name`(현재 **"대구대학교"**)입니다. "정문"이라 쓰지 않습니다 — 아래 "거리 문구" 항목 참조 |
 | 지도 하단 | "등록한 매물만 표시됩니다. 지도에서 새 매물을 찾지 않습니다." |
 | 금융 화면 | `FINANCE_DISCLAIMER` + `FINANCE_ASSUMPTIONS` 상시 노출 |
 | 비교표 ▲▼ | "수치 표시일 뿐 우열이 아님" 범례 필수 |
@@ -33,31 +33,39 @@ v0로 만든 화면 컴포넌트를 여기에 넣습니다.
 | 전월세전환율 입력 | 기본값을 넣지 않습니다 — 아래 "전환 계산기" 항목 참조 |
 | 터치 타깃 | 최소 44px (현장에서 쓰는 화면) |
 
-## 거리 문구 — "정문"이 아니라 "경산캠퍼스"
+## 거리 문구 — 이름을 화면에 직접 쓰지 마세요
 
 거리 계산 기준점은 **대구대 경산캠퍼스 대표 좌표(POI 중심)**이지 정문이 아닙니다.
 기준이 아닌 지점을 기준이라고 표기하면 사실과 다른 정보가 되므로, 화면 어디에도 "정문"을 쓰지 마세요.
+
+**표기 이름은 `SCHOOL_ORIGIN.name`이 단일 소스입니다.** 현재 값은 `"대구대학교"`입니다.
+이 문서에 한때 `"대구대 경산캠퍼스"`로 적혀 있었지만 `lib/geo.ts`가 최신입니다 — 이름을 화면에
+하드코딩하면 상수가 바뀔 때 따라오지 않습니다(HANDOFF-FRONT §4.6의 실제 사고).
 
 **문구를 직접 조립하지 말고 `formatDistanceLabel()`을 쓰세요.** 기준점 이름과
 "직선거리 기준 추정" 병기가 한 곳에서 관리됩니다.
 
 ```tsx
-import { formatDistanceLabel, formatDistance, DISTANCE_NOTICE } from '@/lib/geo';
+import { formatDistanceLabel, formatDistance, estimateWalkMinutes, DISTANCE_NOTICE } from '@/lib/geo';
 
 formatDistanceLabel(820)
-// "대구대 경산캠퍼스에서 직선 820m (도보 약 12분 · 직선거리 기준 추정)"
+// "대구대학교에서 직선 820m (도보 약 12분 · 직선거리 기준 추정)"
 
 formatDistanceLabel(null)
 // "위치 미지정"   ← 좌표를 못 얻은 매물. 에러가 아니라 정상 상태입니다
 
-formatDistance(1420)  // "1.4km"  ← 표에서 거리만 짧게 쓸 때
+formatDistance(1420)        // "1.4km"  ← 표에서 거리만 짧게 쓸 때
+estimateWalkMinutes(820)    // 12       ← 표에서 도보 시간만 짧게 쓸 때
 ```
 
 | 상황 | 표기 |
 |---|---|
 | 카드·상세·PDF 헤더 | `formatDistanceLabel()` 전문 그대로 |
-| 비교표처럼 열이 좁을 때 | `formatDistance()` + 열 제목에 "경산캠퍼스 직선거리", 표 하단에 `DISTANCE_NOTICE` |
+| 비교표처럼 열이 좁을 때 | 칸에는 `formatDistance()`·`estimateWalkMinutes()` 같은 **짧은 값만**. 열 제목에 `{SCHOOL_ORIGIN.name} 직선거리`, 표 하단에 `DISTANCE_NOTICE` |
 | `distanceFromSchool === null` | "위치 미지정" 그룹으로 분리. 거리 0으로 표시하지 마세요 |
+
+> 좁은 열에 `formatDistanceLabel()` 전문을 넣지 마세요. 기준점 이름과 "직선거리 기준 추정"이
+> 매물 수만큼 반복돼 표를 밀어내고, 같은 단서가 표 하단 `DISTANCE_NOTICE`와 중복됩니다.
 
 ## 전환 계산기 (비교 화면 ③ 금융 — 프론트 C)
 

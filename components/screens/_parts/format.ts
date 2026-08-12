@@ -11,12 +11,27 @@ import type { VisitResult } from '@/db/schema';
 
 type PriceFields = Pick<PropertyDTO, 'dealType' | 'price' | 'deposit'>;
 
-/** 프로토타입 fmtPrice() 그대로 */
+/**
+ * 입력하지 않은 숫자 필드는 0으로 저장된다 — 스키마가 nullable 이 아니라 "0"과 "미입력"을
+ * 값으로 구분할 수 없다. 0을 그대로 적으면 "전세 0만"·"0년차"처럼 사실이 아닌 조건이 되므로
+ * —로 바꾼다. (면적을 그렇게 처리한 HANDOFF §3.8 과 같은 방식)
+ *
+ * ★ 관리비에는 쓰지 않는다. 관리비가 실제로 0원인 매물이 있어서 —로 적으면 사실과 달라진다. (R8)
+ *   입력 라벨의 "관리비가 없으면 0을 입력하세요"가 0의 의미를 사용자 의도로 확정한다.
+ * ★ 연식 0은 "신축 당해년도"와 "미입력"을 구분할 수 없다. 미입력이 훨씬 흔해 미입력으로 본다.
+ *   구분하려면 스키마를 nullable 로 바꿔야 하므로 알려진 한계로 남긴다.
+ */
+const DASH = '—';
+
+/** 프로토타입 fmtPrice() 에 미입력(0) 처리를 더한 것 */
 export function formatPrice(p: PriceFields): string {
   if (p.dealType === '월세') {
-    return `보증금 ${p.deposit || 0}만 / 월 ${p.price || 0}만`;
+    // 보증금 0은 그대로 둔다 — 무보증 월세가 실제로 있어 미입력으로 단정할 수 없다
+    const rent = p.price > 0 ? `${p.price.toLocaleString()}만` : DASH;
+    return `보증금 ${(p.deposit || 0).toLocaleString()}만 / 월 ${rent}`;
   }
   const price = p.price || 0;
+  if (price === 0) return `${p.dealType} ${DASH}`;
   if (price >= 10000) {
     const eok = Math.floor(price / 10000);
     const rest = price % 10000;
@@ -32,11 +47,23 @@ type SpecFields = PriceFields & Pick<PropertyDTO, 'age' | 'heating' | 'floor' | 
  * 프로토타입은 관리비를 아예 다루지 않았다 — 계약(PropertyDTO.mgmtFee)에 있어 되살렸다.
  */
 export function formatSpecLine(p: SpecFields): string {
-  const parts = [formatPrice(p), `${p.age}년차`, p.heating];
+  const parts = [formatPrice(p)];
+  if (p.age > 0) parts.push(`${p.age}년차`);
+  parts.push(p.heating);
   if (p.floor) parts.push(`${p.floor}층`);
   if (p.mgmtFee > 0) parts.push(`관리비 ${p.mgmtFee}만`);
   return parts.join(' · ');
 }
+
+/**
+ * 방문 기록의 4택.
+ *
+ * ★ 화면(visit-record-screen)과 인쇄물(survey-sheet-print)이 같은 배열을 쓴다.
+ *   종이에 없는 칸은 현장에서 적을 수 없다. 실제로 인쇄물에 '미확인'이 빠져 있어서,
+ *   "확인 못 했다"를 빈칸으로 적어올 수밖에 없었고 화면에서 미확인(진행률에 반영됨)과
+ *   미입력(반영 안 됨)을 구분해 옮길 수 없었다. 한쪽만 늘어나지 않게 여기 한 곳에 둔다.
+ */
+export const RESULT_CHOICES: Exclude<VisitResult, ''>[] = ['good', 'ok', 'bad', 'na'];
 
 /** 방문 기록 4택 라벨 — 프로토타입 resLabel() 그대로 */
 export function resultLabel(r: VisitResult): string {

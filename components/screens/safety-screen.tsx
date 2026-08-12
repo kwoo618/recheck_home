@@ -134,6 +134,16 @@ export function SafetyScreen({ property: p, hrefFor, onToggleCheck, onSetStatus 
             <b>내 보증금과 권리</b>를 지키는 단계입니다.
           </p>
 
+          {/*
+            빨간 '필수' 배지 + ⚠ 배너 조합은 "안 하면 문제가 있다"로 읽히기 쉽다.
+            분류라는 사실이 코드 주석(lib/rules.ts SafetyRule.critical)에만 있었다 — 화면에 내놓는다.
+            ★ 문구는 사용자가 확정한 것이다. 바꾸지 말 것 (R1 금칙어를 피해 작성됨).
+          */}
+          <p className="rc-notice">
+            &lsquo;필수&rsquo;는 보증금·권리에 직접 걸리는 항목이라는 분류입니다. 확인하지 않았다고 해서
+            문제가 있다는 뜻은 아닙니다.
+          </p>
+
           {rules.map((r) => {
             const on = Boolean(p.safetyChecks[r.id]);
             return (
@@ -144,9 +154,12 @@ export function SafetyScreen({ property: p, hrefFor, onToggleCheck, onSetStatus 
                   disabled={isBusy(`safety-${r.id}`)}
                   onChange={(e) => toggle(r.id, e.target.checked)}
                 />
-                <span>
+                {/* <label> 의 내용 모델은 phrasing content 라 <div> 를 쓸 수 없다.
+                    제목·설명의 줄바꿈은 .rc-chk-t/.rc-chk-d 의 display:block 이 맡는다 */}
+                <span className="rc-chk-body">
                   <span className="rc-chk-t">
-                    {r.title} {r.critical && <span className="rc-required">필수</span>}
+                    {r.title}
+                    {r.critical && <span className="rc-required">필수</span>}
                   </span>
                   <span className="rc-chk-d">{r.description}</span>
                 </span>

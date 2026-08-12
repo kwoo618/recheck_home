@@ -2,7 +2,7 @@
 
 import { formatDistanceLabel } from '@/lib/geo';
 import type { PropertyDTO } from '@/lib/types';
-import { formatSpecLine } from './_parts/format';
+import { RESULT_CHOICES, formatSpecLine, resultLabel } from './_parts/format';
 import { usePrintDocument } from './_parts/use-print-document';
 
 /**
@@ -29,21 +29,29 @@ export function SurveySheetPrint({ property: p }: { property: PropertyDTO }) {
         {printedAt && <> · 리:체크 출력 {printedAt}</>}
       </p>
 
+      {/*
+        결과 열은 화면의 4택(RESULT_CHOICES)과 같은 배열에서 만든다.
+        전에는 좋음·보통·문제 3열뿐이라 "확인 못 했다"를 적을 칸이 없었고, 빈칸으로 적어오면
+        화면에서 '미확인'(진행률에 반영)과 미입력(반영 안 됨)을 구분해 옮길 수 없었다.
+        늘어난 한 열은 메모 폭(30% → 24%)에서 가져온다 — 손으로 짧은 메모를 적기에는 충분하다.
+      */}
       <h2>직접 확인할 것</h2>
       <table>
         <thead>
           <tr>
-            <th style={{ width: '44%' }}>항목</th>
-            <th>좋음</th>
-            <th>보통</th>
-            <th>문제</th>
-            <th style={{ width: '30%' }}>메모</th>
+            <th style={{ width: '36%' }}>항목</th>
+            {RESULT_CHOICES.map((choice) => (
+              <th key={choice} style={{ width: '10%' }}>
+                {resultLabel(choice)}
+              </th>
+            ))}
+            <th style={{ width: '24%' }}>메모</th>
           </tr>
         </thead>
         <tbody>
           {p.visitChecks.length === 0 ? (
             <tr>
-              <td colSpan={5}>확인 항목 없음</td>
+              <td colSpan={RESULT_CHOICES.length + 2}>확인 항목 없음</td>
             </tr>
           ) : (
             p.visitChecks.map((v) => (
@@ -51,9 +59,9 @@ export function SurveySheetPrint({ property: p }: { property: PropertyDTO }) {
                 <td>
                   [{v.category}] {v.title}
                 </td>
-                <td />
-                <td />
-                <td />
+                {RESULT_CHOICES.map((choice) => (
+                  <td key={choice} />
+                ))}
                 <td />
               </tr>
             ))

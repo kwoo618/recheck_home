@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "qa:seed": "node --conditions=react-server --env-file=.env.local tests/e2e/seed.mts",
     "qa:clean": "node --conditions=react-server --env-file=.env.local tests/e2e/seed.mts --clean",
+    "icon:gen": "node tests/e2e/gen-icon.mts",
     "qa:demo": "node --conditions=react-server --env-file=.env.local tests/e2e/seed-demo.mts",
     "qa:demo:clean": "node --conditions=react-server --env-file=.env.local tests/e2e/seed-demo.mts --clean",
     "qa:shoot": "node --env-file=.env.local tests/e2e/shoot.mts",

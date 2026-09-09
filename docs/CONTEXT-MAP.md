@@ -5,33 +5,56 @@
 
 ---
 
-## 1. 결론 — 새로 생기는 파일은 5개뿐이다
+## 1. 저장소 실제 배치 (2026-09-09 실측)
 
 ```
-recheck_home/
-├── CLAUDE.md                      ← 교체 (기존 v1 CLAUDE.md 덮어쓰기)
+recheck/
+├── CLAUDE.md                          규칙의 단일 소스
 ├── .claude/
-│   └── settings.json              ← 신규
-├── package.json                   ← scripts에 verify · shots 추가
+│   └── settings.json                  도구 허용·차단 (요청이 아니라 강제)
+├── package.json                       verify · shots
+├── fixtures/
+│   ├── README.md                      시연 시드 설명
+│   ├── properties.json                시연 매물 시드
+│   └── docs/                         ← 없음. D1 준비물 자리
+│                                        (등기부 PDF·계약서 샘플)
 └── docs/
-    ├── V2-PLAN.md                 ← 이동 (범위. 내용 변경 없음)
-    ├── V2-TECH-REVIEW.md          ← 신규 (제약·실측값)
-    ├── V2-STATUS.md               ← 신규 (진행 추적)
-    ├── CONTEXT-MAP.md             ← 신규 (이 파일)
+    │   ─── v2 현행 ───
+    ├── V2-PLAN.md                     범위
+    ├── PRD-V2.md                     ← 강우가 넣을 것 (사양. 화면·API·수용 기준)
+    ├── V2-TECH-REVIEW.md              제약·실측값
+    ├── V2-STATUS.md                   진행 추적 (사람이 읽는 것)
+    ├── CONTEXT-MAP.md                 이 파일
+    ├── API-V2.md                     ← 없음. D1에 백엔드 세션이 만든다
+    ├── 기획서-V2.md                   ← 강우가 넣을 것 (접수 서류 원본)
     │
-    ├── PRD.md                     ─┐
-    ├── ARCHITECTURE.md             │
-    ├── PROJECT-STATUS.md           ├ v1 기록. 헤더 표시만 달고 그대로 둔다
-    ├── PRESENTATION-FACTS.md       │
-    ├── V1-OUT-OF-SCOPE.md          │  (← ROADMAP-V2.md 개명)
-    ├── SCREENS.md                  │
-    ├── SCREENSHOTS.md             ─┘
-    ├── WORKFLOW.md                ← 브랜치명만 치환
-    ├── CONSOLE-SETTINGS.md        ← 브랜치명만 치환
-    └── INFRA.md                   ← 결정 로그 = ADR. 계속 쓴다
+    │   ─── 계속 쓰는 것 ───
+    ├── INFRA.md                       결정 로그 = ADR
+    ├── WORKFLOW.md                    세션 분담·브랜치
+    ├── CONSOLE-SETTINGS.md            외부 콘솔 설정
+    │
+    │   ─── v1 기록. 헤더 표시 완료. 내용 수정 금지 ───
+    ├── PRD.md                        ┐
+    ├── ARCHITECTURE.md               │
+    ├── PROJECT-STATUS.md             │
+    ├── V1-OUT-OF-SCOPE.md            │ (← ROADMAP-V2.md 개명)
+    ├── SCREENS.md                    │
+    ├── SCREENSHOTS.md                │
+    ├── HANDOFF-FRONT.md              │ settings.json deny로 Edit 차단
+    ├── HANDOFF-BACK.md               │
+    ├── LANDING-REDESIGN.md           │
+    ├── PORTFOLIO-NOTES.md            ┘
+    ├── PRESENTATION-FACTS.md         ← 저장소에 없다. 소재 확인 (V2-STATUS §5)
+    │
+    │   ─── v1 산출물·시연 자료 ───
+    ├── 경산_대구대_매물_40건_시연용.md    시연 시드
+    ├── recheck-prototype-v4.html        v1 프로토타입
+    └── qa/
+        ├── console-errors.md            v1 콘솔 오류 기록
+        └── README-팀원용.md             v1 팀원 안내
 ```
 
-**삭제**: `CLAUDE-v2.md` (CLAUDE.md로 승격됨) · 기존 v1 `CLAUDE.md`
+**삭제 완료**: `CLAUDE-v2.md`·`DOCS-MAP.md`·`DOC-PATCHES.md` (커밋된 적 없음) · 기존 v1 `CLAUDE.md` (덮어씀)
 
 ---
 
@@ -56,7 +79,10 @@ VS Code의 Claude Code와 데스크톱 앱 프로젝트 지식은 **다른 레�
 | `package.json` scripts | ✅ `verify` 실행 시 |
 | `docs/V2-PLAN.md` | 세션 시작 프롬프트가 읽으라고 지시 |
 | `docs/V2-TECH-REVIEW.md` | 세션 시작 프롬프트가 읽으라고 지시 |
+| `docs/PRD-V2.md` | **D2부터.** 화면 명세·대조 규격·수용 기준이 여기 있다 |
 | `docs/API-V2.md` | D1에 백엔드 세션이 만든다. 이후 두 세션의 계약 |
+
+`기획서-V2.md`는 심사위원용이라 코딩 세션이 읽을 이유가 없다. 저장소에 두되 읽히지 않는다.
 
 v1 기록 7개는 저장소에 있되 CLAUDE.md "건드리지 말 것"에 적혀 있고 세션이 읽을 이유가 없다.
 
@@ -74,10 +100,11 @@ v1 기록 7개는 저장소에 있되 CLAUDE.md "건드리지 말 것"에 적혀
 
 | 주제 | 올릴 것 |
 |---|---|
-| 접수 서류·기획서 | 기획서 docx · `기획서_분석.txt` |
+| 접수 서류·기획서 | **`기획서-V2.md`** · `기획서_분석.txt` · (구 docx는 대조용으로만) |
 | 발표·데모 | `PRESENTATION-FACTS.md` · `SCREENS.md` · `SCREENSHOTS.md` |
 | 외부 설정·리허설 | `CONSOLE-SETTINGS.md` · `INFRA.md` |
 | 기술 구조 설명 | `ARCHITECTURE.md` |
+| 화면·사양 논의 | **`PRD-V2.md`** |
 | "왜 안 했나" | `V1-OUT-OF-SCOPE.md` · `PRD.md` |
 | 팀 공유 | `미쁜집_v2.md` |
 
@@ -95,9 +122,11 @@ v1 기록 7개는 저장소에 있되 CLAUDE.md "건드리지 말 것"에 적혀
 | `CLAUDE.md` | **어떻게 만들든 지켜야 할 것은?** | 거의 안 고침 |
 | `V2-PLAN.md` | **무엇을 만들고 무엇을 안 만드나?** | 범위가 바뀔 때 |
 | `V2-TECH-REVIEW.md` | **물리적으로 되나? 얼마나 걸리나?** | 실측할 때마다 |
+| `PRD-V2.md` | **정확히 어떻게 동작하나?** (화면·API·수용 기준) | 사양이 바뀔 때 |
 | `V2-STATUS.md` | **지금 어디까지 됐나?** | D가 끝날 때마다 |
+| `기획서-V2.md` | **심사위원에게 무엇을 보여주나?** | 실측 후 · 접수 전 |
 
-**충돌하면**: `CLAUDE.md` > `V2-PLAN.md` > `V2-TECH-REVIEW.md` > **코드** > v1 기록
+**충돌하면**: `CLAUDE.md` > `V2-PLAN.md` > `PRD-V2.md` > `V2-TECH-REVIEW.md` > **코드** > v1 기록 · `기획서-V2.md`
 (문서와 코드가 다르면 코드가 현실이다.)
 
 ---
@@ -110,17 +139,22 @@ v1 기록 7개는 저장소에 있되 CLAUDE.md "건드리지 말 것"에 적혀
 
 ```json
 "scripts": {
-  "typecheck": "tsc --noEmit",
-  "lint": "eslint .",
+  "typecheck": "next typegen && tsc --noEmit",
+  "lint": "eslint",
   "test": "vitest run",
   "verify": "npm run typecheck && npm run lint && npm run test",
-  "shots": "[기존 스크린샷 러너 명령어]"
+  "shots": "npm run qa:shoot"
 }
 ```
 
 ```bash
+npm ci          # node_modules 없이는 verify가 실행되지 않는다
 npm run verify
 ```
+
+`typegen`이 `typecheck` 안에 있는 이유: Next 16이 생성하는 `LayoutProps` 등의 전역 타입은
+`.next/types`에 있고 이 폴더는 gitignore다. 빼면 클린 클론에서 TS2304로 반드시 실패한다.
+`lint`가 `eslint .`가 아닌 이유: ESLint 9부터 인자 없는 `eslint`는 현재 디렉터리를 린트한다.
 
 **빨간 상태에서 시작하지 않는다.** 지금 실패하는 게 있으면 그것부터 고친다. 아니면 v2 작업 중 생긴 문제와 구분이 안 된다.
 
@@ -179,7 +213,7 @@ Plan 모드 지시 → npm run verify 통과 → git diff 직접 읽음 → 커�
 
 | 파일 | 상태 |
 |---|---|
-| `CONTEXT-MAP.md` | ❌ 이 문서(`CONTEXT-MAP.md`)로 대체 |
+| `DOCS-MAP.md` | ❌ 이 문서(`CONTEXT-MAP.md`)로 대체. 저장소·프로젝트 지식 모두에서 제거 |
 | `CLAUDE-v2.md` | ❌ `CLAUDE.md`로 승격됨 |
 | 기존 v1 `CLAUDE.md` | ❌ 덮어씀 |
 | `PROJECT-STATUS.md` | ⚠️ 지우지 않는다. **v1 기록**으로 헤더 표시만 |

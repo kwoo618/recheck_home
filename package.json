@@ -7,8 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
+    "verify": "npm run typecheck && npm run lint && npm run test",
     "test:watch": "vitest",
     "qa:seed": "node --conditions=react-server --env-file=.env.local tests/e2e/seed.mts",
     "qa:clean": "node --conditions=react-server --env-file=.env.local tests/e2e/seed.mts --clean",
@@ -16,6 +17,7 @@
     "qa:demo": "node --conditions=react-server --env-file=.env.local tests/e2e/seed-demo.mts",
     "qa:demo:clean": "node --conditions=react-server --env-file=.env.local tests/e2e/seed-demo.mts --clean",
     "qa:shoot": "node --env-file=.env.local tests/e2e/shoot.mts",
+    "shots": "npm run qa:shoot",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio"

@@ -3,7 +3,7 @@
 계약 전 부동산 2차 검증 웹 서비스. 직방·다방에서 찾아온 매물을 **계약 전에 2차 검증**하도록 돕는다. 추천하지 않는다. 확인을 돕는다.
 v2: 매물 광고·등기부등본·계약서 사이의 **다르게 적힌 곳을 찾아** 보여준다. 그 차이가 무엇을 뜻하는지는 말하지 않는다.
 
-> **이 파일이 규칙의 단일 소스다.** 범위는 `docs/V2-PLAN.md`, 기술 제약·실측값은 `docs/V2-TECH-REVIEW.md`.
+> **이 파일이 규칙의 단일 소스다.** 범위는 `docs/V2-PLAN.md`, 사양(화면·API·수용 기준)은 `docs/PRD-V2.md`, 기술 제약·실측값은 `docs/V2-TECH-REVIEW.md`.
 > v1 문서(PRD · ARCHITECTURE · PROJECT-STATUS · PRESENTATION-FACTS · V1-OUT-OF-SCOPE)와 기획서 docx는 **기록**이다. 충돌하면 이 파일과 V2-PLAN이 이긴다.
 > 갱신 2026-09-09
 
@@ -20,7 +20,8 @@ Next.js (App Router) + TypeScript + Tailwind / Neon PostgreSQL(ap-southeast-1) +
 
 작업 후 반드시 실행:
 
-- `npm run verify` (= `tsc --noEmit && eslint . && vitest run`)
+- `npm run verify` (= `npm run typecheck` → `npm run lint` → `npm run test`
+  = `next typegen && tsc --noEmit` → `eslint` → `vitest run`)
 - 화면을 건드렸으면 `npm run shots` 후 `screenshots/v1-baseline/`과 비교
 
 실패하면 스스로 고치고 재실행한다. **2회 실패 시 멈추고 보고한다.** 추측으로 통과시키지 않는다.
@@ -78,8 +79,8 @@ Next.js (App Router) + TypeScript + Tailwind / Neon PostgreSQL(ap-southeast-1) +
 
 - `drizzle/` · `db/migrations/` — 기존 마이그레이션 파일 **수정 금지**. 새 파일 추가만
 - `lib/rules.ts` · `finance.ts` · `geo.ts` — 값 변경은 승인 필요. 순수성(부수효과 없음)은 절대 깨지 않는다
-- `docs/PRD.md` · `ARCHITECTURE.md` · `PROJECT-STATUS.md` · `PRESENTATION-FACTS.md` · `V1-OUT-OF-SCOPE.md` — **v1 기록.** 헤더 표시 외에 내용 수정 금지. "그때 왜 그랬나"의 근거다
-- `tests/` 기존 217건 — 실패하면 테스트를 고치지 말고 코드를 고친다. 의도적 변경이면 승인 필요
+- `docs/PRD.md` · `ARCHITECTURE.md` · `PROJECT-STATUS.md` · `V1-OUT-OF-SCOPE.md` — **v1 기록.** 헤더 표시 외에 내용 수정 금지. "그때 왜 그랬나"의 근거다
+- `tests/` 기존 229건 — 실패하면 테스트를 고치지 말고 코드를 고친다. 의도적 변경이면 승인 필요
 - `screenshots/v1-baseline/` — 회귀 비교 기준. 갱신 금지
 - `.env*` — 읽지도 쓰지도 않는다
 - **다른 세션 담당 디렉터리** — 백엔드는 `components/`·`lib/client/`, 프론트는 `db/`·`lib/actions/`·`app/api/`
@@ -89,6 +90,7 @@ Next.js (App Router) + TypeScript + Tailwind / Neon PostgreSQL(ap-southeast-1) +
 ## 이 코드베이스의 관습
 
 - **새 스타일을 도입하지 않는다. 주변 파일의 방식을 따른다.**
+- 클린 클론에서는 `npm ci`가 먼저다. `node_modules` 없이는 `verify`가 실행조차 되지 않는다
 - API 라우트·Server Action은 실패해도 `{ok:false}`를 반환한다. `throw`로 500을 내지 않는다
 - 규칙 상수는 DB가 아니라 코드에 둔다. 버전 관리·유닛 테스트 대상이어야 한다
 - 순수 함수를 고치면 해당 유닛 테스트를 같이 고친다
@@ -135,14 +137,14 @@ Next.js (App Router) + TypeScript + Tailwind / Neon PostgreSQL(ap-southeast-1) +
 
 **백엔드**
 ```
-미쁜집 v2 백엔드 세션이다. CLAUDE.md · docs/V2-PLAN.md · docs/V2-TECH-REVIEW.md(§5 서버 하드 리밋, §6 구조 지적)를 읽고
+미쁜집 v2 백엔드 세션이다. CLAUDE.md · docs/V2-PLAN.md · docs/PRD-V2.md(§3 데이터 모델, §4 AI 계약, §5 대조 규격, §7 API) · docs/V2-TECH-REVIEW.md(§5 서버 하드 리밋, §6 구조 지적)를 읽고
 R1~R11과 V2-PLAN §3·§4·§7을 요약해 보고한 뒤 시작하라. 담당은 db/ · lib/compare/ · lib/ai/ · lib/actions/ · app/api/ · docs/API-V2.md.
 오늘 할 것: [D1 항목을 여기에]
 ```
 
 **프론트**
 ```
-미쁜집 v2 프론트 세션이다. CLAUDE.md · docs/V2-PLAN.md · docs/V2-TECH-REVIEW.md(§2 자산 예산, §4 오프라인 구조)를 읽고
+미쁜집 v2 프론트 세션이다. CLAUDE.md · docs/V2-PLAN.md · docs/PRD-V2.md(§2 화면 명세, §8 오프라인 규격) · docs/V2-TECH-REVIEW.md(§2 자산 예산, §4 오프라인 구조)를 읽고
 R1·R4·R7·R9·R10을 요약해 보고한 뒤 시작하라. 담당은 components/ · lib/client/ · public/ · app/**/page.tsx.
 오늘 할 것: [D1 항목을 여기에]
 ```
@@ -154,6 +156,7 @@ R1·R4·R7·R9·R10을 요약해 보고한 뒤 시작하라. 담당은 component
 .claude/settings.json   도구 허용·차단 (요청이 아니라 강제)
 package.json scripts    완료 판정의 실체 — verify · shots
 docs/V2-PLAN.md         범위
+docs/PRD-V2.md          사양 — 화면·데이터·API·수용 기준
 docs/V2-TECH-REVIEW.md  기술 제약·실측값
 docs/V2-STATUS.md       진행 추적 (사람이 읽는 것)
 docs/INFRA.md           결정 로그 = ADR

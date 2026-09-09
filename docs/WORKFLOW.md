@@ -9,10 +9,10 @@
 ## 1. 구조
 
 ```
-E:\project\
+D:\projects\
 ├─ recheck\          main 브랜치 · 백엔드 세션
 │   └─ .git\         저장소 본체
-└─ recheck-front\    feat/screens 브랜치 · 프론트 세션
+└─ recheck-front\    feat/v2-screens 브랜치 · 프론트 세션
     └─ .git          파일(포인터). 위 .git을 가리킴
 ```
 
@@ -23,9 +23,9 @@ E:\project\
 ### 재구성 방법
 
 ```powershell
-cd E:\project\recheck
+cd D:\projects\recheck
 git status                                    # working tree clean 확인
-git worktree add ..\recheck-front feat/screens
+git worktree add ..\recheck-front feat/v2-screens
 cd ..\recheck-front
 npm install
 copy ..\recheck\.env.local .env.local          # gitignore라 안 따라옴
@@ -33,7 +33,7 @@ code .
 ```
 
 새 창에서 Claude Code **익스텐션**을 연다(CLI 아님 — 익스텐션은 열려 있는 폴더를
-작업 디렉터리로 잡는다). 좌측 하단 브랜치가 `feat/screens`인지 확인할 것.
+작업 디렉터리로 잡는다). 좌측 하단 브랜치가 `feat/v2-screens`인지 확인할 것.
 
 정리: `git worktree remove ..\recheck-front`
 
@@ -44,7 +44,7 @@ code .
 | | 쓰기 허용 | 금지 |
 |---|---|---|
 | **백엔드** (`main`) | `app/`, `lib/`, `db/`, `drizzle/`, `fixtures/`, `components/map/`(로직) | `components/screens/` |
-| **프론트** (`feat/screens`) | `components/screens/`, `components/map/`(스타일만) | `app/`, `lib/`, `db/`, 문서 |
+| **프론트** (`feat/v2-screens`) | `components/screens/`, `components/map/`(스타일만) | `app/`, `lib/`, `db/`, 문서 |
 
 디렉터리가 갈려 있어 **전 기간 병합 충돌 0건**이었다.
 
@@ -108,7 +108,7 @@ code .
 ## 5. 팀원 테스트 안내문
 
 ```
-리:체크 테스트 부탁드립니다.
+미쁜집 테스트 부탁드립니다.
 
 https://recheck-home.vercel.app
 
@@ -161,8 +161,8 @@ docs/HANDOFF-[FRONT/BACK].md를 최신 상태로 갱신하고 커밋해주세요
 
 ### 시작할 때
 ```
-리:체크 프로젝트 [프론트/백엔드] 세션을 이어받습니다.
-CLAUDE.md → docs/HANDOFF-[FRONT/BACK].md → docs/INFRA.md 순으로 읽고,
+미쁜집 v2 [프론트/백엔드] 세션을 이어받습니다.
+CLAUDE.md → docs/V2-PLAN.md → docs/PRD-V2.md → docs/V2-TECH-REVIEW.md 순으로 읽고,
 git log --oneline -20으로 현재 상태를 파악해주세요.
 ```
 

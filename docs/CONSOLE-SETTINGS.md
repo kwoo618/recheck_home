@@ -133,9 +133,9 @@ Hobby 플랜은 리전 1개 제한이라 분산 불가.
 | 항목 | 값 |
 |---|---|
 | 저장소 | `kwoo618/recheck_home` (**private**) |
-| 브랜치 | `main` (배포) / `feat/screens` (프론트 작업) |
-| 로컬 — 백엔드 | `E:\project\recheck` → `main` |
-| 로컬 — 프론트 | `E:\project\recheck-front` → `feat/screens` (git worktree) |
+| 브랜치 | `main` (배포) / `feat/v2-screens` (프론트 작업) |
+| 로컬 — 백엔드 | `D:\projects\recheck` → `main` |
+| 로컬 — 프론트 | `D:\projects\recheck-front` → `feat/v2-screens` (git worktree) |
 
 **private을 유지하는 이유**: public 저장소는 봇이 상시 스캔해서 키가 실수로
 한 번 커밋되면 푸시 직후 수 분 내에 긁힌다. amend로 지워도 늦다.

@@ -1,5 +1,9 @@
 # HANDOFF — 프론트 화면 세션
 
+> ⚠️ v1 세션 인수인계 문서. v2 세션은 이 문서가 아니라
+> CLAUDE.md · docs/V2-PLAN.md · docs/PRD-V2.md · docs/V2-TECH-REVIEW.md를 읽는다.
+> 여기 적힌 브랜치·범위·AI 지점 수는 v1 기준이다.
+
 `components/screens/` 담당 세션의 인수인계 문서. **이 문서 + `CLAUDE.md` + `docs/INFRA.md`만 읽고 바로 작업할 수 있게** 쓴다.
 
 작성 시점: `feat/screens` = `93a9e92` 병합 완료 (origin/main에 포함됨).

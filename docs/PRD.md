@@ -1,5 +1,9 @@
 # 리:체크 (Re:Check) — PRD v2.1 확정판
 
+> ⚠️ v1 기획서 (제목의 "v2.1"은 v1 시절 내부 판번호다. 서비스 v2와 무관).
+> v2 범위는 docs/V2-PLAN.md, v2 사양은 docs/PRD-V2.md가 정한다.
+> Won't 목록의 "등기부 OCR"은 v2에서 Must가 됐다. 나머지 Won't는 유효하다.
+
 > 계약 전 2차 검증 의사지원 웹 서비스 · 카카오맵 연동 반영
 > 스택: Next.js · Neon(PostgreSQL) · Gemini API(무료 티어) · 카카오맵 SDK · Vercel
 > 타깃: 대구대 인근 자취(원룸/투룸) 매물을 구하는 대학생

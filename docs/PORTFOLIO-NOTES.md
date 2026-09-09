@@ -1,5 +1,7 @@
 # 리:체크 — 포트폴리오·발표 노트
 
+> ⚠️ v1 기록. v2 작업의 근거로 쓰지 않는다.
+
 > 계약 전 부동산 2차 검증 웹 서비스 · 대구대 인근 자취방을 구하는 대학생 대상
 > 근거: `docs/HANDOFF-BACK.md` · `docs/HANDOFF-FRONT.md` · `docs/INFRA.md` 의사결정 로그
 >

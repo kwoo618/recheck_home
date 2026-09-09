@@ -1,5 +1,7 @@
 # LANDING-REDESIGN — 홈 랜딩 시각 개편 작업 지시서
 
+> ⚠️ v1 기록. v2 작업의 근거로 쓰지 않는다.
+
 > **이 문서의 용도**
 > 프론트 세션(`E:\project\recheck-front`, `feat/screens`)이 이 문서 하나만 보고 랜딩 개편을 끝낼 수 있게 쓴 것이다.
 > 대상 파일은 `components/screens/_parts/home-landing.tsx` 와 `components/screens/recheck-theme.css` 의 랜딩 블록뿐이다.

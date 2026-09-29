@@ -181,6 +181,19 @@ export function SafetyScreen({ property: p, hrefFor, onToggleCheck, onSetStatus 
         </section>
 
         <section className="rc-card">
+          <h2 className="rc-card-title">문서 올리기</h2>
+          <p className="rc-card-sub">
+            등기부·계약서·광고를 올려 두면 문서끼리 다르게 적힌 곳을 찾을 준비가 됩니다. 원본은 이
+            기기에만 보관합니다.
+          </p>
+          <div className="rc-form-actions">
+            <Link href={hrefFor('documents', p.id)} className="rc-btn rc-btn-ghost">
+              등기부·계약서·광고 올리기
+            </Link>
+          </div>
+        </section>
+
+        <section className="rc-card">
           <h2 className="rc-card-title">다음 단계</h2>
           <p className="rc-card-sub">
             점검표를 출력해 계약 현장에 들고 가거나, 확인을 마쳤다면 계약을 확정하세요.

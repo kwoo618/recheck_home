@@ -52,9 +52,9 @@ export const TOUCHPOINTS = {
   document_structure: {
     no: 4,
     name: '문서 구조화',
-    io: 'PDF 텍스트 레이어 추출 텍스트(마스킹 후) → 공통 스키마 JSON, 미발견 null',
+    io: '등기부·계약서 PDF 텍스트 레이어 추출 텍스트(마스킹 후) → 공통 스키마 JSON, 미발견 null',
     fallback: '확인 화면 직접 입력',
-    status: 'planned',
+    status: 'active',
     feature: 'document',
   },
   confirm_helper: {

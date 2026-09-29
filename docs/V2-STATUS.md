@@ -22,8 +22,10 @@ v2 범위 확정(9/3)과 규칙 정리까지 끝났고, **v2 코딩은 시작하
 | `main` 마지막 커밋 | `f2d3ed1` (2026-09-09). 이후 v2 코드 커밋 없음 → **v2 코딩 0일** | [코드 경로+커밋 f2d3ed1] |
 | 원격 브랜치 | `main` · `feat/screens`(v1) 뿐. `feat/v2-api` · `feat/v2-screens` 없음 | [코드 경로+커밋 f2d3ed1] |
 | 로컬 브랜치 | `feat/v2-api` = `main`(f2d3ed1). `feat/v2-screens` = 4466fd5 — **main보다 5커밋 뒤**. 둘 다 자체 커밋 0 → 강우가 지우고 main에서 다시 딴다 | [코드 경로+커밋 f2d3ed1] |
-| `lib/ai/touchpoints.ts` | 있음 (야간 S2). ①②③ active · ④⑤ planned. ①②③ 라우트가 이 id로 `ai_logs.touchpoint` 기록 | [코드 경로 — 야간 S2 커밋] |
-| `lib/compare/` · `lib/client/` | 없음 | [설계 의도—미구현] |
+| `lib/ai/touchpoints.ts` | 있음 (야간 S2). ①②③④ active · ⑤ planned (④는 야간 S3). ①~④ 라우트가 이 id로 `ai_logs.touchpoint` 기록 | [코드 경로 — 야간 S3 커밋] |
+| `lib/client/` | 있음 (야간 S3). `vault.ts`(IndexedDB 원본) · `pdf-text.ts`(pdfjs-dist 동적 import) · `document-api.ts`(④ 호출·마스킹·본문 크기 확인) | [코드 경로 — 야간 S3 커밋] |
+| `lib/compare/` | 없음 | [설계 의도—미구현] |
+| pdf.js 자산 | `pdfjs-dist` 6.3.289. worker `public/pdfjs/pdf.worker.min.mjs` **1,265,413 B** 자체 호스팅 + 라이브러리(`pdf.min.mjs` 기준) **458,705 B** = 약 **1.72 MB** (예산 2.0MB 안). Korean CMap(176,242 B)은 미포함 — 실측 후 결정 | [러너 실측 — 파일 크기] · 번들 청크 크기는 `next build` 미실행 |
 | `docs/API-V2.md` | 있음 (야간 S2 최초 작성). 이후 변경은 승인 | [코드 경로 — 야간 S2 커밋] |
 | 마이그레이션 `drizzle/0002_steep_warlock.sql` | 생성만 함. **DB 미적용.** CREATE TABLE 3 · ADD COLUMN(nullable) 2 · FK 3 · INDEX 3. DROP · ALTER TYPE · 기존 컬럼 NOT NULL 없음 | [코드 경로 — 야간 S2 커밋] |
 | `public/tessdata/` | 없음 — Tesseract 보류로 **만들지 않는다** | [코드 경로+커밋 f2d3ed1] |
@@ -60,7 +62,7 @@ v1 문서를 `docs/v1/`로 옮기면서 아래 **코드 주석**이 옛 경로�
 | **0 하네스** | `.claude/settings.json` 추적(완료) · CI(verify) · `screenshots/v1-baseline/` 촬영 · 로컬 브랜치 재생성 | CI 초록 · 베이스라인 파일 존재 | 진행 중 (settings.json만 완료) |
 | 1 이름 교체 | 옛 이름 → Sealook Homes(씰룩홈즈). 화면·메타·PDF 파일명(`SealookHomes_`) · 끊긴 주석 경로(§2). README는 저장소에 없음 | verify 통과 · shots 비교 | 부분 — verify 통과, shots·OG 렌더 미확인(야간 S1) |
 | 2 스키마·계약 | 스키마·마이그레이션(승인) · `touchpoints.ts` · `docs/API-V2.md` | verify 통과 · 마이그레이션 승인 기록 | 부분 — verify 통과, 마이그레이션 생성·미적용(강우 검토 후 `db:migrate`). V1.5 Must 3건(면책 상수화 · 연도 주입 · 전월세전환 명칭)도 함께 처리 (야간 S2). ⚠ `properties` 컬럼 추가 → **마이그레이션 적용 전 배포 금지** |
-| 3 PDF 추출·구조화 | pdf.js 텍스트 레이어 추출 · 지점 ④ 구조화 + 마스킹 · 확인 화면 | 등기부 PDF 1건 필드 채워짐 (§4 실측표 선행) | 미착수 |
+| 3 PDF 추출·구조화 | pdf.js 텍스트 레이어 추출 · 지점 ④ 구조화 + 마스킹 · 확인 화면 | 등기부 PDF 1건 필드 채워짐 (§4 실측표 선행) | 부분 — 코드·단위 테스트 완료, verify 통과(야간 S3). `/property/[id]/documents` 화면(업로드 → 원본 IndexedDB → 텍스트 레이어 → ④ → 전 필드 확인 → `saveDocument`) · 준비 상태 패널. **통과 기준 미확인**: 샘플 PDF 없음 → §4 미실측, DB 마이그레이션 미적용이라 저장 경로 미실행 |
 | 4 대조 | `lib/compare` + 테스트 · 대조 결과 화면 · A′ 질문 연결 | **2종 대조에서 불일치 ≥1 검출·표시** | 미착수 |
 | 5 계약서 12항목 | V2-PLAN §4-6 규칙 · 안전 점검 화면 | 12항목 표시 · 문구 검수 완료 | 미착수 |
 | 6 PWA·오프라인 | manifest · SW · 조사지 오프라인 · 큐 · iOS 실기기 | 비행기 모드에서 조사지 열림 | 미착수 |
@@ -109,7 +111,9 @@ v1 문서를 `docs/v1/`로 옮기면서 아래 **코드 주석**이 옛 경로�
 | 스키마 최종 필드 (V2-PLAN §4-1 표) | 개발+도메인 | 2단계 |
 | 저장소명·도메인 변경 여부 | 바꾸면 카카오 콘솔·Vercel 재등록이 따라온다 | 1단계 |
 | 사글세 3문항 문구 · 선납 상한 | 도메인 | 7단계 전 |
-| Gemini 무료 티어 데이터 정책 → 마스킹 범위 | 구조화로 텍스트를 보내므로 v1보다 중요하다 | 3단계 |
+| Gemini 무료 티어 데이터 정책 → 마스킹 범위 | 구조화로 텍스트를 보내므로 v1보다 중요하다. 현재 마스킹은 주민번호·생년월일(표지 있는 것)만 — **성명·주소·금액은 그대로 전송**(대조에 필요) | 3단계 |
+| ④ 입력 글자 수 상한 | API-V2 §0-1대로 실측 전이라 두지 않았다. 샘플 PDF 텍스트 길이 실측 후 정한다 | 3단계 |
+| `lien_total`·`seizure_flags` 의미 | 텍스트 레이어는 말소(취소선)를 구분하지 못한다. 현재는 "보이는 표기를 쉼표로 옮겨 적기"(합산 안 함) — API-V2 §1의 "합산"을 누가·어디서 할지 | 4단계 전 |
 | 한글 금액 ↔ 숫자 금액 우선순위 (법적 근거) | 확인 전까지 "다릅니다"만 표시 (R8) | 4단계 전 |
 | 보증보험이 월세·사글세 보증금에 적용되는지 | 조건 분기 없이 "해당 없음" 선택지로 처리 중 | 5단계 전 |
 | 주택임대차보호법 2년 보장 조문 번호·문구 | 용어 설명 출처용 | 5단계 전 |

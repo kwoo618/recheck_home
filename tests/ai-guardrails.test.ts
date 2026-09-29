@@ -8,6 +8,9 @@ import {
   buildParseSystem,
   QUESTIONS_SYSTEM,
   SUMMARY_SYSTEM,
+  DOCUMENT_REGISTRY_SYSTEM,
+  DOCUMENT_CONTRACT_SYSTEM,
+  documentSystemFor,
   wrapUserInput,
 } from '@/lib/ai/prompts';
 import { normalizeParsed, normalizeQuestions, parseJson, parseJsonDetailed } from '@/lib/ai/normalize';
@@ -349,6 +352,8 @@ const ACTIVE_PROMPTS: Record<string, string> = {
   listing_structure: PARSE_SYSTEM,
   question_convert: QUESTIONS_SYSTEM,
   record_summary: SUMMARY_SYSTEM,
+  // ④는 kind별 프롬프트가 둘이다. 계약서 쪽은 아래 '④ 문서 구조화 프롬프트'에서 따로 검사한다
+  document_structure: DOCUMENT_REGISTRY_SYSTEM,
 };
 
 /** app·lib·components 아래 .ts/.tsx 전부 (슬래시 경로) */
@@ -364,6 +369,7 @@ const AI_ROUTE_FILES = [
   'app/api/ai/parse/route.ts',
   'app/api/ai/questions/route.ts',
   'app/api/ai/summary/route.ts',
+  'app/api/ai/document/route.ts',
 ];
 
 describe('AI 지점 등록표 — 단일 소스', () => {

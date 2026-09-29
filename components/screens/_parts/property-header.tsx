@@ -27,6 +27,7 @@ const PHASE_INDEX: Record<string, number> = {
   sheet: 0,
   record: 1,
   safety: 2,
+  documents: 2,
   contract: 2,
 };
 

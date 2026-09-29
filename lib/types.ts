@@ -5,6 +5,9 @@ import type {
   VisitResult,
   QuestionSource,
   CheckMap,
+  DocumentKind,
+  OcrSource,
+  FieldBbox,
 } from '@/db/schema';
 
 /**
@@ -92,3 +95,26 @@ export type PropertyDTO = {
 export type ActionResult<T = void> =
   | { ok: true; data: T }
   | { ok: false; error: string };
+
+/* ── v2 문서 (docs/API-V2.md §3) ─────────────────────────────── */
+
+/** 확인 화면 [저장] 때 보내는 필드 한 칸. 원문·이미지는 보내지 않는다 (R9) */
+export type DocumentFieldInput = {
+  fieldKey: string;
+  /** ★ R8: 못 찾았거나 비워 두면 null. 빈 문자열로 저장하지 않는다 */
+  value: string | null;
+  /** 페이지 대비 비율 좌표(0~1, 왼쪽 위 원점). 없으면 null → 화면은 "위치 추정" */
+  bbox: FieldBbox | null;
+  confidence: number | null;
+  /** 확인 화면에서 사용자가 값을 바꿨는가 */
+  editedByUser: boolean;
+};
+
+/** 매물의 문서 한 건 + 필드. 원본은 없다 — 원본은 기기(IndexedDB)에만 있다 */
+export type DocumentDTO = {
+  id: string;
+  kind: DocumentKind;
+  ocrSource: OcrSource;
+  createdAt: string;
+  fields: (DocumentFieldInput & { id: string })[];
+};

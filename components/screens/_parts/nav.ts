@@ -13,6 +13,7 @@ export type ScreenRoute =
   | 'record'    // 방문 기록
   | 'compare'   // 매물 비교
   | 'safety'    // 계약 전 안전 점검
+  | 'documents' // 문서 올리기·확인 (v2)
   | 'contract'; // 계약 확정 후 절차
 
 export type HrefFor = (route: ScreenRoute, propertyId?: string) => string;

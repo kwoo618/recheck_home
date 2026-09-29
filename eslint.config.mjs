@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // pdfjs-dist 배포 파일을 그대로 복사한 자체 호스팅 worker (lib/client/pdf-text.ts)
+    "public/pdfjs/**",
   ]),
 ]);
 

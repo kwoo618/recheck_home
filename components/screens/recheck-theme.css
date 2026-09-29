@@ -105,6 +105,23 @@
 .rc-logo .rc-logo-re { color: var(--rc-teal); }
 .rc-tagline { font-size: 12.5px; color: var(--rc-ink-soft); }
 
+/* 헤더 연결 상태·대기 건수 (_parts/network-status) — 칩 모양은 저장 표시(rc-save-chip)를 그대로 쓴다 */
+.rc-net-status {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.rc-net-status .rc-save-chip {
+  min-height: var(--rc-tap);
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+.rc-net-offline { color: var(--rc-amber); background: var(--rc-amber-soft); border-color: var(--rc-amber-soft); }
+.rc-net-retry { cursor: pointer; font-family: inherit; }
+
 .rc-back {
   font-size: 13px;
   color: var(--rc-ink-soft);

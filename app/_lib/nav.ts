@@ -23,6 +23,9 @@ export const hrefFor: HrefFor = (route, propertyId) => {
       return propertyId ? `/property/${propertyId}/contract` : '/';
     case 'documents':
       return propertyId ? `/property/${propertyId}/documents` : '/';
+    // 정적 페이지라 id는 쿼리로 받는다 — SW가 오프라인에서 이 한 장만 캐시한다 (public/sw.js)
+    case 'offline':
+      return propertyId ? `/offline?id=${encodeURIComponent(propertyId)}` : '/offline';
 
     // ── 아직 화면이 없는 국면 ──
     // 프론트 세션이 비교·안전 점검 화면을 만들면 그때 페이지만 추가하면 된다.

@@ -14,6 +14,7 @@ export type ScreenRoute =
   | 'compare'   // 매물 비교
   | 'safety'    // 계약 전 안전 점검
   | 'documents' // 문서 올리기·확인 (v2)
+  | 'offline'   // 이 기기에 저장한 조사지 (v2, 오프라인)
   | 'contract'; // 계약 확정 후 절차
 
 export type HrefFor = (route: ScreenRoute, propertyId?: string) => string;

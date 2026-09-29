@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { OfflineSync } from "./_lib/offline-sync";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -43,6 +44,9 @@ export const metadata: Metadata = {
   title,
   description,
   applicationName: "Sealook Homes",
+  // PWA (V2-PLAN §4-4). 아이콘은 app/icon.png 임시 사용 — 팀원 아이콘 대기
+  manifest: "/manifest.json",
+  appleWebApp: { capable: true, title: "씰룩홈즈", statusBarStyle: "default" },
   openGraph: {
     type: "website",
     locale: "ko_KR",
@@ -62,6 +66,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  themeColor: "#f6f5f1",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -70,7 +75,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="ko"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <OfflineSync />
+      </body>
     </html>
   );
 }

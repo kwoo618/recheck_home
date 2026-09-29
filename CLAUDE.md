@@ -37,8 +37,8 @@ Next.js (App Router) + TypeScript + Tailwind / Neon PostgreSQL(ap-southeast-1) +
 - 배포 (`main` 푸시가 곧 배포다)
 - 데이터 삭제·seed 스크립트
 - `lib/rules.ts` · `finance.ts` · `geo.ts` · `compare/*` 의 **값** 변경
-- `docs/API-V2.md` 계약 변경
-- **AI 지점 추가** (R3)
+- `docs/API-V2.md` 계약 변경 (최초 생성은 승인 불필요, 이후 계약 변경은 승인 필요)
+- V2-PLAN §3 등록표에 **없는** AI 지점을 새로 추가할 때 (R3)
 - **원본을 서버에 저장해야 할 것 같을 때** (R9)
 - **온디바이스 자산 예산 2.0MB를 넘겨야 할 것 같을 때**
 - V2-PLAN 범위 밖 기능 · 상태 전이 변경 · 다른 세션 담당 디렉터리
@@ -80,8 +80,8 @@ Next.js (App Router) + TypeScript + Tailwind / Neon PostgreSQL(ap-southeast-1) +
 - `drizzle/` · `db/migrations/` — 기존 마이그레이션 파일 **수정 금지**. 새 파일 추가만
 - `lib/rules.ts` · `finance.ts` · `geo.ts` — 값 변경은 승인 필요. 순수성(부수효과 없음)은 절대 깨지 않는다
 - `docs/v1/**` — **v1 기록.** 내용 수정 금지. "그때 왜 그랬나"의 근거다
-- `tests/` 기존 229건 — 실패하면 테스트를 고치지 말고 코드를 고친다. 의도적 변경이면 승인 필요
-- `screenshots/v1-baseline/` — 회귀 비교 기준. 갱신 금지
+- `tests/` 기존 테스트 — 실패하면 테스트를 고치지 말고 코드를 고친다. 의도적 변경이면 승인 필요
+- `screenshots/v1-baseline/` — 회귀 비교 기준. 0단계에서 촬영한 뒤 갱신 금지
 - `.env*` — 읽지도 쓰지도 않는다
 - **다른 세션 담당 디렉터리** — 백엔드는 `components/`·`lib/client/`, 프론트는 `db/`·`lib/actions/`·`app/api/`
 
@@ -97,8 +97,6 @@ Next.js (App Router) + TypeScript + Tailwind / Neon PostgreSQL(ap-southeast-1) +
 - 모델명은 `lib/ai/models.ts` 한 곳에서만. 라우트에 문자열로 박지 않는다
 - 면책 문구는 `lib/ai/disclaimer.ts` 한 곳에서만
 - 프롬프트 파일은 순수 상수다. `Date.now()`를 그 안에서 부르지 않는다 — 연도는 호출부가 넘긴다
-- `lib/client/*`는 `'use client'`에서만 import. Tesseract·pdf.js는 **동적 import**
-- 대조 재실행은 멱등이어야 한다. `discrepancies`는 `property_id` 기준 전량 삭제 후 재삽입
 - 커밋 메시지는 한국어 한 줄 요약 + 이유. 작업 단위는 **커밋 하나** 크기
 - 대규모 반복 작업(이름 치환 등)은 **파일 1개 먼저 → diff 확정 → 나머지 배치**
 
@@ -129,37 +127,5 @@ Next.js (App Router) + TypeScript + Tailwind / Neon PostgreSQL(ap-southeast-1) +
 - **막힌 것**: 등기부 PDF·계약서 샘플 미확보 · CI 없음 · `screenshots/v1-baseline/` 없음
 - **다음**: 0단계 하네스 (CI · 베이스라인 · 로컬 브랜치 재생성) → 1단계 이름 교체
 
----
+> 세션 시작 프롬프트 → `docs/WORKFLOW.md` §6
 
-## 세션 시작 프롬프트
-
-> 백엔드 `feat/v2-api` · 프론트 `feat/v2-screens` (둘 다 main에서 딴다 — `docs/WORKFLOW.md`). **Plan 모드로 시작한다.** 계획에는 `docs/REVIEW.md` 자체 검토를 붙인다.
-
-**백엔드**
-```
-미쁜집 v2 백엔드 세션이다. CLAUDE.md · docs/V2-PLAN.md(§3 AI 지점, §4 기능 명세, §7 데이터 모델) · docs/V2-TECH-REVIEW.md(§5 서버 하드 리밋, §6 구조 지적)를 읽고
-R1~R11과 V2-PLAN §3·§4·§7을 요약해 보고한 뒤 시작하라. 담당은 db/ · lib/compare/ · lib/ai/ · lib/actions/ · app/api/ · docs/API-V2.md.
-오늘 할 것: [V2-STATUS §3 단계 항목을 여기에]
-```
-
-**프론트**
-```
-미쁜집 v2 프론트 세션이다. CLAUDE.md · docs/V2-PLAN.md(§4 기능 명세) · docs/V2-TECH-REVIEW.md(§2 자산 예산, §4 오프라인 구조)를 읽고
-R1·R4·R7·R9·R10을 요약해 보고한 뒤 시작하라. 담당은 components/ · lib/client/ · public/ · app/**/page.tsx.
-오늘 할 것: [V2-STATUS §3 단계 항목을 여기에]
-```
-
----
-
-<!--
-같이 두는 파일
-.claude/settings.json   도구 허용·차단 (요청이 아니라 강제)
-package.json scripts    완료 판정의 실체 — verify · shots
-docs/V2-PLAN.md         범위·사양 (고정된 사실)
-docs/V2-TECH-REVIEW.md  기술 제약·실측값 (고정된 사실)
-docs/V2-STATUS.md       진행·일정·미확인·열린 결정 (움직이는 사실 — 여기에만)
-docs/WORKFLOW.md        역할·브랜치·작업 루프
-docs/REVIEW.md          계획서 자체 검토 체크리스트
-docs/INFRA.md           결정 로그 = ADR
-docs/v1/                v1 기록 — 읽지 않는다
--->

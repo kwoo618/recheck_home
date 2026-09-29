@@ -92,3 +92,39 @@ CLAUDE.md · docs/V2-STATUS.md 를 읽고 현재 단계와 열린 결정을 요�
 | `[코드 경로+커밋]` | 특정 커밋의 코드·파일에서 읽은 값. 파일 경로와 커밋 해시를 함께 적는다 |
 | `[설계 의도—미구현]` | 문서에 설계로만 있고 코드에는 아직 없는 것 |
 | `[추정]` | 근거 없는 어림. 결정의 근거로 쓰지 않는다 |
+
+---
+
+## 6. 세션 시작 프롬프트
+
+> 2026-09-29 `CLAUDE.md`에서 이동. 매 세션 자동으로 읽힐 이유가 없어 필요할 때 여기서 꺼내 쓴다.
+
+> 백엔드 `feat/v2-api` · 프론트 `feat/v2-screens` (둘 다 main에서 딴다 — `docs/WORKFLOW.md`). **Plan 모드로 시작한다.** 계획에는 `docs/REVIEW.md` 자체 검토를 붙인다.
+
+**백엔드**
+```
+미쁜집 v2 백엔드 세션이다. CLAUDE.md · docs/V2-PLAN.md(§3 AI 지점, §4 기능 명세, §7 데이터 모델) · docs/V2-TECH-REVIEW.md(§5 서버 하드 리밋, §6 구조 지적)를 읽고
+R1~R11과 V2-PLAN §3·§4·§7을 요약해 보고한 뒤 시작하라. 담당은 db/ · lib/compare/ · lib/ai/ · lib/actions/ · app/api/ · docs/API-V2.md.
+오늘 할 것: [V2-STATUS §3 단계 항목을 여기에]
+```
+
+**프론트**
+```
+미쁜집 v2 프론트 세션이다. CLAUDE.md · docs/V2-PLAN.md(§4 기능 명세) · docs/V2-TECH-REVIEW.md(§2 자산 예산, §4 오프라인 구조)를 읽고
+R1·R4·R7·R9·R10을 요약해 보고한 뒤 시작하라. 담당은 components/ · lib/client/ · public/ · app/**/page.tsx.
+오늘 할 것: [V2-STATUS §3 단계 항목을 여기에]
+```
+
+### 문서 배치
+
+| 파일 | 역할 |
+|---|---|
+| `.claude/settings.json` | 도구 허용·차단 (요청이 아니라 강제) |
+| `package.json` scripts | 완료 판정의 실체 — verify · shots |
+| `docs/V2-PLAN.md` | 범위·사양 (고정된 사실) |
+| `docs/V2-TECH-REVIEW.md` | 기술 제약·실측값 (고정된 사실) |
+| `docs/V2-STATUS.md` | 진행·일정·미확인·열린 결정 (움직이는 사실 — 여기에만) |
+| `docs/WORKFLOW.md` | 역할·브랜치·작업 루프 |
+| `docs/REVIEW.md` | 계획서 자체 검토 체크리스트 |
+| `docs/INFRA.md` | 결정 로그 = ADR |
+| `docs/v1/` | v1 기록 — 읽지 않는다 |

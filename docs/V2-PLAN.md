@@ -190,6 +190,11 @@ Gemini 무료 티어 유지(마스킹 후 전송). Neon Free scale-to-zero 유�
 
 외부 준비물(샘플 문서·아이콘·도메인)은 → `V2-STATUS.md` §5.
 
+**v2 신규 코드 관습** (2026-09-29 `CLAUDE.md`에서 이동 — 아직 없는 파일에만 해당해 여기 둔다. 해당 코드를 쓸 때 이 절을 읽는다)
+
+- `lib/client/*`는 `'use client'`에서만 import. Tesseract·pdf.js는 **동적 import**
+- 대조 재실행은 멱등이어야 한다. `discrepancies`는 `property_id` 기준 전량 삭제 후 재삽입
+
 ---
 
 ## 9. (이관)

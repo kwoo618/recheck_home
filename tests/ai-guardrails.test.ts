@@ -256,6 +256,21 @@ describe('normalizeParsed — 모델 출력을 믿지 않는다', () => {
     expect(out.address).toBeUndefined();
   });
 
+  it('상세주소(addressDetail)를 주소와 따로 받는다', () => {
+    // 가상 데이터
+    const out = normalizeParsed({ address: '경산시 진량읍 가상로 1', addressDetail: ' 101동 202호 ' });
+    expect(out.address).toBe('경산시 진량읍 가상로 1');
+    expect(out.addressDetail).toBe('101동 202호');
+    expect(normalizeParsed({ addressDetail: '' }).addressDetail).toBeUndefined();
+    expect(normalizeParsed({ addressDetail: 12 }).addressDetail).toBeUndefined();
+    expect(normalizeParsed({ addressDetail: '추천 호실' }).addressDetail).toBeUndefined();
+    expect(normalizeParsed({ addressDetail: '가'.repeat(100) }).addressDetail).toHaveLength(60);
+  });
+
+  it('① 프롬프트 스키마에 addressDetail이 있다 — normalize와 짝이 맞아야 값이 버려지지 않는다', () => {
+    expect(PARSE_SYSTEM).toContain('"addressDetail"');
+  });
+
   it('배열·null·문자열이 와도 빈 객체를 돌려준다', () => {
     expect(normalizeParsed(null)).toEqual({});
     expect(normalizeParsed([1, 2])).toEqual({});

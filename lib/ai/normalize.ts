@@ -176,6 +176,8 @@ function extractBalanced(text: string): string | null {
 export type ParsedProperty = {
   name?: string;
   address?: string;
+  /** 동·호수. 저장만 하고 지도 핀·PDF·공유에는 그리지 않는다 (R7) */
+  addressDetail?: string;
   dealType?: DealType;
   price?: number;
   deposit?: number;
@@ -219,6 +221,10 @@ export function normalizeParsed(raw: unknown): ParsedProperty {
 
   const address = text(r.address, 200);
   if (address && !containsBanned(address)) out.address = address;
+
+  // 형식(○동 ○호 등)은 강제하지 않는다 — 표기가 제각각이라 틀리게 거르는 편이 더 나쁘다. 길이만 막는다
+  const addressDetail = text(r.addressDetail, 60);
+  if (addressDetail && !containsBanned(addressDetail)) out.addressDetail = addressDetail;
 
   if (DEAL_TYPES.includes(r.dealType as DealType)) out.dealType = r.dealType as DealType;
   if (HEATINGS.includes(r.heating as Heating)) out.heating = r.heating as Heating;

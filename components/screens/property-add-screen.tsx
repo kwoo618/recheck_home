@@ -132,6 +132,8 @@ export function PropertyAddScreen({
             ? ''
             : String(data.prepaidTotal)
           : prev.prepaidTotal,
+      // 지점 ①은 '포함'·'매월 별도'만 준다. '모름'은 사용자만 고르는 답이다 (lib/ai/normalize.ts)
+      mgmtFeeMode: data.mgmtFeeMode ?? prev.mgmtFeeMode,
       area: data.area !== undefined ? String(data.area) : prev.area,
       age: data.age !== undefined ? String(data.age) : prev.age,
       heating: data.heating ?? prev.heating,

@@ -42,6 +42,7 @@ export const PARSE_SYSTEM = [
   '  "price": number,       // 월세면 월세액, 전세·매매면 보증금/매매가 (만원)',
   '  "deposit": number,     // 월세 보증금 (만원)',
   '  "mgmtFee": number,     // 관리비 (만원)',
+  '  "mgmtFeeMode": "포함" | "매월 별도", // 관리비가 월세·선납액에 포함인지, 매월 따로 내는지 — 텍스트에 적힌 경우만',
   '  "area": number,        // ㎡',
   '  "age": number,         // 년차',
   '  "heating": "개별난방" | "중앙난방" | "지역난방" | "모름",',

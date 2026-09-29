@@ -9,6 +9,7 @@ import type {
   OcrSource,
   FieldBbox,
   DiscrepancyStatus,
+  MgmtFeeMode,
 } from '@/db/schema';
 
 /**
@@ -69,6 +70,11 @@ export type PropertyDTO = {
    */
   prepaidMonths: number | null;
   prepaidTotal: number | null;
+  /**
+   * 관리비 부과 방식 (v2 — docs/API-V2.md §5-2). 지금은 사글세 등록 화면에서만 묻는다.
+   * `null` = 아직 묻지 않음, `'모름'` = 사용자가 모른다고 답함 — 둘은 다르다.
+   */
+  mgmtFeeMode: MgmtFeeMode | null;
 
   area: number;
   age: number;

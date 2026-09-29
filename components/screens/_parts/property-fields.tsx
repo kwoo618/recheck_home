@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import type { DealType, Heating } from '@/db/schema';
+import type { DealType, Heating, MgmtFeeMode } from '@/db/schema';
 import type { CreatePropertyInput } from '@/lib/actions/properties';
 import { distanceFromSchool, formatDistanceLabel } from '@/lib/geo';
 import { useDaumPostcode } from './use-daum-postcode';
@@ -32,6 +32,8 @@ export type PropertyFormValue = {
    */
   prepaidMonths: string;
   prepaidTotal: string;
+  /** 관리비 부과 방식. null = 아직 고르지 않음 ('모름'과 다르다). 지금은 사글세에서만 묻는다 (V2-PLAN §6) */
+  mgmtFeeMode: MgmtFeeMode | null;
   area: string;
   age: string;
   heating: Heating;
@@ -49,6 +51,7 @@ export type GeocodeFn = (address: string) => Promise<{ lat: number; lng: number 
 
 export const DEAL_TYPES: DealType[] = ['전세', '월세', '매매', '사글세'];
 export const HEATINGS: Heating[] = ['개별난방', '중앙난방', '지역난방', '모름'];
+export const MGMT_FEE_MODES: MgmtFeeMode[] = ['포함', '매월 별도', '모름'];
 
 export const EMPTY_FORM: PropertyFormValue = {
   name: '',
@@ -62,6 +65,7 @@ export const EMPTY_FORM: PropertyFormValue = {
   mgmtFee: '',
   prepaidMonths: '',
   prepaidTotal: '',
+  mgmtFeeMode: null,
   area: '',
   age: '',
   heating: '개별난방',
@@ -90,6 +94,8 @@ export function toCreateInput(v: PropertyFormValue): CreatePropertyInput {
     */
     prepaidMonths: prepaid ? v.prepaidMonths : null,
     prepaidTotal: prepaid ? v.prepaidTotal : null,
+    // 사글세에서만 묻는다. 다른 유형은 null("묻지 않음") — 숨긴 칸의 옛 답이 남지 않게 한다
+    mgmtFeeMode: prepaid ? v.mgmtFeeMode : null,
     area: v.area,
     age: v.age,
     heating: v.heating,
@@ -325,6 +331,24 @@ export function PropertyFields({
               value={value.prepaidTotal}
               onChange={(e) => onChange({ prepaidTotal: e.target.value })}
             />
+          </div>
+          <div className="rc-full">
+            <span className="rc-fl">
+              관리비 부과 방식 <span className="rc-opt">(선택 · 다시 누르면 선택 해제)</span>
+            </span>
+            <div className="rc-seg" role="group" aria-label="관리비 부과 방식">
+              {MGMT_FEE_MODES.map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  className={value.mgmtFeeMode === m ? 'rc-on' : ''}
+                  aria-pressed={value.mgmtFeeMode === m}
+                  onClick={() => onChange({ mgmtFeeMode: value.mgmtFeeMode === m ? null : m })}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
           </div>
         </>
       )}

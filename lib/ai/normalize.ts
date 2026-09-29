@@ -1,4 +1,4 @@
-import type { DealType, Heating } from '@/db/schema';
+import type { DealType, Heating, MgmtFeeMode } from '@/db/schema';
 import { containsBanned } from '@/lib/rules';
 
 /**
@@ -182,6 +182,8 @@ export type ParsedProperty = {
   price?: number;
   deposit?: number;
   mgmtFee?: number;
+  /** '모름'은 받지 않는다 — 사용자가 고르는 답이지 모델이 채울 값이 아니다 (schema 주석: 둘을 섞지 않는다) */
+  mgmtFeeMode?: Exclude<MgmtFeeMode, '모름'>;
   area?: number;
   age?: number;
   heating?: Heating;
@@ -228,6 +230,7 @@ export function normalizeParsed(raw: unknown): ParsedProperty {
 
   if (DEAL_TYPES.includes(r.dealType as DealType)) out.dealType = r.dealType as DealType;
   if (HEATINGS.includes(r.heating as Heating)) out.heating = r.heating as Heating;
+  if (r.mgmtFeeMode === '포함' || r.mgmtFeeMode === '매월 별도') out.mgmtFeeMode = r.mgmtFeeMode;
 
   const price = amount(r.price, LIMITS.price);
   if (price !== undefined) out.price = Math.round(price);

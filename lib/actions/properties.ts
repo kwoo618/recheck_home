@@ -10,6 +10,7 @@ import {
   questions,
   type DealType,
   type Heating,
+  type MgmtFeeMode,
   type PropertyStatus,
   type Property,
   type VisitCheck,
@@ -40,6 +41,12 @@ import type { PropertyDTO, VisitCheckDTO, QuestionDTO, ActionResult } from '@/li
 
 const DEAL_TYPES: DealType[] = ['전세', '월세', '매매', '사글세'];
 const HEATINGS: Heating[] = ['개별난방', '중앙난방', '지역난방', '모름'];
+const MGMT_FEE_MODES: MgmtFeeMode[] = ['포함', '매월 별도', '모름'];
+
+/** 관리비 부과 방식 — 허용값이 아니면 null("아직 묻지 않음")로 저장한다 (docs/API-V2.md §5-2) */
+function toMgmtFeeMode(v: unknown): MgmtFeeMode | null {
+  return MGMT_FEE_MODES.includes(v as MgmtFeeMode) ? (v as MgmtFeeMode) : null;
+}
 
 /* ══════════════════════════════════════════════════════════════
    입력 정규화 — 폼에서 문자열로 넘어오는 값을 안전하게 좁힌다
@@ -200,6 +207,7 @@ function toPropertyDTO(row: PropertyRow): PropertyDTO {
     // 사글세 전용. null을 0으로 접지 않는다 — 0("선납 없음")과 null("모름")은 다르다
     prepaidMonths: row.prepaidMonths,
     prepaidTotal: row.prepaidTotal,
+    mgmtFeeMode: row.mgmtFeeMode,
     // numeric 컬럼은 드라이버에서 string으로 온다 → number로 정규화
     area: Number(row.area),
     age: row.age,
@@ -304,6 +312,8 @@ export type CreatePropertyInput = {
    */
   prepaidMonths?: number | string | null;
   prepaidTotal?: number | string | null;
+  /** 관리비 부과 방식. 허용값 밖이면 null. 거래유형으로 거르지 않는다 (API-V2 §5-2에 조건 없음) */
+  mgmtFeeMode?: MgmtFeeMode | null;
   area?: number | string;
   age?: number | string;
   heating?: Heating;
@@ -361,6 +371,7 @@ export async function createProperty(
     // 사글세가 아니면 값이 와도 버린다 — 유형과 맞지 않는 선납값이 남으면 계산이 틀어진다
     prepaidMonths: input.dealType === '사글세' ? toNullableInt(input.prepaidMonths) : null,
     prepaidTotal: input.dealType === '사글세' ? toNullableInt(input.prepaidTotal) : null,
+    mgmtFeeMode: toMgmtFeeMode(input.mgmtFeeMode),
     area: String(toFloat(input.area)), // numeric 컬럼은 string으로 넣는다
     age: toInt(input.age),
     heating,
@@ -469,6 +480,7 @@ export async function updateProperty(
     if (input.prepaidMonths !== undefined) patch.prepaidMonths = toNullableInt(input.prepaidMonths);
     if (input.prepaidTotal !== undefined) patch.prepaidTotal = toNullableInt(input.prepaidTotal);
   }
+  if (input.mgmtFeeMode !== undefined) patch.mgmtFeeMode = toMgmtFeeMode(input.mgmtFeeMode);
   if (input.area !== undefined) patch.area = String(toFloat(input.area));
   if (input.age !== undefined) patch.age = toInt(input.age);
   if (input.floor !== undefined) patch.floor = toText(input.floor);

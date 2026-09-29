@@ -271,6 +271,14 @@ describe('normalizeParsed — 모델 출력을 믿지 않는다', () => {
     expect(PARSE_SYSTEM).toContain('"addressDetail"');
   });
 
+  it('관리비 부과 방식은 포함·매월 별도만 받는다 — 모름은 사용자만 고른다', () => {
+    expect(normalizeParsed({ mgmtFeeMode: '포함' }).mgmtFeeMode).toBe('포함');
+    expect(normalizeParsed({ mgmtFeeMode: '매월 별도' }).mgmtFeeMode).toBe('매월 별도');
+    expect(normalizeParsed({ mgmtFeeMode: '모름' }).mgmtFeeMode).toBeUndefined();
+    expect(normalizeParsed({ mgmtFeeMode: '별도' }).mgmtFeeMode).toBeUndefined();
+    expect(PARSE_SYSTEM).toContain('"mgmtFeeMode"');
+  });
+
   it('배열·null·문자열이 와도 빈 객체를 돌려준다', () => {
     expect(normalizeParsed(null)).toEqual({});
     expect(normalizeParsed([1, 2])).toEqual({});

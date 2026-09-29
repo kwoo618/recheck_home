@@ -26,7 +26,7 @@ const BANK_TEXTS = new Set(Object.values(QUESTION_BANK).flat());
 const REQUIRED_KEYS = [
   'id', 'name', 'address', 'addressDetail', 'latitude', 'longitude',
   'distanceFromSchool', 'dealType', 'price', 'deposit', 'mgmtFee',
-  'prepaidMonths', 'prepaidTotal', 'area',
+  'prepaidMonths', 'prepaidTotal', 'mgmtFeeMode', 'area',
   'age', 'heating', 'floor', 'link', 'status', 'noConcern', 'progress',
   'visitChecks', 'questions', 'safetyChecks', 'contractChecks', 'afterChecks',
   'createdAt', 'updatedAt',

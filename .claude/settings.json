@@ -1,0 +1,49 @@
+{
+  "$comment": [
+    "미쁜집 v2 — Claude Code 도구 권한.",
+    "md는 요청이고 이 파일은 강제다. CLAUDE.md의 '승인 필요'와 '건드리지 말 것' 중",
+    "정말 막아야 하는 것만 여기 옮겼다.",
+    "권한 문법은 Claude Code 버전에 따라 바뀐다. 처음 적용한 뒤 실제로 막히는지",
+    "한 번 시험해 볼 것 — 막히지 않으면 문법이 바뀐 것이므로 docs.claude.com 확인.",
+    "$comment 키는 무시되므로 남겨도 된다."
+  ],
+
+  "permissions": {
+    "allow": [
+      "Bash(npm run verify)",
+      "Bash(npm run typecheck)",
+      "Bash(npm run lint)",
+      "Bash(npm run test:*)",
+      "Bash(npm run build)",
+      "Bash(npm run dev)",
+      "Bash(npm run shots)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ],
+
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Edit(./.env)",
+      "Edit(./.env.*)",
+
+      "Edit(./drizzle/**)",
+
+      "Edit(./screenshots/v1-baseline/**)",
+
+      "Edit(./docs/v1/**)",
+      "Edit(./docs/PORTFOLIO-NOTES.md)",
+
+      "Bash(vercel:*)",
+      "Bash(git push:*)",
+      "Bash(npx drizzle-kit push:*)",
+      "Bash(npx drizzle-kit drop:*)",
+      "Bash(psql:*)",
+      "Bash(rm -rf:*)",
+      "Bash(curl:*)"
+    ]
+  }
+}

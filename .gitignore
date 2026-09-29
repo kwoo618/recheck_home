@@ -40,8 +40,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Claude Code 세션 로컬 설정 (저장소 공유 대상 아님)
-.claude/
+# Claude Code — 공유 설정(settings.json)만 추적, 개인 설정(settings.local.json 등)은 무시
+.claude/*
+!.claude/settings.json
 
 # 로컬 검증용 임시 데이터
 *.local.json

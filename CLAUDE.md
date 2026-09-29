@@ -3,16 +3,16 @@
 계약 전 부동산 2차 검증 웹 서비스. 직방·다방에서 찾아온 매물을 **계약 전에 2차 검증**하도록 돕는다. 추천하지 않는다. 확인을 돕는다.
 v2: 매물 광고·등기부등본·계약서 사이의 **다르게 적힌 곳을 찾아** 보여준다. 그 차이가 무엇을 뜻하는지는 말하지 않는다.
 
-> **이 파일이 규칙의 단일 소스다.** 범위는 `docs/V2-PLAN.md`, 사양(화면·API·수용 기준)은 `docs/PRD-V2.md`, 기술 제약·실측값은 `docs/V2-TECH-REVIEW.md`.
-> v1 문서(PRD · ARCHITECTURE · PROJECT-STATUS · PRESENTATION-FACTS · V1-OUT-OF-SCOPE)와 기획서 docx는 **기록**이다. 충돌하면 이 파일과 V2-PLAN이 이긴다.
-> 갱신 2026-09-09
+> **이 파일이 규칙의 단일 소스다.** 범위·사양은 `docs/V2-PLAN.md`, 기술 제약·실측값은 `docs/V2-TECH-REVIEW.md`, 진행·일정·열린 결정은 `docs/V2-STATUS.md`.
+> `docs/v1/`은 **기록**이다. 세션은 읽지 않는다. 충돌하면 이 파일과 V2-PLAN이 이긴다.
+> 갱신 2026-09-29
 
 ---
 
 ## 스택
 
 Next.js (App Router) + TypeScript + Tailwind / Neon PostgreSQL(ap-southeast-1) + Drizzle / 카카오맵 JS SDK + 우편번호 + 로컬 API / Gemini / Vercel(sin1)
-**v2 추가**: PWA(Service Worker 직접 작성) · IndexedDB · Tesseract.js · pdf.js
+**v2 추가**: PWA(Service Worker 직접 작성) · IndexedDB · pdf.js (Tesseract.js는 **보류** — 도입은 별도 승인)
 
 ---
 
@@ -22,7 +22,7 @@ Next.js (App Router) + TypeScript + Tailwind / Neon PostgreSQL(ap-southeast-1) +
 
 - `npm run verify` (= `npm run typecheck` → `npm run lint` → `npm run test`
   = `next typegen && tsc --noEmit` → `eslint` → `vitest run`)
-- 화면을 건드렸으면 `npm run shots` 후 `screenshots/v1-baseline/`과 비교
+- 화면을 건드렸으면 `npm run shots` 후 `screenshots/v1-baseline/`과 비교 (베이스라인 미촬영 — V2-STATUS 0단계)
 
 실패하면 스스로 고치고 재실행한다. **2회 실패 시 멈추고 보고한다.** 추측으로 통과시키지 않는다.
 
@@ -40,7 +40,7 @@ Next.js (App Router) + TypeScript + Tailwind / Neon PostgreSQL(ap-southeast-1) +
 - `docs/API-V2.md` 계약 변경
 - **AI 지점 추가** (R3)
 - **원본을 서버에 저장해야 할 것 같을 때** (R9)
-- **온디바이스 자산 예산 5.5MB를 넘겨야 할 것 같을 때**
+- **온디바이스 자산 예산 2.0MB를 넘겨야 할 것 같을 때**
 - V2-PLAN 범위 밖 기능 · 상태 전이 변경 · 다른 세션 담당 디렉터리
 
 > 위험한 것은 여기 적는 것으로 끝내지 않는다. `.claude/settings.json`의 deny와 `.env`에서 실제로 막는다.
@@ -55,7 +55,7 @@ Next.js (App Router) + TypeScript + Tailwind / Neon PostgreSQL(ap-southeast-1) +
 
 **R3. AI는 등록된 지점에만.** `lib/ai/touchpoints.ts`가 단일 소스. ① 매물 텍스트 구조화 ② 질문 변환 ③ 기록 차이 요약 ④ 문서 구조화 ⑤ 확인 도우미. 각 지점은 판정 금지 프롬프트 + `containsBanned()` + 폴백 + `ai_logs.touchpoint`를 전부 갖춘다. ④는 문서 종류(`kind`)별로 프롬프트를 나눈다.
 
-**R4. 모든 외부 의존성에는 폴백이 있다.** Gemini → 템플릿 / 지도 → 리스트 / 좌표 → null / 기기 OCR → 동의 후 서버 OCR → 수기 / 오프라인 → IndexedDB 큐. AI·geocode·OCR 라우트는 실패·타임아웃·413에도 **HTTP 200 + `{ok:false}`**.
+**R4. 모든 외부 의존성에는 폴백이 있다.** Gemini → 템플릿 / 지도 → 리스트 / 좌표 → null / PDF 텍스트 추출 → 수기 (기기 OCR → 동의 후 서버 OCR 단계는 **보류**) / 오프라인 → IndexedDB 큐. AI·geocode·OCR 라우트는 실패·타임아웃·413에도 **HTTP 200 + `{ok:false}`**.
 
 **R5. 현장 항목은 방문 후에 체크한다.** 국면 A는 목록만. 문서 불일치에서 나온 질문도 조사지에 목록으로만 실린다.
 
@@ -67,7 +67,7 @@ Next.js (App Router) + TypeScript + Tailwind / Neon PostgreSQL(ap-southeast-1) +
 
 **R9. 원본은 기기에만 둔다.** 문서 원본은 IndexedDB에만. `documents`에 원본 참조 컬럼을 두지 않는다.
 · **텍스트 경로(④)**: 주민번호·생년월일 마스킹 후 전송
-· **이미지 경로(서버 OCR)**: 동의 후 본문으로만, 저장 없음. **마스킹은 원리상 불가능하다** — 읽기 전에는 무엇이 주민번호인지 알 수 없다. 이미지를 마스킹하는 코드를 만들려 하지 말 것. 동의 다이얼로그에 이 사실을 적고 "가리고 다시 촬영"·"수기 입력"을 나란히 둔다.
+· **이미지 경로(서버 OCR) — 보류**: 동의 후 본문으로만, 저장 없음. **마스킹은 원리상 불가능하다** — 읽기 전에는 무엇이 주민번호인지 알 수 없다. 이미지를 마스킹하는 코드를 만들려 하지 말 것. 동의 다이얼로그에 이 사실을 적고 "가리고 다시 촬영"·"수기 입력"을 나란히 둔다.
 
 **R10. `different`는 표기 체계가 같은 필드에만.** 허용: 성명·금액·면적·용도·층·날짜. **주소는 `different`를 내지 않는다** — 광고는 지번, 등기부는 도로명+지번, 계약서는 도로명이라 표기가 달라서 다른 것이다. 일치하면 `same`, 아니면 "확인 필요 — 두 표기 나란히". `missing`은 `not_applicable`(원래 없는 필드)과 `not_found`(못 찾음)를 구분한다.
 
@@ -79,7 +79,7 @@ Next.js (App Router) + TypeScript + Tailwind / Neon PostgreSQL(ap-southeast-1) +
 
 - `drizzle/` · `db/migrations/` — 기존 마이그레이션 파일 **수정 금지**. 새 파일 추가만
 - `lib/rules.ts` · `finance.ts` · `geo.ts` — 값 변경은 승인 필요. 순수성(부수효과 없음)은 절대 깨지 않는다
-- `docs/PRD.md` · `ARCHITECTURE.md` · `PROJECT-STATUS.md` · `V1-OUT-OF-SCOPE.md` — **v1 기록.** 헤더 표시 외에 내용 수정 금지. "그때 왜 그랬나"의 근거다
+- `docs/v1/**` — **v1 기록.** 내용 수정 금지. "그때 왜 그랬나"의 근거다
 - `tests/` 기존 229건 — 실패하면 테스트를 고치지 말고 코드를 고친다. 의도적 변경이면 승인 필요
 - `screenshots/v1-baseline/` — 회귀 비교 기준. 갱신 금지
 - `.env*` — 읽지도 쓰지도 않는다
@@ -116,7 +116,7 @@ Next.js (App Router) + TypeScript + Tailwind / Neon PostgreSQL(ap-southeast-1) +
 
 ### 하지 말 것
 
-점수·랭킹·추천 · 리뷰(UGC) · 링크 크롤링 · 핀 클러스터링 · 건축물대장 · 녹음/STT · 사진 분류 · 정책 링크 · 세션 복구 코드 · 로그인·역할 관리자·유료 티어·공유 링크(v3) · 사글세 교차 환산 · 계약금 적정 비율 계산 · 특약 대신 작성 · 한글/숫자 금액 우선순위 단정 · **주소에 `different` 판정** · **`tessdata` 표준판(14.6MB)이나 `kor+eng` 기본 조합** · `ADMIN_TOKEN` 방식 변경 · v1 수치("AI 3지점"·"화면 8개")를 v2 문구에 쓰기
+점수·랭킹·추천 · 리뷰(UGC) · 링크 크롤링 · 핀 클러스터링 · 건축물대장 · 녹음/STT · 사진 분류 · 정책 링크 · 세션 복구 코드 · 로그인·역할 관리자·유료 티어·공유 링크(나중) · 사글세 교차 환산 · 계약금 적정 비율 계산 · 특약 대신 작성 · 한글/숫자 금액 우선순위 단정 · **주소에 `different` 판정** · **Tesseract 도입**(보류 — 재개 승인 후에도 `tessdata` 표준판(14.6MB)·`kor+eng` 기본 조합 금지) · **서버 OCR 경로** · **공모전 관련 문구** · `ADMIN_TOKEN` 방식 변경 · v1 수치("AI 3지점"·"화면 8개")를 현재 문구에 쓰기
 
 ---
 
@@ -124,29 +124,29 @@ Next.js (App Router) + TypeScript + Tailwind / Neon PostgreSQL(ap-southeast-1) +
 
 <!-- 세션이 바뀌어도 이어지는 유일한 기억. 작업 끝날 때마다 갱신한다. 4줄을 넘기지 않는다. 자세한 추적은 docs/V2-STATUS.md -->
 
-- **목표**: v2 문서 대조 — D1~D4 (~9/16). 10/7 공모전 접수
-- **완료**: v1 배포본 · 범위 확정(V2-PLAN) · 규칙 정리
-- **막힌 것**: D1 준비물(등기부 PDF·계약서 샘플·tessdata) 미확보 · 기획서 docx가 구 범위
-- **다음**: `npm run verify` + 베이스라인 촬영 → D1 OCR 실측
+- **목표**: 대구대 실배포 + 포트폴리오 완성도. 마감 없음, 단계 순서는 V2-STATUS §3
+- **완료**: v1 배포본 · 범위 확정(V2-PLAN) · 규칙 정리 · 문서 정리(9/29). v2 코딩 0일
+- **막힌 것**: 등기부 PDF·계약서 샘플 미확보 · CI 없음 · `screenshots/v1-baseline/` 없음
+- **다음**: 0단계 하네스 (CI · 베이스라인 · 로컬 브랜치 재생성) → 1단계 이름 교체
 
 ---
 
 ## 세션 시작 프롬프트
 
-> 백엔드 `main` · 프론트 `feat/v2-screens`. **Plan 모드로 시작한다.**
+> 백엔드 `feat/v2-api` · 프론트 `feat/v2-screens` (둘 다 main에서 딴다 — `docs/WORKFLOW.md`). **Plan 모드로 시작한다.** 계획에는 `docs/REVIEW.md` 자체 검토를 붙인다.
 
 **백엔드**
 ```
-미쁜집 v2 백엔드 세션이다. CLAUDE.md · docs/V2-PLAN.md · docs/PRD-V2.md(§3 데이터 모델, §4 AI 계약, §5 대조 규격, §7 API) · docs/V2-TECH-REVIEW.md(§5 서버 하드 리밋, §6 구조 지적)를 읽고
+미쁜집 v2 백엔드 세션이다. CLAUDE.md · docs/V2-PLAN.md(§3 AI 지점, §4 기능 명세, §7 데이터 모델) · docs/V2-TECH-REVIEW.md(§5 서버 하드 리밋, §6 구조 지적)를 읽고
 R1~R11과 V2-PLAN §3·§4·§7을 요약해 보고한 뒤 시작하라. 담당은 db/ · lib/compare/ · lib/ai/ · lib/actions/ · app/api/ · docs/API-V2.md.
-오늘 할 것: [D1 항목을 여기에]
+오늘 할 것: [V2-STATUS §3 단계 항목을 여기에]
 ```
 
 **프론트**
 ```
-미쁜집 v2 프론트 세션이다. CLAUDE.md · docs/V2-PLAN.md · docs/PRD-V2.md(§2 화면 명세, §8 오프라인 규격) · docs/V2-TECH-REVIEW.md(§2 자산 예산, §4 오프라인 구조)를 읽고
+미쁜집 v2 프론트 세션이다. CLAUDE.md · docs/V2-PLAN.md(§4 기능 명세) · docs/V2-TECH-REVIEW.md(§2 자산 예산, §4 오프라인 구조)를 읽고
 R1·R4·R7·R9·R10을 요약해 보고한 뒤 시작하라. 담당은 components/ · lib/client/ · public/ · app/**/page.tsx.
-오늘 할 것: [D1 항목을 여기에]
+오늘 할 것: [V2-STATUS §3 단계 항목을 여기에]
 ```
 
 ---
@@ -155,9 +155,11 @@ R1·R4·R7·R9·R10을 요약해 보고한 뒤 시작하라. 담당은 component
 같이 두는 파일
 .claude/settings.json   도구 허용·차단 (요청이 아니라 강제)
 package.json scripts    완료 판정의 실체 — verify · shots
-docs/V2-PLAN.md         범위
-docs/PRD-V2.md          사양 — 화면·데이터·API·수용 기준
-docs/V2-TECH-REVIEW.md  기술 제약·실측값
-docs/V2-STATUS.md       진행 추적 (사람이 읽는 것)
+docs/V2-PLAN.md         범위·사양 (고정된 사실)
+docs/V2-TECH-REVIEW.md  기술 제약·실측값 (고정된 사실)
+docs/V2-STATUS.md       진행·일정·미확인·열린 결정 (움직이는 사실 — 여기에만)
+docs/WORKFLOW.md        역할·브랜치·작업 루프
+docs/REVIEW.md          계획서 자체 검토 체크리스트
 docs/INFRA.md           결정 로그 = ADR
+docs/v1/                v1 기록 — 읽지 않는다
 -->

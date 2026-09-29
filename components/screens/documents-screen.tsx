@@ -22,7 +22,8 @@ import { documentReadiness } from '@/lib/documents/readiness';
 import { structureDocument } from '@/lib/client/document-api';
 import { extractPdfText } from '@/lib/client/pdf-text';
 import { deleteOriginal, listOriginals, saveOriginal, type VaultMeta } from '@/lib/client/vault';
-import type { ActionResult, DocumentDTO, PropertyDTO } from '@/lib/types';
+import type { ActionResult, DiscrepancyDTO, DocumentDTO, PropertyDTO } from '@/lib/types';
+import { DiscrepancyResults } from './_parts/discrepancy-results';
 import { ScreenShell } from './_parts/screen-shell';
 import { PropertyHeader } from './_parts/property-header';
 import { SourceBadge } from './_parts/source-badge';
@@ -38,7 +39,8 @@ import type { HrefFor } from './_parts/nav';
  * ★ R4: 텍스트 레이어가 없거나 ④가 실패하면 빈 확인 화면(수기 입력)으로 이어간다.
  *   이미지(촬영본·광고 캡처)는 글자를 자동으로 읽지 않는다 — OCR은 보류(2026-09-29).
  * ★ R7: 이 화면은 인쇄·공유 경로가 없다. 상세주소·특약 원문은 화면 표시만 한다.
- * ★ 대조는 4단계. 준비 상태 패널은 2종 이상인지만 보여 주고, onCompare가 없으면 버튼을 잠근다.
+ * ★ 대조: 준비 상태 패널은 2종 이상인지만 보여 주고, onCompare가 없으면 버튼을 잠근다.
+ *   결과는 이 화면 아래(DiscrepancyResults)에 나란히 보인다. 판정은 lib/compare가 하고 화면은 옮겨 그리기만 한다.
  */
 export type DocumentsScreenProps = {
   property: PropertyDTO;
@@ -50,8 +52,10 @@ export type DocumentsScreenProps = {
   onDelete: (documentId: string) => Promise<ActionResult<void>>;
   /** 광고 문구 → 지점 ① (POST /api/ai/parse). 없으면 붙여넣기 칸을 그리지 않는다 */
   onParseAd?: (text: string) => Promise<{ ok: boolean; data?: Partial<CreatePropertyInput> }>;
-  /** 대조 실행 (4단계). 없으면 대조 버튼은 잠긴 채로 보인다 */
-  onCompare?: () => void;
+  /** 대조 실행 — Server Action runCompare. 없으면 대조 버튼은 잠긴 채로 보인다 */
+  onCompare?: (propertyId: string) => Promise<ActionResult<{ discrepancies: DiscrepancyDTO[] }>>;
+  /** 마지막 대조 결과 (listDiscrepancies). 대조한 적 없으면 [] */
+  discrepancies?: DiscrepancyDTO[];
 };
 
 type Origin = 'ai' | 'user';
@@ -123,12 +127,14 @@ export function DocumentsScreen({
   onDelete,
   onParseAd,
   onCompare,
+  discrepancies = [],
 }: DocumentsScreenProps) {
   const router = useRouter();
   const [originals, setOriginals] = useState<VaultMeta[]>([]);
   const [draft, setDraft] = useState<Draft | null>(null);
   const [busyKind, setBusyKind] = useState<DocumentKind | null>(null);
   const [saving, setSaving] = useState(false);
+  const [comparing, setComparing] = useState(false);
   const [error, setError] = useState('');
   const [adText, setAdText] = useState('');
 
@@ -221,6 +227,21 @@ export function DocumentsScreen({
       return;
     }
     router.refresh();
+  }
+
+  async function handleCompare() {
+    if (!onCompare || comparing) return;
+    setComparing(true);
+    setError('');
+    try {
+      const result = await onCompare(p.id);
+      if (!result.ok) setError(result.error);
+      else router.refresh();
+    } catch {
+      setError('지금 대조할 수 없어요. 잠시 후 다시 시도해 주세요.');
+    } finally {
+      setComparing(false);
+    }
   }
 
   async function handleSave() {
@@ -338,20 +359,24 @@ export function DocumentsScreen({
         </h2>
         <p className="rc-card-sub">{readiness.summary}</p>
         {readiness.reason && <p className="rc-field-note">{readiness.reason}</p>}
-        {readiness.canCompare && !onCompare && (
-          <p className="rc-field-note">문서 대조 화면은 아직 준비 중입니다.</p>
-        )}
         <div className="rc-form-actions">
           <button
             type="button"
             className="rc-btn rc-btn-primary"
-            disabled={!readiness.canCompare || !onCompare}
-            onClick={onCompare}
+            disabled={!readiness.canCompare || !onCompare || comparing}
+            onClick={() => void handleCompare()}
           >
-            문서 대조하기
+            {comparing ? '대조하는 중...' : discrepancies.length > 0 ? '다시 대조하기' : '문서 대조하기'}
           </button>
         </div>
+        {discrepancies.length > 0 && (
+          <p className="rc-field-note">문서 내용을 고쳤다면 다시 대조해 주세요. 아래 결과는 마지막 대조 기준입니다.</p>
+        )}
       </section>
+
+      {(discrepancies.length > 0 || readiness.canCompare) && (
+        <DiscrepancyResults discrepancies={discrepancies} documents={documents} originals={originals} />
+      )}
 
       <p className="rc-notice">
         원본 파일은 <b>이 기기에만</b> 보관하고 서버로 보내지 않습니다. 브라우저 데이터를 지우면 원본도

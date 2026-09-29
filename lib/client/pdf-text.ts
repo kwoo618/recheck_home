@@ -70,3 +70,45 @@ export async function extractPdfText(file: Blob): Promise<PdfTextResult> {
     void task?.destroy().catch(() => undefined);
   }
 }
+
+/**
+ * 원본 PDF 한 페이지를 canvas에 그린다 — 대조 결과의 위치 하이라이트용 (V2-PLAN §4-1 "표시").
+ * 기기 안에서만 그린다. 원본은 어디에도 보내지 않는다 (R9).
+ * 하이라이트 사각형은 호출부가 bbox(페이지 비율 좌표)로 canvas 위에 겹친다.
+ * ★ 예외를 던지지 않는다. 실패하면 false — 화면은 "원본을 열지 못했습니다"만 보여 주고 결과는 그대로 둔다.
+ */
+export async function renderPdfPage(
+  file: Blob,
+  pageNumber: number,
+  canvas: HTMLCanvasElement,
+  cssWidth: number,
+): Promise<boolean> {
+  let task: { destroy(): Promise<void> } | null = null;
+  try {
+    const pdfjs = await import('pdfjs-dist');
+    pdfjs.GlobalWorkerOptions.workerSrc = PDF_WORKER_SRC;
+
+    const loading = pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) });
+    task = loading;
+    const doc = await loading.promise;
+    if (pageNumber < 1 || pageNumber > doc.numPages) return false;
+
+    const page = await doc.getPage(pageNumber);
+    const base = page.getViewport({ scale: 1 });
+    const ratio = window.devicePixelRatio || 1;
+    const viewport = page.getViewport({ scale: (cssWidth / base.width) * ratio });
+
+    canvas.width = Math.floor(viewport.width);
+    canvas.height = Math.floor(viewport.height);
+    canvas.style.width = `${cssWidth}px`;
+    canvas.style.height = `${Math.floor(viewport.height / ratio)}px`;
+
+    await page.render({ canvas, viewport }).promise;
+    page.cleanup();
+    return true;
+  } catch {
+    return false;
+  } finally {
+    void task?.destroy().catch(() => undefined);
+  }
+}

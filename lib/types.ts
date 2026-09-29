@@ -8,6 +8,7 @@ import type {
   DocumentKind,
   OcrSource,
   FieldBbox,
+  DiscrepancyStatus,
 } from '@/db/schema';
 
 /**
@@ -109,6 +110,22 @@ export type DocumentFieldInput = {
   /** 확인 화면에서 사용자가 값을 바꿨는가 */
   editedByUser: boolean;
 };
+
+/** 대조 결과 한 행 (docs/API-V2.md §4). status는 lib/compare 순수 함수만 정한다 */
+export type DiscrepancyDTO = {
+  id: string;
+  fieldKey: string;
+  docA: DocumentKind;
+  /** 같은 문서 안 비교(deposit_text_kr ↔ deposit)면 docA와 같다 */
+  docB: DocumentKind;
+  /** 원문 표기 그대로 */
+  valueA: string | null;
+  valueB: string | null;
+  status: DiscrepancyStatus;
+};
+
+/** 조사지 "문서에서 확인된 차이"용 — 값(성명·금액)을 뺀 대조 행. 조사지는 인쇄된다 */
+export type DocumentDiffRow = Omit<DiscrepancyDTO, 'valueA' | 'valueB'>;
 
 /** 매물의 문서 한 건 + 필드. 원본은 없다 — 원본은 기기(IndexedDB)에만 있다 */
 export type DocumentDTO = {

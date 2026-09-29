@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import type { PropertyStatus, QuestionSource } from '@/db/schema';
 import { QUESTION_BANK } from '@/lib/rules';
-import type { ActionResult, PropertyDTO, VisitCheckDTO } from '@/lib/types';
+import { discrepancyTemplateQuestion } from '@/lib/compare/question';
+import type { ActionResult, DocumentDiffRow, PropertyDTO, VisitCheckDTO } from '@/lib/types';
 import type { AddVisitCheckInput } from '@/lib/actions/visit';
 import { ScreenShell } from './_parts/screen-shell';
 import { PropertyHeader } from './_parts/property-header';
@@ -51,6 +52,14 @@ export type SurveySheetScreenProps = {
     propertyId: string,
     concern: string,
   ) => Promise<{ ok: boolean; questions: string[] }>;
+
+  /**
+   * 문서 대조에서 질문으로 바꾸는 행 (V2-PLAN §4-2). 값(성명·금액)은 없다 — 조사지는 인쇄된다.
+   * 기본 문장은 규칙 템플릿(lib/rules.ts)이고, 사용자가 누르면 지점 ②로 다듬는다.
+   */
+  documentDiffs?: DocumentDiffRow[];
+  /** POST /api/ai/questions `{discrepancyId}` → `{ok, questions[]}`. ok=false면 템플릿을 그대로 둔다 */
+  onAskDiscrepancy?: (discrepancyId: string) => Promise<{ ok: boolean; questions: string[] }>;
 };
 
 export function SurveySheetScreen({
@@ -65,10 +74,34 @@ export function SurveySheetScreen({
   onSetNoConcern,
   onSetStatus,
   onAskQuestions,
+  documentDiffs = [],
+  onAskDiscrepancy,
 }: SurveySheetScreenProps) {
   const router = useRouter();
   const { run: mutate, isBusy, saveState } = useMutations();
   const [error, setError] = useState('');
+
+  /* ── 문서에서 확인된 차이: 규칙 템플릿 → (선택) 지점 ②로 다듬은 문장. 이 화면 안에서만 들고 있다 ── */
+  const [diffAi, setDiffAi] = useState<Record<string, string>>({});
+  const [diffNote, setDiffNote] = useState('');
+  const diffItems = documentDiffs.flatMap((d) => {
+    const template = discrepancyTemplateQuestion(d);
+    if (!template) return [];
+    const ai = diffAi[d.id];
+    return [{ id: d.id, text: ai ?? template, fromAi: ai !== undefined }];
+  });
+
+  function handleAskDiscrepancy(id: string) {
+    if (!onAskDiscrepancy) return;
+    setDiffNote('');
+    void mutate(`diff-${id}`, async () => {
+      const result = await onAskDiscrepancy(id);
+      const text = result.questions[0]?.trim();
+      if (result.ok && text) setDiffAi((prev) => ({ ...prev, [id]: text }));
+      else setDiffNote('AI로 다듬지 못해 규칙 기반 문장을 그대로 둡니다.');
+      return { ok: true as const, data: undefined };
+    });
+  }
 
   const [newCheck, setNewCheck] = useState('');
   const [concern, setConcern] = useState('');
@@ -421,6 +454,37 @@ export function SurveySheetScreen({
           )}
         </section>
 
+        {/* ── 문서에서 확인된 차이 (V2-PLAN §4-2) — 목록만. 체크는 없다 (R5) ── */}
+        {diffItems.length > 0 && (
+          <section className="rc-card">
+            <h2 className="rc-card-title">문서에서 확인된 차이</h2>
+            <p className="rc-card-sub">
+              문서 대조에서 다르게 기재된 항목을 물어볼 문장으로 옮겼어요. 어느 쪽이 맞는지는 방문·계약 전에
+              직접 확인하세요. 값은 문서 화면에서 볼 수 있고, 조사지에는 싣지 않습니다.
+            </p>
+            {diffItems.map((item) => (
+              <div key={item.id} className="rc-q-item">
+                <div className="rc-q-text">
+                  <span>{item.text}</span>
+                  <SourceBadge kind={item.fromAi ? 'ai' : 'rule'} />
+                </div>
+                {onAskDiscrepancy && !item.fromAi && (
+                  <div className="rc-q-actions">
+                    <button
+                      type="button"
+                      disabled={isBusy(`diff-${item.id}`)}
+                      onClick={() => handleAskDiscrepancy(item.id)}
+                    >
+                      {isBusy(`diff-${item.id}`) ? '다듬는 중...' : 'AI로 문장 다듬기'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+            {diffNote && <p className="rc-field-note">{diffNote}</p>}
+          </section>
+        )}
+
         {error && <p className="rc-error">{error}</p>}
 
         {/*
@@ -477,7 +541,7 @@ export function SurveySheetScreen({
         </div>
       </div>
 
-      <SurveySheetPrint property={p} />
+      <SurveySheetPrint property={p} diffQuestions={diffItems.map((i) => i.text)} />
     </ScreenShell>
   );
 }

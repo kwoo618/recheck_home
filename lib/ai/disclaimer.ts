@@ -17,6 +17,10 @@ export const FINANCE_DISCLAIMER =
 export const RENT_CONVERSION_NOTICE =
   '법정 전월세전환율은 갱신 계약의 상한 기준이며, 신규 계약 협상에는 강제력이 없습니다. 실제 조건은 임대인과의 협의로 정해집니다.';
 
+/** 문서 대조 결과에 결과 유무와 무관하게 상시 노출 (V2-PLAN §4-1 "표시" — 면책 상시) */
+export const DOCUMENT_COMPARE_DISCLAIMER =
+  '대조 결과는 확인·저장한 칸의 표기를 나란히 보여 줄 뿐이며, 어느 쪽이 맞는지나 그 차이가 무엇을 뜻하는지 판단하지 않습니다. 원본 문서와 함께 확인하고, 궁금한 점은 중개사·임대인에게 직접 물어보세요.';
+
 /*
  * 아직 여기로 옮기지 않은 것 (tests/glossary.test.ts가 원문 위치를 고정하고 있어 테스트 승인 후 이동):
  *   · compare-finance.tsx 전월세전환 계산기 맨 위 합의 안내

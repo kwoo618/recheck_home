@@ -9,12 +9,18 @@ import {
   removeQuestion,
 } from '@/lib/actions/questions';
 import { SurveySheetScreen } from '@/components/screens/survey-sheet-screen';
-import type { ActionResult, PropertyDTO } from '@/lib/types';
+import type { ActionResult, DocumentDiffRow, PropertyDTO } from '@/lib/types';
 import { hrefFor } from '@/app/_lib/nav';
-import { askQuestions } from '@/app/_lib/api-client';
+import { askDiscrepancyQuestions, askQuestions } from '@/app/_lib/api-client';
 
 /** 조사지 만들기 화면의 클라이언트 경계 */
-export function SheetClient({ property }: { property: PropertyDTO }) {
+export function SheetClient({
+  property,
+  documentDiffs,
+}: {
+  property: PropertyDTO;
+  documentDiffs: DocumentDiffRow[];
+}) {
   // 화면은 "걱정 없음"만 저장하면 되고, updateProperty의 나머지 필드는 알 필요가 없다.
   const setNoConcern = (propertyId: string, noConcern: boolean): Promise<ActionResult<void>> =>
     updateProperty(propertyId, { noConcern });
@@ -32,6 +38,8 @@ export function SheetClient({ property }: { property: PropertyDTO }) {
       onSetNoConcern={setNoConcern}
       onSetStatus={setStatus}
       onAskQuestions={askQuestions}
+      documentDiffs={documentDiffs}
+      onAskDiscrepancy={askDiscrepancyQuestions}
     />
   );
 }

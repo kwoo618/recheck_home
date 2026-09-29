@@ -1,5 +1,7 @@
 import { notFound } from 'next/navigation';
 import { getProperty } from '@/lib/actions/properties';
+import { listDiscrepancies } from '@/lib/actions/compare';
+import { QUESTION_STATUSES } from '@/lib/compare/text';
 import { withoutAddressDetail } from '@/app/_lib/property';
 import { SheetClient } from './sheet-client';
 
@@ -14,5 +16,10 @@ export default async function SurveySheetPage({ params }: { params: Promise<{ id
   const property = await getProperty(id);
   if (!property) notFound();
 
-  return <SheetClient property={withoutAddressDetail(property)} />;
+  // 문서 대조에서 질문으로 바꾸는 행만 (V2-PLAN §4-2). 조사지는 인쇄되므로 값(성명·금액)은 넘기지 않는다
+  const documentDiffs = (await listDiscrepancies(id))
+    .filter((d) => QUESTION_STATUSES.includes(d.status))
+    .map(({ id: diffId, fieldKey, docA, docB, status }) => ({ id: diffId, fieldKey, docA, docB, status }));
+
+  return <SheetClient property={withoutAddressDetail(property)} documentDiffs={documentDiffs} />;
 }

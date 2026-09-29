@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { getProperty } from '@/lib/actions/properties';
 import { listDocuments } from '@/lib/actions/documents';
+import { listDiscrepancies } from '@/lib/actions/compare';
 import { withoutAddressDetail } from '@/app/_lib/property';
 import { DocumentsClient } from './documents-client';
 
@@ -16,7 +17,13 @@ export default async function DocumentsPage({ params }: { params: Promise<{ id: 
   const property = await getProperty(id);
   if (!property) notFound();
 
-  const documents = await listDocuments(id);
+  const [documents, discrepancies] = await Promise.all([listDocuments(id), listDiscrepancies(id)]);
 
-  return <DocumentsClient property={withoutAddressDetail(property)} documents={documents} />;
+  return (
+    <DocumentsClient
+      property={withoutAddressDetail(property)}
+      documents={documents}
+      discrepancies={discrepancies}
+    />
+  );
 }

@@ -1,4 +1,5 @@
 import type { DealType, Heating } from '@/db/schema';
+import { josa } from '@/lib/compare/text';
 
 /**
  * 결정론 규칙 모듈 (PRD v2.1 §5)
@@ -135,6 +136,17 @@ export function fallbackQuestions(concern: string): string[] {
     if (keys.some((k) => concern.includes(k))) return QUESTION_BANK[cat].slice(0, 3);
   }
   return QUESTION_BANK['계약 조건'].slice(0, 3);
+}
+
+/**
+ * 문서 불일치 → 질문 폴백 템플릿 (V2-PLAN §4-2 · API-V2 §5-1)
+ *   "{field}가 {docA}와 {docB}에서 다릅니다. 어느 쪽이 맞는지 확인해 주세요."
+ * 값(성명·금액)은 넣지 않는다 — 필드 이름과 문서 이름만. 조사는 받침에 맞춘다.
+ * 같은 문서 안 비교(한글 ↔ 숫자 금액)면 "{docA}의 두 표기에서".
+ */
+export function discrepancyFallbackQuestion(field: string, docA: string, docB: string): string {
+  const where = docA === docB ? `${docA}의 두 표기에서` : `${josa(docA, '과/와')} ${docB}에서`;
+  return `${josa(field, '이/가')} ${where} 다릅니다. 어느 쪽이 맞는지 확인해 주세요.`;
 }
 
 /* ══════════════════════════════════════════════════════════════

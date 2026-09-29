@@ -4,9 +4,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import type { PropertyStatus } from '@/db/schema';
-import { selectSafetyRules, type RuleContext } from '@/lib/rules';
+import { selectSafetyRules, type ContractChoiceId, type RuleContext } from '@/lib/rules';
 import type { ActionResult, PropertyDTO } from '@/lib/types';
 import type { CheckGroup } from '@/lib/actions/checks';
+import type { ContractCheckData } from '@/lib/documents/contract-checks';
+import { ContractChecks } from './_parts/contract-checks';
 import { ScreenShell } from './_parts/screen-shell';
 import { PropertyHeader } from './_parts/property-header';
 import { SourceBadge } from './_parts/source-badge';
@@ -32,6 +34,8 @@ import type { HrefFor } from './_parts/nav';
  */
 export type SafetyScreenProps = {
   property: PropertyDTO;
+  /** 계약서 확인 항목의 자동 채움 자료 (V2-PLAN §4-6). 문서가 없으면 빈 자료 */
+  contract: ContractCheckData;
   hrefFor: HrefFor;
   onToggleCheck: (
     propertyId: string,
@@ -39,10 +43,22 @@ export type SafetyScreenProps = {
     ruleId: string,
     on: boolean,
   ) => Promise<ActionResult<void>>;
+  onSetChoice: (
+    propertyId: string,
+    ruleId: string,
+    choice: ContractChoiceId | null,
+  ) => Promise<ActionResult<void>>;
   onSetStatus: (propertyId: string, next: PropertyStatus) => Promise<ActionResult<void>>;
 };
 
-export function SafetyScreen({ property: p, hrefFor, onToggleCheck, onSetStatus }: SafetyScreenProps) {
+export function SafetyScreen({
+  property: p,
+  contract,
+  hrefFor,
+  onToggleCheck,
+  onSetChoice,
+  onSetStatus,
+}: SafetyScreenProps) {
   const router = useRouter();
   const { run: mutate, isBusy, busy, saveState } = useMutations();
   const [error, setError] = useState('');
@@ -72,6 +88,18 @@ export function SafetyScreen({ property: p, hrefFor, onToggleCheck, onSetStatus 
 
   function toggle(ruleId: string, on: boolean) {
     void mutate(`safety-${ruleId}`, () => onToggleCheck(p.id, 'safety', ruleId, on)).then((result) => {
+      if (!result) return;
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      setError('');
+      router.refresh();
+    });
+  }
+
+  function choose(ruleId: string, choice: ContractChoiceId | null) {
+    void mutate(`choice-${ruleId}`, () => onSetChoice(p.id, ruleId, choice)).then((result) => {
       if (!result) return;
       if (!result.ok) {
         setError(result.error);
@@ -179,6 +207,14 @@ export function SafetyScreen({ property: p, hrefFor, onToggleCheck, onSetStatus 
           {/* 항목 제목·설명(lib/rules.ts)에 나오는 말들. 규칙 문구는 못 고치므로 화면이 덧붙인다 */}
           <GlossaryPanel terms={GLOSSARY_BY_SCREEN.safety} />
         </section>
+
+        <ContractChecks
+          data={contract}
+          checks={p.safetyChecks}
+          isBusy={isBusy}
+          onToggle={toggle}
+          onChoice={choose}
+        />
 
         <section className="rc-card">
           <h2 className="rc-card-title">문서 올리기</h2>

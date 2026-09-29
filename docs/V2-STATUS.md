@@ -22,8 +22,10 @@ v2 범위 확정(9/3)과 규칙 정리까지 끝났고, **v2 코딩은 시작하
 | `main` 마지막 커밋 | `f2d3ed1` (2026-09-09). 이후 v2 코드 커밋 없음 → **v2 코딩 0일** | [코드 경로+커밋 f2d3ed1] |
 | 원격 브랜치 | `main` · `feat/screens`(v1) 뿐. `feat/v2-api` · `feat/v2-screens` 없음 | [코드 경로+커밋 f2d3ed1] |
 | 로컬 브랜치 | `feat/v2-api` = `main`(f2d3ed1). `feat/v2-screens` = 4466fd5 — **main보다 5커밋 뒤**. 둘 다 자체 커밋 0 → 강우가 지우고 main에서 다시 딴다 | [코드 경로+커밋 f2d3ed1] |
-| `lib/ai/touchpoints.ts` · `lib/compare/` · `lib/client/` | 없음 | [설계 의도—미구현] |
-| `docs/API-V2.md` | 없음 (2단계에서 만든다) | [설계 의도—미구현] |
+| `lib/ai/touchpoints.ts` | 있음 (야간 S2). ①②③ active · ④⑤ planned. ①②③ 라우트가 이 id로 `ai_logs.touchpoint` 기록 | [코드 경로 — 야간 S2 커밋] |
+| `lib/compare/` · `lib/client/` | 없음 | [설계 의도—미구현] |
+| `docs/API-V2.md` | 있음 (야간 S2 최초 작성). 이후 변경은 승인 | [코드 경로 — 야간 S2 커밋] |
+| 마이그레이션 `drizzle/0002_steep_warlock.sql` | 생성만 함. **DB 미적용.** CREATE TABLE 3 · ADD COLUMN(nullable) 2 · FK 3 · INDEX 3. DROP · ALTER TYPE · 기존 컬럼 NOT NULL 없음 | [코드 경로 — 야간 S2 커밋] |
 | `public/tessdata/` | 없음 — Tesseract 보류로 **만들지 않는다** | [코드 경로+커밋 f2d3ed1] |
 | `public/manifest.json` · `sw.js` | 없음 | [설계 의도—미구현] |
 | `.claude/settings.json` | 9/9부터 로컬에만 있었고 `.gitignore`의 `.claude/`로 **미추적**이었다 → 2026-09-29 추적 전환 | [코드 경로+커밋 — 이번 커밋] |
@@ -57,12 +59,12 @@ v1 문서를 `docs/v1/`로 옮기면서 아래 **코드 주석**이 옛 경로�
 |---|---|---|---|
 | **0 하네스** | `.claude/settings.json` 추적(완료) · CI(verify) · `screenshots/v1-baseline/` 촬영 · 로컬 브랜치 재생성 | CI 초록 · 베이스라인 파일 존재 | 진행 중 (settings.json만 완료) |
 | 1 이름 교체 | 옛 이름 → Sealook Homes(씰룩홈즈). 화면·메타·PDF 파일명(`SealookHomes_`) · 끊긴 주석 경로(§2). README는 저장소에 없음 | verify 통과 · shots 비교 | 부분 — verify 통과, shots·OG 렌더 미확인(야간 S1) |
-| 2 스키마·계약 | 스키마·마이그레이션(승인) · `touchpoints.ts` · `docs/API-V2.md` | verify 통과 · 마이그레이션 승인 기록 | 미착수 |
+| 2 스키마·계약 | 스키마·마이그레이션(승인) · `touchpoints.ts` · `docs/API-V2.md` | verify 통과 · 마이그레이션 승인 기록 | 부분 — verify 통과, 마이그레이션 생성·미적용(강우 검토 후 `db:migrate`). V1.5 Must 3건(면책 상수화 · 연도 주입 · 전월세전환 명칭)도 함께 처리 (야간 S2). ⚠ `properties` 컬럼 추가 → **마이그레이션 적용 전 배포 금지** |
 | 3 PDF 추출·구조화 | pdf.js 텍스트 레이어 추출 · 지점 ④ 구조화 + 마스킹 · 확인 화면 | 등기부 PDF 1건 필드 채워짐 (§4 실측표 선행) | 미착수 |
 | 4 대조 | `lib/compare` + 테스트 · 대조 결과 화면 · A′ 질문 연결 | **2종 대조에서 불일치 ≥1 검출·표시** | 미착수 |
 | 5 계약서 12항목 | V2-PLAN §4-6 규칙 · 안전 점검 화면 | 12항목 표시 · 문구 검수 완료 | 미착수 |
 | 6 PWA·오프라인 | manifest · SW · 조사지 오프라인 · 큐 · iOS 실기기 | 비행기 모드에서 조사지 열림 | 미착수 |
-| 7 V1.5·디자인 | V2-PLAN §5 보정 · 디자인 (**팀원 레퍼런스 대기**) | verify · shots | 미착수 |
+| 7 V1.5·디자인 | V2-PLAN §5 보정 · 디자인 (**팀원 레퍼런스 대기**) | verify · shots | 부분 — Must 중 면책 상수화·연도 주입·전월세전환 명칭은 2단계에서 처리(야간 S2). 이름 변경은 1단계. Should 전부 미착수 |
 | 나중 | Tesseract · 서버 OCR · 확인 도우미 ⑤ · 로그인 · 공유 링크 | 각각 별도 승인 | — |
 
 **중단 규칙**

@@ -75,7 +75,7 @@ export async function POST(request: Request) {
   });
 
   if (!result.ok) {
-    await logAi('questions', clipped, `실패: ${result.reason}`, result.reason === 'banned');
+    await logAi('question_convert', clipped, `실패: ${result.reason}`, result.reason === 'banned');
     return template(clipped, 'AI 변환에 실패해 질문 은행에서 골랐습니다.');
   }
 
@@ -83,7 +83,7 @@ export async function POST(request: Request) {
   const questions = normalizeQuestions(parsed.value);
 
   await logAi(
-    'questions',
+    'question_convert',
     clipped,
     parsed.recovered ? `${RECOVERY_MARK}\n${result.text}` : result.text,
     false,

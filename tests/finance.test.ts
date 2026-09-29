@@ -1,13 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import {
   calcFinance,
-  calcConversion,
+  calcRentConversion,
   calcPrepaid,
   negotiationQuestion,
-  FINANCE_DISCLAIMER,
   FINANCE_ASSUMPTIONS,
-  CONVERSION_NOTICE,
 } from '@/lib/finance';
+import { FINANCE_DISCLAIMER, RENT_CONVERSION_NOTICE } from '@/lib/ai/disclaimer';
 import { containsBanned } from '@/lib/rules';
 
 /**
@@ -146,19 +145,19 @@ describe('calcFinance — 경계값', () => {
   });
 });
 
-describe('calcConversion — 보증금↔월세 전환 (참고 계산)', () => {
+describe('calcRentConversion — 전월세전환 (참고 계산)', () => {
   it('전환율이 0 이하면 계산하지 않는다 (0으로 나누기 방지)', () => {
-    expect(calcConversion(45, 20, 0, 500)).toEqual({ ok: false, reason: 'invalid_rate' });
-    expect(calcConversion(45, 20, -1, 500)).toEqual({ ok: false, reason: 'invalid_rate' });
+    expect(calcRentConversion(45, 20, 0, 500)).toEqual({ ok: false, reason: 'invalid_rate' });
+    expect(calcRentConversion(45, 20, -1, 500)).toEqual({ ok: false, reason: 'invalid_rate' });
   });
 
   it('목표 월세가 현재보다 낮지 않으면 계산하지 않는다', () => {
-    expect(calcConversion(45, 45, 5.5, 500)).toEqual({ ok: false, reason: 'target_not_lower' });
-    expect(calcConversion(45, 50, 5.5, 500)).toEqual({ ok: false, reason: 'target_not_lower' });
+    expect(calcRentConversion(45, 45, 5.5, 500)).toEqual({ ok: false, reason: 'target_not_lower' });
+    expect(calcRentConversion(45, 50, 5.5, 500)).toEqual({ ok: false, reason: 'target_not_lower' });
   });
 
   it('추가보증금 = (현재월세 − 목표월세) × 12 ÷ (전환율/100)', () => {
-    const r = calcConversion(45, 20, 5.5, 500, 4);
+    const r = calcRentConversion(45, 20, 5.5, 500, 4);
     if (!r.ok) throw new Error('ok여야 한다');
 
     expect(r.rentReduction).toBe(25);
@@ -167,7 +166,7 @@ describe('calcConversion — 보증금↔월세 전환 (참고 계산)', () => {
   });
 
   it('추가 보증금을 전액 대출로 마련한다고 가정한 월이자 증가분을 함께 낸다', () => {
-    const r = calcConversion(45, 20, 5.5, 500, 4);
+    const r = calcRentConversion(45, 20, 5.5, 500, 4);
     if (!r.ok) throw new Error('ok여야 한다');
 
     expect(r.addedMonthlyInterest).toBe(18.2); // 5455 * 0.04 / 12 = 18.18… → 18.2
@@ -175,14 +174,14 @@ describe('calcConversion — 보증금↔월세 전환 (참고 계산)', () => {
   });
 
   it('대출 금리가 높으면 순변화가 음수가 될 수 있다 (사실 서술이지 판정 아님)', () => {
-    const r = calcConversion(45, 20, 5.5, 500, 10);
+    const r = calcRentConversion(45, 20, 5.5, 500, 10);
     if (!r.ok) throw new Error('ok여야 한다');
 
     expect(r.netMonthlyChange).toBeLessThan(0);
   });
 
   it('대출 금리를 생략하면 이자 증가분은 0이다', () => {
-    const r = calcConversion(45, 20, 5.5, 500);
+    const r = calcRentConversion(45, 20, 5.5, 500);
     if (!r.ok) throw new Error('ok여야 한다');
 
     expect(r.addedMonthlyInterest).toBe(0);
@@ -207,7 +206,7 @@ describe('R1 가드레일 — 금융 모듈은 판정성 표현을 만들지 않
   it('상시 노출 문구에 금칙어가 없다', () => {
     expect(containsBanned(FINANCE_DISCLAIMER)).toBe(false);
     expect(containsBanned(FINANCE_ASSUMPTIONS)).toBe(false);
-    expect(containsBanned(CONVERSION_NOTICE)).toBe(false);
+    expect(containsBanned(RENT_CONVERSION_NOTICE)).toBe(false);
   });
 
   it('협상 질문 템플릿에 금칙어가 없다', () => {
@@ -218,7 +217,7 @@ describe('R1 가드레일 — 금융 모듈은 판정성 표현을 만들지 않
     expect(FINANCE_DISCLAIMER).toContain('참고용');
     expect(FINANCE_DISCLAIMER).toContain('투자자문이 아닙니다');
     expect(FINANCE_ASSUMPTIONS).toContain('이자만 상환');
-    expect(CONVERSION_NOTICE).toContain('강제력');
+    expect(RENT_CONVERSION_NOTICE).toContain('강제력');
   });
 });
 
@@ -289,7 +288,7 @@ describe('calcPrepaid — 사글세', () => {
     }
   });
 
-  it('예외를 던지지 않는다 — 실패는 항상 값이다 (calcConversion과 같은 규약)', () => {
+  it('예외를 던지지 않는다 — 실패는 항상 값이다 (calcRentConversion과 같은 규약)', () => {
     expect(() => calcPrepaid({ ...base, prepaidMonths: 0, prepaidTotal: 0 })).not.toThrow();
   });
 });

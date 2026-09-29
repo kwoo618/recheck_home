@@ -1,9 +1,11 @@
 import 'server-only';
 
+import { sql } from 'drizzle-orm';
 import { db } from '@/db';
-import { aiLogs, type AiFeature } from '@/db/schema';
+import { aiLogs } from '@/db/schema';
 import { containsBanned } from '@/lib/rules';
 import { GEMINI_MODEL_CHAIN, GEMINI_TIMEOUT_MS, GEMINI_MAX_OUTPUT_TOKENS } from './models';
+import { TOUCHPOINTS, type TouchpointId } from './touchpoints';
 
 /**
  * Gemini 호출 공통 계층 (PRD v2.1 §8.2 · R1 · R4 · R6)
@@ -115,22 +117,36 @@ async function callModel(
 /**
  * AI 입출력 기록 (발표용 대조 자료).
  *
+ * 지점 id(lib/ai/touchpoints.ts)로만 기록한다. feature는 등록표에서 따라온다.
+ *
  * ★ 로그 실패가 기능을 막지 않는다. DB가 죽어도 AI 응답은 사용자에게 가야 한다.
  * ★ 입력은 요약만 남긴다. 붙여넣은 매물 텍스트 전문을 보관할 이유가 없다.
+ * ★ touchpoint 컬럼은 v2 마이그레이션(0002)에서 생긴다. 미적용 DB에서는 첫 insert가
+ *   실패하므로 v1 컬럼만으로 한 번 더 기록한다. 그것도 실패하면 삼킨다.
+ *   drizzle insert는 스키마의 모든 컬럼을 나열하므로 두 번째 시도는 SQL로 직접 쓴다.
  */
 export async function logAi(
-  feature: AiFeature,
+  touchpoint: TouchpointId,
   inputSummary: string,
   outputText: string,
   filtered: boolean,
 ): Promise<void> {
+  const feature = TOUCHPOINTS[touchpoint].feature;
+  const input = inputSummary.slice(0, 300);
+  const output = outputText.slice(0, 2000);
+
   try {
-    await db.insert(aiLogs).values({
-      feature,
-      inputSummary: inputSummary.slice(0, 300),
-      outputText: outputText.slice(0, 2000),
-      filtered,
-    });
+    await db.insert(aiLogs).values({ feature, touchpoint, inputSummary: input, outputText: output, filtered });
+    return;
+  } catch {
+    // 아래 v1 형태로 재시도
+  }
+
+  try {
+    await db.execute(sql`
+      insert into ai_logs (feature, input_summary, output_text, filtered)
+      values (${feature}, ${input}, ${output}, ${filtered})
+    `);
   } catch {
     // 기록 실패는 무시한다.
   }

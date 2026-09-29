@@ -88,11 +88,11 @@ export async function POST(request: Request) {
   });
 
   if (!result.ok) {
-    await logAi('summary', inputSummary, `실패: ${result.reason}`, result.reason === 'banned');
+    await logAi('record_summary', inputSummary, `실패: ${result.reason}`, result.reason === 'banned');
     return fail('요약을 만들지 못했습니다. 아래 표를 확인해주세요.');
   }
 
-  await logAi('summary', inputSummary, result.text, false);
+  await logAi('record_summary', inputSummary, result.text, false);
 
   return NextResponse.json({ ok: true as const, summary: result.text });
 }

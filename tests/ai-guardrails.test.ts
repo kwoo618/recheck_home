@@ -1,7 +1,11 @@
 import { describe, it, expect } from 'vitest';
+import { readdirSync, readFileSync } from 'node:fs';
+import * as DISCLAIMERS from '@/lib/ai/disclaimer';
+import { TOUCHPOINTS, TOUCHPOINT_IDS, isTouchpointId } from '@/lib/ai/touchpoints';
 import {
   NO_JUDGMENT_RULE,
   PARSE_SYSTEM,
+  buildParseSystem,
   QUESTIONS_SYSTEM,
   SUMMARY_SYSTEM,
   wrapUserInput,
@@ -333,5 +337,151 @@ describe('모델 설정', () => {
   it('타임아웃이 설정돼 있고 상한을 넘지 않는다', () => {
     expect(GEMINI_TIMEOUT_MS).toBe(12000);
     expect(GEMINI_TIMEOUT_MS).toBeLessThanOrEqual(15000);
+  });
+});
+
+/* ══════════════════════════════════════════════════════════════
+   v2 — AI 지점 등록표 (R3 · lib/ai/touchpoints.ts)
+   ══════════════════════════════════════════════════════════════ */
+
+/** active 지점 ↔ 그 지점의 판정 금지 프롬프트. active를 늘리면 여기도 늘려야 테스트가 통과한다 */
+const ACTIVE_PROMPTS: Record<string, string> = {
+  listing_structure: PARSE_SYSTEM,
+  question_convert: QUESTIONS_SYSTEM,
+  record_summary: SUMMARY_SYSTEM,
+};
+
+/** app·lib·components 아래 .ts/.tsx 전부 (슬래시 경로) */
+function sourceFiles(): string[] {
+  return ['app', 'lib', 'components'].flatMap((dir) =>
+    readdirSync(dir, { recursive: true, encoding: 'utf8' })
+      .filter((p) => /\.tsx?$/.test(p))
+      .map((p) => `${dir}/${p.replace(/\\/g, '/')}`),
+  );
+}
+
+const AI_ROUTE_FILES = [
+  'app/api/ai/parse/route.ts',
+  'app/api/ai/questions/route.ts',
+  'app/api/ai/summary/route.ts',
+];
+
+describe('AI 지점 등록표 — 단일 소스', () => {
+  it('V2-PLAN §3의 ①~⑤ 다섯 지점이 번호 순서대로 한 번씩 등록돼 있다', () => {
+    expect(TOUCHPOINT_IDS.map((id) => TOUCHPOINTS[id].no)).toEqual([1, 2, 3, 4, 5]);
+  });
+
+  it('⑤ 확인 도우미는 planned다 (V2-PLAN §3 "나중")', () => {
+    expect(TOUCHPOINTS.confirm_helper.status).toBe('planned');
+  });
+
+  it('모든 지점이 이름·입출력·폴백을 갖는다 (R4 — 폴백 없는 지점은 없다)', () => {
+    for (const id of TOUCHPOINT_IDS) {
+      const t = TOUCHPOINTS[id];
+      expect(t.name, id).not.toBe('');
+      expect(t.io, id).not.toBe('');
+      expect(t.fallback, id).not.toBe('');
+    }
+  });
+
+  it('등록표 문구 자체에 판정성 표현이 없다 (관리자 화면에 그대로 나간다)', () => {
+    for (const id of TOUCHPOINT_IDS) {
+      const t = TOUCHPOINTS[id];
+      expect(containsBanned(`${t.name} ${t.io} ${t.fallback}`), id).toBe(false);
+    }
+  });
+
+  it('active 지점은 전부 판정 금지 프롬프트를 갖는다', () => {
+    const active = TOUCHPOINT_IDS.filter((id) => TOUCHPOINTS[id].status === 'active');
+    expect(active.sort()).toEqual(Object.keys(ACTIVE_PROMPTS).sort());
+    for (const id of active) {
+      expect(ACTIVE_PROMPTS[id], id).toContain(NO_JUDGMENT_RULE);
+    }
+  });
+
+  it('등록되지 않은 id는 지점으로 인정하지 않는다', () => {
+    expect(isTouchpointId('listing_structure')).toBe(true);
+    expect(isTouchpointId('parse')).toBe(false); // v1 feature 값은 지점 id가 아니다
+    expect(isTouchpointId('recommend')).toBe(false);
+    expect(isTouchpointId('toString')).toBe(false); // 프로토타입 키에 속지 않는다
+    expect(isTouchpointId(undefined)).toBe(false);
+  });
+});
+
+describe('AI 호출부 — 등록된 active 지점 id로만 기록한다', () => {
+  const read = (p: string) => readFileSync(p, 'utf8');
+
+  it('generate()를 부르는 파일은 이 목록에만 있다 — 목록 밖 AI 호출은 새 지점이다', () => {
+    const callers = sourceFiles().filter((p) => /\bgenerate\(\{/.test(read(p)));
+    expect(callers.sort()).toEqual([...AI_ROUTE_FILES].sort());
+  });
+
+  it('각 라우트의 logAi 첫 인자는 등록된 active 지점 id다', () => {
+    for (const file of AI_ROUTE_FILES) {
+      const ids = [...read(file).matchAll(/logAi\(\s*'([^']+)'/g)].map((m) => m[1]);
+      expect(ids.length, file).toBeGreaterThan(0);
+      for (const id of ids) {
+        expect(isTouchpointId(id), `${file}: ${id}`).toBe(true);
+        if (isTouchpointId(id)) expect(TOUCHPOINTS[id].status, `${file}: ${id}`).toBe('active');
+      }
+    }
+  });
+});
+
+describe('프롬프트 연도 주입 (V2-PLAN §5)', () => {
+  it('prompts.ts는 시계를 읽지 않는다 — 연도는 호출부가 넘긴다', () => {
+    const src = readFileSync('lib/ai/prompts.ts', 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/\/\/.*$/gm, '');
+    expect(src).not.toMatch(/Date\.now\(/);
+    expect(src).not.toMatch(/new Date\(/);
+    expect(src).not.toMatch(/getFullYear\(/);
+  });
+
+  it('넘긴 연도가 프롬프트에 그대로 들어간다', () => {
+    expect(buildParseSystem(2031)).toContain('2031년');
+    expect(buildParseSystem(2031)).toContain('2031 −');
+  });
+
+  it('같은 연도면 같은 프롬프트다 (순수)', () => {
+    expect(buildParseSystem(2026)).toBe(buildParseSystem(2026));
+  });
+
+  it('연도를 붙여도 판정 금지·추측 금지 지시는 그대로다', () => {
+    const p = buildParseSystem(2026);
+    expect(p).toContain(NO_JUDGMENT_RULE);
+    expect(p).toContain('추측');
+  });
+
+  it('정수 연도가 아니면 연도 줄 없이 기본 프롬프트를 쓴다', () => {
+    for (const bad of [NaN, 0, -1, 2026.5, Infinity]) {
+      expect(buildParseSystem(bad)).toBe(PARSE_SYSTEM);
+    }
+  });
+
+  it('파싱 라우트는 연도를 넣은 프롬프트를 쓴다', () => {
+    const src = readFileSync('app/api/ai/parse/route.ts', 'utf8');
+    expect(src).toContain('buildParseSystem(');
+    expect(src).not.toMatch(/system:\s*PARSE_SYSTEM/);
+  });
+});
+
+describe('면책 문구 단일 소스 (lib/ai/disclaimer.ts)', () => {
+  it('모든 문구가 금칙어 필터를 통과한다', () => {
+    for (const [name, text] of Object.entries(DISCLAIMERS)) {
+      expect(typeof text, name).toBe('string');
+      expect(containsBanned(text as string), name).toBe(false);
+    }
+  });
+
+  it('면책 상수를 다른 파일에서 다시 정의하지 않는다', () => {
+    const names = Object.keys(DISCLAIMERS);
+    const files = sourceFiles().filter((p) => p !== 'lib/ai/disclaimer.ts');
+    for (const file of files) {
+      const src = readFileSync(file, 'utf8');
+      for (const name of names) {
+        expect(src, `${file}: ${name}`).not.toMatch(new RegExp(`(const|let|var)\\s+${name}\\b`));
+      }
+    }
   });
 });

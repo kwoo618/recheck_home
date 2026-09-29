@@ -1,4 +1,4 @@
-# V2-STATUS.md — 미쁜집 진행 스냅샷
+# V2-STATUS.md — Sealook Homes(씰룩홈즈) 진행 스냅샷
 
 > **이 문서의 용도**: 새 채팅·새 세션이 "지금 어디까지 됐나"를 여기서만 읽는다.
 > **움직이는 사실(일정·진행·미확인·준비물·열린 결정)은 이 문서에만 둔다.** 고정된 사실(범위·제약·실측값)은 `V2-PLAN.md` · `V2-TECH-REVIEW.md`에만.
@@ -31,12 +31,12 @@ v2 범위 확정(9/3)과 규칙 정리까지 끝났고, **v2 코딩은 시작하
 | CI (`.github/workflows`) | 없음 | [코드 경로+커밋 f2d3ed1] |
 | `screenshots/v1-baseline/` | 없음 (`screenshots/` 자체가 없다) → `npm run shots` 비교가 성립하지 않는다 | [코드 경로+커밋 f2d3ed1] |
 | `npm run verify` 정의 | `next typegen && tsc --noEmit` → `eslint` → `vitest run`. CLAUDE.md와 일치 | [코드 경로+커밋 f2d3ed1] |
-| 서비스명 | 코드는 전부 **"리:체크"**. "미쁜집"은 문서와 `.claude/settings.json`에만 (9/29 조사 시점 추적 문서 7개) → 1단계에서 일괄 교체 | [코드 경로+커밋 f2d3ed1] |
+| 서비스명 | **Sealook Homes(씰룩홈즈)** 로 교체(1단계, 표시명만). 남은 옛 이름: `.claude/settings.json` `$comment`(쓰기 권한 없음) · `docs/PORTFOLIO-NOTES.md:1`(deny 대상) · `tests/e2e/gen-icon.mts:25`(아이콘 팀원 대기) · INFRA 결정 로그(과거 기록) | [코드 경로 — 1단계 커밋] |
 | `docs/PRD-V2.md` | 없음. 참조를 전부 지웠다. 사양은 `V2-PLAN.md` §4가 담당. 필요해지면 그때 만든다 | [코드 경로+커밋 — 이번 커밋] |
 
-### 끊긴 경로 참조 — 1단계(이름 교체)에서 같이 고친다
+### 끊긴 경로 참조 — 1단계(이름 교체)에서 고쳤다
 
-v1 문서를 `docs/v1/`로 옮기면서 아래 **코드 주석**이 옛 경로를 가리킨다. 코드는 문서 정리 커밋에서 건드리지 않았다.
+v1 문서를 `docs/v1/`로 옮기면서 아래 **코드 주석**이 옛 경로를 가리켰다. 1단계에서 전부 `docs/v1/` 경로로 고쳤다(`recheck-theme.css:3·362`, `tests/e2e/README.md:69·165` 포함).
 
 | 파일 | 가리키는 옛 경로 |
 |---|---|
@@ -47,7 +47,7 @@ v1 문서를 `docs/v1/`로 옮기면서 아래 **코드 주석**이 옛 경로�
 | `tests/e2e/seed.mts:163` | `docs/HANDOFF-BACK.md` |
 | `tests/glossary.test.ts:86` | `docs/HANDOFF-FRONT.md` |
 
-문서 쪽도 두 곳이 옛 경로를 가리키지만 **그대로 둔다**: `docs/qa/README-팀원용.md:135`(`docs/SCREENS.md` — qa는 손대지 않음) · `docs/PORTFOLIO-NOTES.md:6`(`docs/HANDOFF-*.md` — settings.json deny 대상). `tests/e2e/README.md:69·165`도 옛 경로다 — 1단계에서 같이 본다.
+문서 쪽도 두 곳이 옛 경로를 가리키지만 **그대로 둔다**: `docs/qa/README-팀원용.md:135`(`docs/SCREENS.md` — qa는 손대지 않음) · `docs/PORTFOLIO-NOTES.md:6`(`docs/HANDOFF-*.md` — settings.json deny 대상).
 
 ---
 
@@ -56,7 +56,7 @@ v1 문서를 `docs/v1/`로 옮기면서 아래 **코드 주석**이 옛 경로�
 | 단계 | 내용 | 통과 기준 | 상태 |
 |---|---|---|---|
 | **0 하네스** | `.claude/settings.json` 추적(완료) · CI(verify) · `screenshots/v1-baseline/` 촬영 · 로컬 브랜치 재생성 | CI 초록 · 베이스라인 파일 존재 | 진행 중 (settings.json만 완료) |
-| 1 이름 교체 | 리:체크 → 새 이름. 화면·메타·README·PDF 파일명 · 끊긴 주석 경로(§2) | verify 통과 · shots 비교 | 미착수 |
+| 1 이름 교체 | 옛 이름 → Sealook Homes(씰룩홈즈). 화면·메타·PDF 파일명(`SealookHomes_`) · 끊긴 주석 경로(§2). README는 저장소에 없음 | verify 통과 · shots 비교 | 부분 — verify 통과, shots·OG 렌더 미확인(야간 S1) |
 | 2 스키마·계약 | 스키마·마이그레이션(승인) · `touchpoints.ts` · `docs/API-V2.md` | verify 통과 · 마이그레이션 승인 기록 | 미착수 |
 | 3 PDF 추출·구조화 | pdf.js 텍스트 레이어 추출 · 지점 ④ 구조화 + 마스킹 · 확인 화면 | 등기부 PDF 1건 필드 채워짐 (§4 실측표 선행) | 미착수 |
 | 4 대조 | `lib/compare` + 테스트 · 대조 결과 화면 · A′ 질문 연결 | **2종 대조에서 불일치 ≥1 검출·표시** | 미착수 |

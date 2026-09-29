@@ -103,14 +103,14 @@ CLAUDE.md · docs/V2-STATUS.md 를 읽고 현재 단계와 열린 결정을 요�
 
 **백엔드**
 ```
-미쁜집 v2 백엔드 세션이다. CLAUDE.md · docs/V2-PLAN.md(§3 AI 지점, §4 기능 명세, §7 데이터 모델) · docs/V2-TECH-REVIEW.md(§5 서버 하드 리밋, §6 구조 지적)를 읽고
+씰룩홈즈 v2 백엔드 세션이다. CLAUDE.md · docs/V2-PLAN.md(§3 AI 지점, §4 기능 명세, §7 데이터 모델) · docs/V2-TECH-REVIEW.md(§5 서버 하드 리밋, §6 구조 지적)를 읽고
 R1~R11과 V2-PLAN §3·§4·§7을 요약해 보고한 뒤 시작하라. 담당은 db/ · lib/compare/ · lib/ai/ · lib/actions/ · app/api/ · docs/API-V2.md.
 오늘 할 것: [V2-STATUS §3 단계 항목을 여기에]
 ```
 
 **프론트**
 ```
-미쁜집 v2 프론트 세션이다. CLAUDE.md · docs/V2-PLAN.md(§4 기능 명세) · docs/V2-TECH-REVIEW.md(§2 자산 예산, §4 오프라인 구조)를 읽고
+씰룩홈즈 v2 프론트 세션이다. CLAUDE.md · docs/V2-PLAN.md(§4 기능 명세) · docs/V2-TECH-REVIEW.md(§2 자산 예산, §4 오프라인 구조)를 읽고
 R1·R4·R7·R9·R10을 요약해 보고한 뒤 시작하라. 담당은 components/ · lib/client/ · public/ · app/**/page.tsx.
 오늘 할 것: [V2-STATUS §3 단계 항목을 여기에]
 ```

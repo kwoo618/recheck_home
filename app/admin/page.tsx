@@ -6,7 +6,7 @@
  *   URL 이 브라우저 히스토리·서버 로그·Referer 에 남고, 링크를 받은 사람은 누구나 들어온다.
  *   **실제 인증이 아니므로 발표 슬라이드에 URL 을 넣지 않는다.**
  *   발표 후 Vercel 환경변수에서 ADMIN_TOKEN 을 지우면 이 페이지는 notFound() 로 막힌다.
- *   (docs/INFRA.md 결정 로그 · docs/PROJECT-STATUS.md §5 참조)
+ *   (docs/INFRA.md 결정 로그 · docs/v1/PROJECT-STATUS.md §5 참조)
  *
  * ★ 개인정보를 렌더하지 않는다 — 상세주소·매물 별칭·메모·질문 답변 원문·방문 기록 내용.
  *   `_data.ts` 가 애초에 select 하지 않는다. 주소는 읍·면·동까지만 집계에 쓴다.
@@ -98,7 +98,7 @@ export default async function AdminPage({
   return (
     <main className="mx-auto max-w-[900px] px-4 py-8">
       <header>
-        <h1 className="text-[20px] font-bold text-[var(--rc-ink)]">리:체크 — 집계</h1>
+        <h1 className="text-[20px] font-bold text-[var(--rc-ink)]">Sealook Homes — 집계</h1>
         <p className="mt-1 text-[12px] text-[var(--rc-ink-soft)]">
           발표용 임시 화면입니다. 개인을 식별할 수 있는 값(상세주소·별칭·메모·답변 원문)은 읽지 않습니다.
         </p>
@@ -376,7 +376,7 @@ export default async function AdminPage({
       </Section>
 
       <footer className="mt-10 border-t border-[var(--rc-line)] pt-4 text-[11.5px] text-[var(--rc-ink-faint)]">
-        이 화면은 매물을 매칭하지 않습니다. 리:체크는 매물을 추천·매칭하지 않으므로 그런 지표가 없습니다.
+        이 화면은 매물을 매칭하지 않습니다. 씰룩홈즈는 매물을 추천·매칭하지 않으므로 그런 지표가 없습니다.
       </footer>
     </main>
   );

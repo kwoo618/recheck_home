@@ -15,7 +15,7 @@ import { usePrintDocument } from './_parts/use-print-document';
  * ★ 주소와 거리는 넣되 상세주소(동/호수)는 넣지 않는다. (R7)
  */
 export function SurveySheetPrint({ property: p }: { property: PropertyDTO }) {
-  // 출력일과 PDF 저장 파일명(리체크_조사지_{매물명}_{날짜})을 인쇄 시점에 만든다
+  // 출력일과 PDF 저장 파일명(SealookHomes_조사지_{매물명}_{날짜})을 인쇄 시점에 만든다
   const printedAt = usePrintDocument('조사지', p.name);
 
   return (
@@ -26,7 +26,7 @@ export function SurveySheetPrint({ property: p }: { property: PropertyDTO }) {
         {p.address && <> · {p.address}</>}
         <br />
         {formatDistanceLabel(p.distanceFromSchool)}
-        {printedAt && <> · 리:체크 출력 {printedAt}</>}
+        {printedAt && <> · 씰룩홈즈 출력{printedAt}</>}
       </p>
 
       {/*
@@ -96,7 +96,7 @@ export function SurveySheetPrint({ property: p }: { property: PropertyDTO }) {
       </table>
 
       <p className="rc-foot">
-        ※ 이 조사지는 확인을 돕는 참고 자료이며, 계약 판단은 본인의 몫입니다. 다녀온 뒤 리:체크에
+        ※ 이 조사지는 확인을 돕는 참고 자료이며, 계약 판단은 본인의 몫입니다. 다녀온 뒤 씰룩홈즈에
         결과를 입력하면 매물 비교에 활용됩니다.
       </p>
     </div>

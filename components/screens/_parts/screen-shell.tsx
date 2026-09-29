@@ -17,7 +17,7 @@ export function ScreenShell({ hrefFor, children }: { hrefFor: HrefFor; children:
       <div className="rc-wrap">
         <header className="rc-top rc-screen-only">
           <Link href={hrefFor('dash')} className="rc-logo">
-            <span className="rc-logo-re">리:</span>체크
+            Sealook Homes
           </Link>
           <span className="rc-tagline">계약 전 2차 검증</span>
         </header>

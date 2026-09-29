@@ -5,7 +5,7 @@ import {
 import { relations } from 'drizzle-orm';
 
 /**
- * 리:체크 DB 스키마 (PRD v2.1 §8.3)
+ * Sealook Homes(씰룩홈즈) DB 스키마 (PRD v2.1 §8.3)
  *
  * 설계 원칙:
  * - 규칙 상수(VISIT_RULES / QBANK / SAFETY_RULES 등)는 DB가 아니라 lib/rules.ts 코드에 둔다.

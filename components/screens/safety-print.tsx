@@ -16,7 +16,7 @@ import { usePrintDocument } from './_parts/use-print-document';
  * ★ 주소·거리는 넣되 상세주소는 넣지 않는다. (R7)
  */
 export function SafetyPrint({ property: p }: { property: PropertyDTO }) {
-  // 출력일과 PDF 저장 파일명(리체크_최종점검표_{매물명}_{날짜})을 인쇄 시점에 만든다
+  // 출력일과 PDF 저장 파일명(SealookHomes_최종점검표_{매물명}_{날짜})을 인쇄 시점에 만든다
   const printedAt = usePrintDocument('최종점검표', p.name);
 
   const ctx: RuleContext = {
@@ -36,7 +36,7 @@ export function SafetyPrint({ property: p }: { property: PropertyDTO }) {
         {p.address && <> · {p.address}</>}
         <br />
         {formatDistanceLabel(p.distanceFromSchool)}
-        {printedAt && <> · 리:체크 출력 {printedAt}</>}
+        {printedAt && <> · 씰룩홈즈 출력{printedAt}</>}
       </p>
 
       <h2>서류·권리 점검</h2>

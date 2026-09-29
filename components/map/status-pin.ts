@@ -23,7 +23,7 @@ export type PinStyle = {
 };
 
 /**
- * 색상은 프로토타입(docs/recheck-prototype-v4.html)의 상태 배지 팔레트를 그대로 쓴다.
+ * 색상은 프로토타입(docs/v1/recheck-prototype-v4.html)의 상태 배지 팔레트를 그대로 쓴다.
  * 카드 배지와 지도 핀이 다른 색이면 같은 상태를 다른 것으로 읽게 된다.
  */
 export const STATUS_PIN: Record<PropertyStatus, PinStyle> = {

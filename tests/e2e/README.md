@@ -66,7 +66,7 @@ docs/qa/console-errors.md            콘솔 에러·경고 보고서   ← 커�
 
 ```
 1) npm run qa:shoot          ← shots/·pdf/ 를 비우고 다시 채운다
-2) 랜딩 4장 수동 촬영         ← docs/SCREENSHOTS.md 참조
+2) 랜딩 4장 수동 촬영         ← docs/v1/SCREENSHOTS.md 참조
 3) /admin 2장 수동 촬영       ← docs/qa/admin/ (러너가 건드리지 않는 경로)
 ```
 
@@ -162,7 +162,7 @@ SELECT u.id, count(p.id) FROM users u LEFT JOIN properties p ON p.user_id=u.id G
 전환 계산기가 빈 값 상태로 어떻게 보이는지도 확인 대상이다.
 
 질문 문구는 `lib/rules.ts`의 `QUESTION_BANK`와 **글자 단위로 같아야 한다.**
-`toggleBankQuestion`이 문자열 자체를 매칭 키로 쓰기 때문이다 (`docs/HANDOFF-BACK.md` §5-⑪).
+`toggleBankQuestion`이 문자열 자체를 매칭 키로 쓰기 때문이다 (`docs/v1/HANDOFF-BACK.md` §5-⑪).
 
 ---
 

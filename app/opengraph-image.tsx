@@ -14,7 +14,7 @@ import { join } from 'node:path';
  *   빌드 때 구글 폰트를 fetch 하면 네트워크가 빌드 성공 여부를 좌우하므로,
  *   **쓰는 글자만 담은 서브셋**(약 49KB)을 받아 `app/_og/` 에 넣었다.
  *   문구를 바꾸면 글리프가 없어 그 글자만 빈 네모가 된다 — 서브셋을 다시 받아야 한다.
- *   (받는 법은 `docs/ARCHITECTURE.md` 참조)
+ *   (받는 법은 `docs/v1/ARCHITECTURE.md` 참조)
  *
  * ★ 색은 팔레트 값만 쓴다 — paper #f6f5f1 · ink #22252b · teal #145c54.
  * ★ 문구에 "안전한 · 추천 · 찾아드립니다"를 쓰지 않는다. 이 서비스는 찾아주지도,
@@ -23,7 +23,7 @@ import { join } from 'node:path';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
-export const alt = '리:체크 — 계약 전 2차 검증';
+export const alt = 'Sealook Homes(씰룩홈즈) — 계약 전 2차 검증';
 
 const PAPER = '#f6f5f1';
 const INK = '#22252b';
@@ -59,9 +59,8 @@ export default async function OpengraphImage() {
           />
         </svg>
 
-        <div style={{ display: 'flex', fontSize: 128, letterSpacing: -4, lineHeight: 1 }}>
-          <span style={{ color: TEAL }}>리:</span>
-          <span style={{ color: INK }}>체크</span>
+        <div style={{ display: 'flex', fontSize: 128, letterSpacing: -4, lineHeight: 1, color: INK }}>
+          Sealook Homes
         </div>
 
         <div style={{ display: 'flex', marginTop: 28, fontSize: 46, color: INK, opacity: 0.72 }}>

@@ -34,7 +34,7 @@ const siteUrl =
       ? `https://${process.env.VERCEL_URL}`
       : "https://recheck-home.vercel.app";
 
-const title = "리:체크 — 계약 전 2차 검증";
+const title = "Sealook Homes(씰룩홈즈) — 계약 전 2차 검증";
 const description =
   "찾은 집을, 계약 전에 다시 확인하세요. 부동산 앱이나 중개사무소에서 찾아온 매물의 확인 항목을 규칙으로 정리해 드립니다. 매물을 추천하지 않습니다.";
 
@@ -42,11 +42,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title,
   description,
-  applicationName: "리:체크",
+  applicationName: "Sealook Homes",
   openGraph: {
     type: "website",
     locale: "ko_KR",
-    siteName: "리:체크",
+    siteName: "Sealook Homes",
     title,
     description,
     url: siteUrl,

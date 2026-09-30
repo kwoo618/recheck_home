@@ -21,7 +21,9 @@
 |---|---|---|
 | `main` 마지막 커밋 | `0e0c5bb` (2026-09-30, v1 화면 베이스라인). v2 코드는 main에 없고 `feat/v2`에만 있다 — main보다 20커밋 앞(야간 S1~S8 · main 머지 포함), 뒤처진 커밋 0 | [코드 경로+커밋 0e0c5bb] |
 | 원격 브랜치 | `main` · `feat/screens`(v1) · `feat/v2`(`a595291`까지 푸시). `feat/v2-api` · `feat/v2-screens` 없음 | [코드 경로 — `git branch -r` 9/30] |
-| 로컬 브랜치 | `main`(= `origin/main`, 워크트리 `D:\projectsecheck`) · `feat/v2`(워크트리 `D:\projectsecheck-v2`). `feat/v2-api` · `feat/v2-screens`는 지웠다 | [코드 경로 — `git worktree list` 9/30] |
+| 로컬 브랜치 | `main`(= `origin/main`, 워크트리 `D:\projects
+echeck`) · `feat/v2`(워크트리 `D:\projects
+echeck-v2`). `feat/v2-api` · `feat/v2-screens`는 지웠다 | [코드 경로 — `git worktree list` 9/30] |
 | `lib/ai/touchpoints.ts` | 있음 (야간 S2). ①②③④ active · ⑤ planned (④는 야간 S3). ①~④ 라우트가 이 id로 `ai_logs.touchpoint` 기록 | [코드 경로 — 야간 S3 커밋] |
 | `lib/client/` | 있음 (야간 S3). `vault.ts`(IndexedDB 원본) · `pdf-text.ts`(pdfjs-dist 동적 import) · `document-api.ts`(④ 호출·마스킹·본문 크기 확인) | [코드 경로 — 야간 S3 커밋] |
 | `lib/compare/` | 있음 (야간 S4). `normalize`(금액·한글 금액·면적·층·날짜·성명) · `pairs`(대조 쌍 = 결과 순서) · `compare`(status 산출) · `text`(결과 문장) · `question`(A′ 템플릿). 평↔㎡ 환산 없음(상수 없음) → 평 표기는 `needs_review`. `tests/compare.test.ts` 148건 | [러너 실측 — 야간 S4 커밋] |
@@ -32,7 +34,7 @@
 | `public/manifest.json` · `sw.js` | 있음 (야간 S6). SW 직접 작성 — 캐시는 `/offline` 셸·그 청크·manifest·아이콘만. API·RSC·매물 HTML·원본은 캐시 안 함. 아이콘은 `app/icon.png`(512) 임시 | [코드 경로 — 야간 S6 커밋] · 설치·오프라인 동작은 실기기 미확인 |
 | `.claude/settings.json` | 9/9부터 로컬에만 있었고 `.gitignore`의 `.claude/`로 **미추적**이었다 → 2026-09-29 추적 전환 | [코드 경로+커밋 — 이번 커밋] |
 | `.claude/settings.local.json` | 없음 (개인 설정 없음). 생기면 무시 대상 | [코드 경로+커밋 — 이번 커밋] |
-| CI (`.github/workflows`) | 없음 | [코드 경로+커밋 f2d3ed1] |
+| CI (`.github/workflows`) | `verify.yml` — push와 main 대상 PR마다 `npm ci` → `npm run verify` (Node 22, 비밀키 없음). `e2e:v2` · `qa:shoot`는 DB·AI·지도 키가 필요해 넣지 않는다. GitHub에서 실제 실행은 푸시 후 확인 | [코드 경로 — 클린 클론 verify 9/30] |
 | `screenshots/v1-baseline/` | 있음 (main `0e0c5bb`, 이름 교체 전 · 카카오 키 없이 촬영). 화면 13종 × 3뷰포트 + 인쇄 2종 + `console-errors.md`. v2 shots는 커밋하지 않는다 — 디자인이 바뀔 때 새 베이스라인을 찍는다 | [코드 경로+커밋 0e0c5bb] |
 | `npm run verify` 정의 | `next typegen && tsc --noEmit` → `eslint` → `vitest run`. CLAUDE.md와 일치. 9/30 기준 lint 경고 0 · 테스트 514건 통과 | [러너 실측 — 3055bf0] |
 | 서비스명 | **Sealook Homes(씰룩홈즈)** 로 교체(1단계, 표시명만). 남은 옛 이름: `.claude/settings.json` `$comment`(쓰기 권한 없음) · `docs/PORTFOLIO-NOTES.md:1`(deny 대상) · `tests/e2e/gen-icon.mts:25`(아이콘 팀원 대기) · INFRA 결정 로그(과거 기록) | [코드 경로 — 1단계 커밋] |

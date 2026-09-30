@@ -81,6 +81,25 @@ npm run qa:clean   # QA 세션의 매물만 삭제
 
 ---
 
+## v2 흐름 E2E — `npm run e2e:v2` (여기만 단언한다)
+
+`v2-flow.mts`는 위 원칙의 예외다. 문서 업로드 → 대조 → 조사지 → 안전 점검 → 오프라인 큐를 **실제로 조작하고 단언한다.**
+단계별 통과/실패는 `docs/qa/e2e-v2/report.md`(커밋), 실패 사진·픽스처 PDF·추출 텍스트는 같은 폴더(.gitignore).
+
+- 지점 ④(Gemini)를 실행마다 1회 부른다. AI 값은 "채워졌는가 · 깨진 문자 없는가"만 본다
+- 8단계(Service Worker 오프라인 이동)는 **`next start`에서만** 통과한다 — dev는 SW를 등록하지 않는다
+  ```bash
+  npx next build
+  node --env-file=.env.local node_modules/next/dist/bin/next start -p 3001
+  QA_BASE_URL=http://localhost:3001 npm run e2e:v2
+  ```
+  3001이면 카카오 지도가 401로 거부되지만 이 흐름은 지도를 쓰지 않는다
+- Playwright 오프라인 에뮬레이션은 **이미 열린 문서**에만 `navigator.onLine=false`를 준다.
+  오프라인으로 새로 연 문서는 `onLine=true`이고 복귀 때 `online` 이벤트도 없다. 8단계 순서는 이 제약에 맞춰져 있다
+- 모든 러너는 `--import ./tests/e2e/_register-alias.mts`로 `@/` 별칭을 푼다 (lib/rules.ts가 `@/`를 값으로 임포트한다)
+
+---
+
 ## ⚠ 반드시 포트 3000 — 그리고 그래서 CI에 올리지 않는다
 
 카카오 JS 키가 `http://localhost:3000`과 배포 도메인에만 등록돼 있다.

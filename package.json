@@ -18,6 +18,7 @@
     "qa:demo:clean": "node --import ./tests/e2e/_register-alias.mts --conditions=react-server --env-file=.env.local tests/e2e/seed-demo.mts --clean",
     "qa:shoot": "node --import ./tests/e2e/_register-alias.mts --env-file=.env.local tests/e2e/shoot.mts",
     "shots": "npm run qa:shoot",
+    "e2e:v2": "node --import ./tests/e2e/_register-alias.mts --conditions=react-server --env-file=.env.local tests/e2e/v2-flow.mts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio"

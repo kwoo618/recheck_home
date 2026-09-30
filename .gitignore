@@ -59,3 +59,7 @@ next-env.d.ts
 # /admin 수동 캡처. 러너에 넣지 않는다 — 토큰이 URL 에 실리므로
 # 커밋되는 산출물에 경로가 남을 자리를 아예 만들지 않는다. (tests/e2e/_shared.mts 주석)
 /docs/qa/admin/
+# v2 흐름 E2E (tests/e2e/v2-flow.mts) — 실패 사진·픽스처 PDF는 넣지 않고 report.md만 커밋한다
+/docs/qa/e2e-v2/*.png
+/docs/qa/e2e-v2/*.pdf
+/docs/qa/e2e-v2/*.txt

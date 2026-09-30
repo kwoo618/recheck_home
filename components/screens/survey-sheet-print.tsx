@@ -33,7 +33,7 @@ export function SurveySheetPrint({
         {p.address && <> · {p.address}</>}
         <br />
         {formatDistanceLabel(p.distanceFromSchool)}
-        {printedAt && <> · 씰룩홈즈 출력{printedAt}</>}
+        {printedAt && <> · 씰룩홈즈 출력 {printedAt}</>}
       </p>
 
       {/*

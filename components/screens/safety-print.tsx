@@ -36,7 +36,7 @@ export function SafetyPrint({ property: p }: { property: PropertyDTO }) {
         {p.address && <> · {p.address}</>}
         <br />
         {formatDistanceLabel(p.distanceFromSchool)}
-        {printedAt && <> · 씰룩홈즈 출력{printedAt}</>}
+        {printedAt && <> · 씰룩홈즈 출력 {printedAt}</>}
       </p>
 
       <h2>서류·권리 점검</h2>

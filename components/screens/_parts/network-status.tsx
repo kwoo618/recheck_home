@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { readQueueSummary, retryStuckItems, subscribeQueue } from '@/lib/client/offline';
 import type { QueueSummary } from '@/lib/offline/queue';
-import type { HrefFor } from './nav';
 
 /**
  * 헤더의 연결 상태 + 대기 중 큐 항목 수 (CLAUDE.md UI 관습 · V2-TECH-REVIEW §6)
@@ -23,7 +22,7 @@ function subscribeOnline(cb: () => void) {
   };
 }
 
-export function NetworkStatus({ hrefFor }: { hrefFor: HrefFor }) {
+export function NetworkStatus({ offlineHref }: { offlineHref: string }) {
   const online = useSyncExternalStore(
     subscribeOnline,
     () => navigator.onLine,
@@ -52,7 +51,7 @@ export function NetworkStatus({ hrefFor }: { hrefFor: HrefFor }) {
     <div className="rc-net-status" aria-live="polite">
       {!online && <span className="rc-save-chip rc-net-offline">오프라인</span>}
       {summary.pending > 0 && (
-        <Link href={hrefFor('offline')} className="rc-save-chip rc-net-queue">
+        <Link href={offlineHref} className="rc-save-chip rc-net-queue">
           보낼 기록 {summary.pending}건
         </Link>
       )}

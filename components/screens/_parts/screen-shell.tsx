@@ -21,7 +21,7 @@ export function ScreenShell({ hrefFor, children }: { hrefFor: HrefFor; children:
             Sealook Homes
           </Link>
           <span className="rc-tagline">계약 전 2차 검증</span>
-          <NetworkStatus hrefFor={hrefFor} />
+          <NetworkStatus offlineHref={hrefFor('offline')} />
         </header>
         <main>{children}</main>
       </div>

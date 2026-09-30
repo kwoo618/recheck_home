@@ -15,26 +15,26 @@
 
 ---
 
-## 2. 레포 실측 (2026-09-29)
+## 2. 레포 실측 (2026-09-30)
 
 | 항목 | 상태 | 확인 |
 |---|---|---|
-| `main` 마지막 커밋 | `f2d3ed1` (2026-09-09). 이후 v2 코드 커밋 없음 → **v2 코딩 0일** | [코드 경로+커밋 f2d3ed1] |
-| 원격 브랜치 | `main` · `feat/screens`(v1) 뿐. `feat/v2-api` · `feat/v2-screens` 없음 | [코드 경로+커밋 f2d3ed1] |
-| 로컬 브랜치 | `feat/v2-api` = `main`(f2d3ed1). `feat/v2-screens` = 4466fd5 — **main보다 5커밋 뒤**. 둘 다 자체 커밋 0 → 강우가 지우고 main에서 다시 딴다 | [코드 경로+커밋 f2d3ed1] |
+| `main` 마지막 커밋 | `0e0c5bb` (2026-09-30, v1 화면 베이스라인). v2 코드는 main에 없고 `feat/v2`에만 있다 — main보다 20커밋 앞(야간 S1~S8 · main 머지 포함), 뒤처진 커밋 0 | [코드 경로+커밋 0e0c5bb] |
+| 원격 브랜치 | `main` · `feat/screens`(v1) · `feat/v2`(`a595291`까지 푸시). `feat/v2-api` · `feat/v2-screens` 없음 | [코드 경로 — `git branch -r` 9/30] |
+| 로컬 브랜치 | `main`(= `origin/main`, 워크트리 `D:\projectsecheck`) · `feat/v2`(워크트리 `D:\projectsecheck-v2`). `feat/v2-api` · `feat/v2-screens`는 지웠다 | [코드 경로 — `git worktree list` 9/30] |
 | `lib/ai/touchpoints.ts` | 있음 (야간 S2). ①②③④ active · ⑤ planned (④는 야간 S3). ①~④ 라우트가 이 id로 `ai_logs.touchpoint` 기록 | [코드 경로 — 야간 S3 커밋] |
 | `lib/client/` | 있음 (야간 S3). `vault.ts`(IndexedDB 원본) · `pdf-text.ts`(pdfjs-dist 동적 import) · `document-api.ts`(④ 호출·마스킹·본문 크기 확인) | [코드 경로 — 야간 S3 커밋] |
 | `lib/compare/` | 있음 (야간 S4). `normalize`(금액·한글 금액·면적·층·날짜·성명) · `pairs`(대조 쌍 = 결과 순서) · `compare`(status 산출) · `text`(결과 문장) · `question`(A′ 템플릿). 평↔㎡ 환산 없음(상수 없음) → 평 표기는 `needs_review`. `tests/compare.test.ts` 148건 | [러너 실측 — 야간 S4 커밋] |
-| pdf.js 자산 | `pdfjs-dist` 6.3.289. worker `public/pdfjs/pdf.worker.min.mjs` **1,265,413 B** 자체 호스팅 + 라이브러리(`pdf.min.mjs` 기준) **458,705 B** = 약 **1.72 MB** (예산 2.0MB 안). Korean CMap(176,242 B)은 미포함 — 실측 후 결정 | [러너 실측 — 파일 크기] · 번들 청크 크기는 `next build` 미실행 |
+| pdf.js 자산 | `pdfjs-dist` 6.3.289. worker `public/pdfjs/pdf.worker.min.mjs` **1,265,413 B** 자체 호스팅 + 라이브러리(`pdf.min.mjs` 기준) **458,705 B** = 약 **1.72 MB** (예산 2.0MB 안). Korean CMap(176,242 B)은 미포함 — 실측 후 결정. `next build`(9/30) 결과 pdf.js가 든 청크 455,720 B 1개 (내용 검색으로 찾음) | [러너 실측 — 파일 크기 · `next build` 9/30] |
 | `docs/API-V2.md` | 있음 (야간 S2 최초 작성). 이후 변경은 승인 | [코드 경로 — 야간 S2 커밋] |
-| 마이그레이션 `drizzle/0002_steep_warlock.sql` | 생성만 함. **DB 미적용.** CREATE TABLE 3 · ADD COLUMN(nullable) 2 · FK 3 · INDEX 3. DROP · ALTER TYPE · 기존 컬럼 NOT NULL 없음 | [코드 경로 — 야간 S2 커밋] |
+| 마이그레이션 `drizzle/0002_steep_warlock.sql` | **Neon dev 브랜치 DB에 적용됨** — `documents` · `document_fields` · `discrepancies` 테이블과 `properties.mgmt_fee_mode` 존재, `drizzle.__drizzle_migrations` 3행. **운영(배포) DB 적용 여부는 미확인.** 내용: CREATE TABLE 3 · ADD COLUMN(nullable) 2 · FK 3 · INDEX 3. DROP · ALTER TYPE · 기존 컬럼 NOT NULL 없음 | [러너 실측 — dev DB 조회 9/30] |
 | `public/tessdata/` | 없음 — Tesseract 보류로 **만들지 않는다** | [코드 경로+커밋 f2d3ed1] |
 | `public/manifest.json` · `sw.js` | 있음 (야간 S6). SW 직접 작성 — 캐시는 `/offline` 셸·그 청크·manifest·아이콘만. API·RSC·매물 HTML·원본은 캐시 안 함. 아이콘은 `app/icon.png`(512) 임시 | [코드 경로 — 야간 S6 커밋] · 설치·오프라인 동작은 실기기 미확인 |
 | `.claude/settings.json` | 9/9부터 로컬에만 있었고 `.gitignore`의 `.claude/`로 **미추적**이었다 → 2026-09-29 추적 전환 | [코드 경로+커밋 — 이번 커밋] |
 | `.claude/settings.local.json` | 없음 (개인 설정 없음). 생기면 무시 대상 | [코드 경로+커밋 — 이번 커밋] |
 | CI (`.github/workflows`) | 없음 | [코드 경로+커밋 f2d3ed1] |
-| `screenshots/v1-baseline/` | 없음 (`screenshots/` 자체가 없다) → `npm run shots` 비교가 성립하지 않는다 | [코드 경로+커밋 f2d3ed1] |
-| `npm run verify` 정의 | `next typegen && tsc --noEmit` → `eslint` → `vitest run`. CLAUDE.md와 일치 | [코드 경로+커밋 f2d3ed1] |
+| `screenshots/v1-baseline/` | 있음 (main `0e0c5bb`, 이름 교체 전 · 카카오 키 없이 촬영). 화면 13종 × 3뷰포트 + 인쇄 2종 + `console-errors.md`. v2 shots는 커밋하지 않는다 — 디자인이 바뀔 때 새 베이스라인을 찍는다 | [코드 경로+커밋 0e0c5bb] |
+| `npm run verify` 정의 | `next typegen && tsc --noEmit` → `eslint` → `vitest run`. CLAUDE.md와 일치. 9/30 기준 lint 경고 0 · 테스트 514건 통과 | [러너 실측 — 3055bf0] |
 | 서비스명 | **Sealook Homes(씰룩홈즈)** 로 교체(1단계, 표시명만). 남은 옛 이름: `.claude/settings.json` `$comment`(쓰기 권한 없음) · `docs/PORTFOLIO-NOTES.md:1`(deny 대상) · `tests/e2e/gen-icon.mts:25`(아이콘 팀원 대기) · INFRA 결정 로그(과거 기록) | [코드 경로 — 1단계 커밋] |
 | `docs/PRD-V2.md` | 없음. 참조를 전부 지웠다. 사양은 `V2-PLAN.md` §4가 담당. 필요해지면 그때 만든다 | [코드 경로+커밋 — 이번 커밋] |
 

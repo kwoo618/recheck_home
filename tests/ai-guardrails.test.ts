@@ -9,8 +9,6 @@ import {
   QUESTIONS_SYSTEM,
   SUMMARY_SYSTEM,
   DOCUMENT_REGISTRY_SYSTEM,
-  DOCUMENT_CONTRACT_SYSTEM,
-  documentSystemFor,
   wrapUserInput,
 } from '@/lib/ai/prompts';
 import { normalizeParsed, normalizeQuestions, parseJson, parseJsonDetailed } from '@/lib/ai/normalize';

@@ -11,7 +11,7 @@
 ## 1. 한 줄
 
 목표는 **대구대 실배포 + 포트폴리오 완성도.** 공모전 출품은 포기했다(2026-09-29). 마감이 없으므로 일정은 날짜가 아니라 **단계 순서**다.
-야간 작업(9/29, `feat/v2` S1~S7)으로 1~7단계 코드가 전부 **부분** 완료됐다. verify는 통과했지만 마이그레이션 `0002`는 DB에 적용하지 않았고, 샘플 문서·실기기·shots로는 한 번도 확인하지 않았다. 통과 기준은 모두 미확인이다. 다음은 강우가 `0002`를 검토하고 `db:migrate`를 실행한 뒤 실제 흐름을 확인하는 것이다. **0단계 하네스(CI·베이스라인)는 여전히 미완.**
+v2 필수 기능 코드는 `feat/v2`에 있고, 마이그레이션 `0002`는 운영·dev DB 모두 적용됐다(9/30). 가상 등기부 PDF로 업로드→대조→조사지→안전 점검→오프라인 큐 E2E 10단계가 dev·prod 빌드 둘 다 통과했고(`npm run e2e:v2`, 9/30), 0단계 하네스(CI verify · v1 베이스라인)도 갖췄다. **막힌 것은 실제 등기부 PDF 하나** — 텍스트 레이어 실측(§4)과 추출문 쪼개짐 확인이 여기에 걸려 있다. 다음은 실제 등기부로 §4 실측 → 실기기 확인(§7) → `feat/v2`를 main에 머지(= 배포, 승인).
 
 ---
 
@@ -29,7 +29,7 @@ echeck-v2`). `feat/v2-api` · `feat/v2-screens`는 지웠다 | [코드 경로 �
 | `lib/compare/` | 있음 (야간 S4). `normalize`(금액·한글 금액·면적·층·날짜·성명) · `pairs`(대조 쌍 = 결과 순서) · `compare`(status 산출) · `text`(결과 문장) · `question`(A′ 템플릿). 평↔㎡ 환산 없음(상수 없음) → 평 표기는 `needs_review`. `tests/compare.test.ts` 148건 | [러너 실측 — 야간 S4 커밋] |
 | pdf.js 자산 | `pdfjs-dist` 6.3.289. worker `public/pdfjs/pdf.worker.min.mjs` **1,265,413 B** 자체 호스팅 + 라이브러리(`pdf.min.mjs` 기준) **458,705 B** = 약 **1.72 MB** (예산 2.0MB 안). Korean CMap(176,242 B)은 미포함 — 실측 후 결정. `next build`(9/30) 결과 pdf.js가 든 청크 455,720 B 1개 (내용 검색으로 찾음) | [러너 실측 — 파일 크기 · `next build` 9/30] |
 | `docs/API-V2.md` | 있음 (야간 S2 최초 작성). 이후 변경은 승인 | [코드 경로 — 야간 S2 커밋] |
-| 마이그레이션 `drizzle/0002_steep_warlock.sql` | **Neon dev 브랜치 DB에 적용됨** — `documents` · `document_fields` · `discrepancies` 테이블과 `properties.mgmt_fee_mode` 존재, `drizzle.__drizzle_migrations` 3행. **운영(배포) DB 적용 여부는 미확인.** 내용: CREATE TABLE 3 · ADD COLUMN(nullable) 2 · FK 3 · INDEX 3. DROP · ALTER TYPE · 기존 컬럼 NOT NULL 없음 | [러너 실측 — dev DB 조회 9/30] |
+| 마이그레이션 `drizzle/0002_steep_warlock.sql` | **운영 DB에 적용됨** — 9/30 14:42 `db:migrate` 후 information_schema로 `documents` · `document_fields` · `discrepancies` 존재 조회. dev 브랜치는 그 뒤 운영에서 복제했고 같은 테이블·`properties.mgmt_fee_mode`·`drizzle.__drizzle_migrations` 3행 확인. 내용: CREATE TABLE 3 · ADD COLUMN(nullable) 2 · FK 3 · INDEX 3. DROP · ALTER TYPE · 기존 컬럼 NOT NULL 없음 | 운영: [러너 실측 — 강우 9/30 14:42 조회] · dev: [러너 실측 — dev DB 조회 9/30] |
 | `public/tessdata/` | 없음 — Tesseract 보류로 **만들지 않는다** | [코드 경로+커밋 f2d3ed1] |
 | `public/manifest.json` · `sw.js` | 있음 (야간 S6). SW 직접 작성 — 캐시는 `/offline` 셸·그 청크·manifest·아이콘만. API·RSC·매물 HTML·원본은 캐시 안 함. 아이콘은 `app/icon.png`(512) 임시 | [코드 경로 — 야간 S6 커밋] · 설치·오프라인 동작은 실기기 미확인 |
 | `.claude/settings.json` | 9/9부터 로컬에만 있었고 `.gitignore`의 `.claude/`로 **미추적**이었다 → 2026-09-29 추적 전환 | [코드 경로+커밋 — 이번 커밋] |

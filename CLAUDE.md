@@ -127,7 +127,7 @@ Next.js (App Router) + TypeScript + Tailwind / Neon PostgreSQL(ap-southeast-1) +
 - **목표**: 대구대 실배포 + 포트폴리오 완성도. 마감 없음, 단계 순서는 V2-STATUS §3
 - **완료**: v1 배포본 · v2 필수 기능 코드(`feat/v2`) · 마이그레이션 `0002` 운영·dev DB 적용 · E2E 10단계(`e2e:v2`, dev·prod 빌드) · CI(verify) · v1 베이스라인
 - **막힌 것**: 실제 등기부 PDF 미확보 — 텍스트 레이어 실측(V2-STATUS §4)·추출문 쪼개짐 확인이 여기에 걸려 있다
-- **다음**: 실제 등기부로 §4 실측 → 실기기 확인(iOS PWA·오프라인 표시) → `feat/v2`를 main에 머지(= 배포, 승인 필요). 순서는 V2-STATUS §1
+- **다음**: 실제 등기부 §4 실측 → 결정 2건 반영(평 환산 · 선납 상한) → Vercel 프리뷰 URL로 실기기 확인 → main 머지(= 배포, 승인 필요). 순서는 V2-STATUS §1
 
 > 세션 시작 프롬프트 → `docs/WORKFLOW.md` §6
 

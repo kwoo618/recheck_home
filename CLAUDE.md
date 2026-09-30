@@ -22,7 +22,9 @@ Next.js (App Router) + TypeScript + Tailwind / Neon PostgreSQL(ap-southeast-1) +
 
 - `npm run verify` (= `npm run typecheck` → `npm run lint` → `npm run test`
   = `next typegen && tsc --noEmit` → `eslint` → `vitest run`)
-- 화면을 건드렸으면 `npm run shots` 후 `screenshots/v1-baseline/`과 비교 (베이스라인 미촬영 — V2-STATUS 0단계)
+- 화면을 건드렸으면 `npm run shots` 후 `screenshots/v1-baseline/`과 비교
+- 화면을 건드렸으면 `npm run e2e:v2` 통과 — 앱이 떠 있어야 한다(8단계 SW는 `next start`에서만, 절차는 `tests/e2e/README.md`).
+  실행마다 지점 ④ 호출 1회가 생긴다. 실패하면 테스트를 약하게 고치지 말고 원인을 보고한다
 
 실패하면 스스로 고치고 재실행한다. **2회 실패 시 멈추고 보고한다.** 추측으로 통과시키지 않는다.
 

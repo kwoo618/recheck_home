@@ -196,6 +196,7 @@
 | **2026-09-29** | **`.claude/settings.json`을 git 추적 대상으로 전환. `.gitignore`는 `.claude/*` + `!.claude/settings.json`** | 9/9에 만든 deny 가드레일이 `.gitignore`의 `.claude/` 때문에 이 PC에만 있었다. 클린 클론에는 없고, diff로 검토할 수 없고, PC가 죽으면 사라진다 — CLAUDE.md의 "settings.json deny에서 실제로 막는다"가 레포 기준으로는 거짓이었다. Claude Code 관례대로 공유 설정(`settings.json`)은 추적하고 개인 설정(`settings.local.json`)은 무시한다. 같은 커밋에서 deny의 v1 문서 경로를 `docs/v1/**`로 고쳤다(문서 이동으로 기존 7개 경로가 무효가 됨) |
 | **2026-09-29** | **CLAUDE.md 슬림화 (165 → 131줄). 세션 시작 프롬프트는 WORKFLOW §6, v2 신규 코드 관습 2개는 V2-PLAN §8로 이동. 승인 필요 문구 2건을 좁힘** | 매 세션 자동으로 읽히는 분량을 줄이고, 아직 없는 것에 대한 규칙을 걷어낸다. 사실과 다른 문구를 고쳤다: 테스트 "229건"은 확인된 값이 아니고(R8) `screenshots/v1-baseline/`은 아직 없다. **승인 대상을 좁혔다**: "AI 지점 추가"는 지점 ④ 구현까지 승인 대상으로 읽혀 V2-PLAN §3 등록표에 없는 지점만으로 한정했고, `docs/API-V2.md`는 파일이 없어 최초 생성은 승인 불필요로 했다. R1~R11 본문 · "하지 말 것" · 나머지 승인 항목 · UI 관습은 바꾸지 않았다 |
 | **2026-09-29** | **서비스명을 Sealook Homes(씰룩홈즈)로 바꾼다 (구 리:체크 · 미쁜집). 표시명만 바꾸고 식별자는 그대로 둔다** | 강우 결정. 식별자(패키지명 · `recheck-theme.css` · `--rc-*`/`rc-` · 폴더 · `recheck-home.vercel.app` · env 키 · DB·테이블명)는 유지한다 |
+| **2026-09-30** | **마이그레이션 `0002_steep_warlock` 적용 — 추가만.** CREATE TABLE 3(`documents`·`document_fields`·`discrepancies`) · ADD COLUMN nullable 2(`ai_logs.touchpoint`·`properties.mgmt_fee_mode`). 강우 승인 후 9/30 운영 DB에 적용, Neon dev 브랜치는 그 뒤 운영에서 복제 | v2 문서 대조 결과를 담을 곳이다(원본 참조 컬럼 없음 — R9). DROP·ALTER TYPE·기존 컬럼 NOT NULL이 없어 기존 행은 바뀌지 않는다. 적용 확인: 강우가 information_schema로 세 테이블 존재 조회(9/30 14:42) |
 
 ---
 

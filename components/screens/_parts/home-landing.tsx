@@ -37,7 +37,7 @@ function SheetArt() {
     <svg className="rc-lp-sheet" viewBox="0 0 200 250" fill="none" aria-hidden="true" focusable="false">
       <g transform="rotate(-4 100 125)">
         <rect x="10" y="8" width="176" height="232" rx="6" fill="var(--rc-surface)" stroke="var(--rc-line-strong)" strokeWidth="1.5" />
-        <rect x="26" y="26" width="74" height="8" rx="4" fill="var(--rc-teal)" />
+        <rect x="26" y="26" width="74" height="8" rx="4" fill="var(--rc-brown)" />
         <rect x="26" y="42" width="46" height="6" rx="3" fill="var(--lp-rule)" />
         {[66, 98, 130, 162, 194].map((y, i) => (
           <g key={y}>

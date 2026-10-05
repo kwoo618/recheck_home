@@ -16,15 +16,16 @@
    ══════════════════════════════════════════════════════════════ */
 
 :root {
-  --rc-paper: #f6f5f1;
-  --rc-surface: #ffffff;
-  --rc-ink: #22252b;
-  --rc-ink-soft: #5a5e66;
-  --rc-ink-faint: #9a9ea6;
-  --rc-line: #e3e1da;
-  --rc-line-strong: #c9c6bc;
-  --rc-teal: #145c54;
-  --rc-teal-soft: #e4efed;
+  --rc-paper: #F5EBDD;
+  --rc-surface: #FFFDF8;
+  --rc-ink: #1C1A17;
+  --rc-ink-soft: #6B5B4B;
+  --rc-ink-faint: #756554;
+  --rc-line: #E2D3BF;
+  --rc-line-strong: #C9B39A;
+  /* teal = "규칙 기반" 배지 계열 전용. 주 행동(버튼·활성 표시)에는 쓰지 않는다 — 아래 brand/dark */
+  --rc-teal: #2F5D57;
+  --rc-teal-soft: #E3ECE6;
   --rc-teal-mid: #1d9e75;
   --rc-amber: #b7791f;
   --rc-amber-soft: #faf0dc;
@@ -32,8 +33,20 @@
   --rc-red-soft: #f9e9e9;
   --rc-blue: #2c5fa8;
   --rc-blue-soft: #e8eef7;
-  --rc-violet: #4c4699;
-  --rc-violet-soft: #ebeaf7;
+  --rc-violet: #55477F;
+  --rc-violet-soft: #EAE6F2;
+
+  /*
+    브랜드 (로고에서 온 색)
+    ★ --rc-brand 는 버튼 바탕처럼 넓은 면에만 쓴다. 선·테두리·글자색으로 쓰지 않는다 —
+      크림(paper) 바탕 대비 1.9:1 이라 선이나 글자로는 보이지 않는다.
+    ★ brand 위 글자는 --rc-on-brand. 흰 글자는 대비가 부족하다.
+  */
+  --rc-dark: #1C1A17;
+  --rc-brown: #65452F;
+  --rc-brown-soft: #EFE3D2;
+  --rc-brand: #D4A72C;
+  --rc-on-brand: #1C1A17;
 
   /* 터치 타깃 최소치 — 현장(방문 직후 길가에서)에서 쓰는 화면이라 규약값이다 */
   --rc-tap: 44px;
@@ -160,9 +173,9 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  border: 1.5px solid var(--rc-ink);
+  border: 1.5px solid var(--rc-brown);
   background: var(--rc-surface);
-  color: var(--rc-ink);
+  color: var(--rc-brown);
   padding: 9px 18px;
   min-height: var(--rc-tap);
   border-radius: 10px;
@@ -174,9 +187,9 @@
   text-decoration: none;
   white-space: nowrap;
 }
-.rc-btn:hover { background: var(--rc-ink); color: #fff; }
-.rc-btn-primary { background: var(--rc-teal); border-color: var(--rc-teal); color: #fff; }
-.rc-btn-primary:hover { background: #0e453f; color: #fff; }
+.rc-btn:hover { background: var(--rc-brown-soft); color: var(--rc-brown); }
+.rc-btn-primary { background: var(--rc-brand); border-color: var(--rc-brand); color: var(--rc-on-brand); }
+.rc-btn-primary:hover { background: var(--rc-brand); border-color: var(--rc-dark); color: var(--rc-on-brand); }
 .rc-btn-ghost { border-color: var(--rc-line-strong); font-weight: 500; }
 .rc-btn-ghost:hover { background: var(--rc-surface); color: var(--rc-ink); border-color: var(--rc-ink); }
 .rc-btn-danger { border-color: var(--rc-red); color: var(--rc-red); }
@@ -184,8 +197,8 @@
 /* 프로토타입 .btn.small 은 padding 5px 12px 로 44px 규약 미달이었다 */
 .rc-btn-sm { padding: 7px 14px; font-size: 13px; border-radius: 8px; min-height: var(--rc-tap); }
 .rc-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.rc-btn:disabled:hover { background: var(--rc-surface); color: var(--rc-ink); }
-.rc-btn-primary:disabled:hover { background: var(--rc-teal); color: #fff; }
+.rc-btn:disabled:hover { background: var(--rc-surface); color: var(--rc-brown); }
+.rc-btn-primary:disabled:hover { background: var(--rc-brand); border-color: var(--rc-brand); color: var(--rc-on-brand); }
 
 /* 프로토타입의 .chip 은 옮겨오지 않았다 — 화면 어디에서도 쓰지 않아 삭제했다 */
 
@@ -217,8 +230,8 @@
   letter-spacing: 0.5px;
   padding: 3px 10px;
   border-radius: 4px;
-  background: var(--rc-ink);
-  color: #fff;
+  background: var(--rc-dark);
+  color: var(--rc-paper);
 }
 
 /* ── 홈 ─────────────────────────────────────────────────────── */
@@ -254,7 +267,7 @@
   border-bottom: 2.5px solid transparent;
   margin-bottom: -1.5px;
 }
-.rc-home-tabs button.rc-on { color: var(--rc-ink); border-bottom-color: var(--rc-teal); }
+.rc-home-tabs button.rc-on { color: var(--rc-ink); border-bottom-color: var(--rc-dark); }
 
 .rc-home-body { display: grid; grid-template-columns: 1fr; gap: 16px; }
 /*
@@ -426,9 +439,9 @@
   text-decoration-color: var(--rc-line-strong);
 }
 
-.rc-lp-rail-now { background: var(--rc-teal); border-color: var(--rc-teal); }
-.rc-lp-rail-now .rc-lp-rail-n { color: var(--lp-teal-bright); }
-.rc-lp-rail-now .rc-lp-rail-label { color: #fff; font-weight: 800; }
+.rc-lp-rail-now { background: var(--rc-dark); border-color: var(--rc-dark); }
+.rc-lp-rail-now .rc-lp-rail-n { color: var(--rc-brand); }
+.rc-lp-rail-now .rc-lp-rail-label { color: var(--rc-paper); font-weight: 800; }
 
 .rc-lp-rail-next {
   background: repeating-linear-gradient(45deg, var(--rc-surface) 0 6px, #faf9f6 6px 12px);
@@ -517,10 +530,10 @@
   font-size: 11.5px;
   font-weight: 800;
   letter-spacing: 1.4px;
-  color: var(--rc-teal);
+  color: var(--rc-brown);
   margin-bottom: 14px;
 }
-.rc-lp-eyebrow-top::before { content: ''; width: 22px; height: 2px; background: var(--rc-teal); }
+.rc-lp-eyebrow-top::before { content: ''; width: 22px; height: 2px; background: var(--rc-brown); }
 
 .rc-lp-title {
   font-size: clamp(26px, 7.4vw, 44px);
@@ -629,7 +642,7 @@ ol.rc-lp-grid > .rc-lp-card::before {
   height: 20px;
   border-radius: 50%;
   background: var(--rc-paper);
-  border: 2px solid var(--rc-teal);
+  border: 2px solid var(--rc-brown);
   box-sizing: border-box;
 }
 ol.rc-lp-grid > .rc-lp-card::after {
@@ -640,7 +653,7 @@ ol.rc-lp-grid > .rc-lp-card::after {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: var(--rc-teal);
+  background: var(--rc-brown);
   transition: transform 0.2s ease;
 }
 ol.rc-lp-grid > .rc-lp-card:hover::after { transform: scale(1.5); }
@@ -649,7 +662,7 @@ ol.rc-lp-grid > .rc-lp-open::before { border-style: dashed; border-color: var(--
 ol.rc-lp-grid > .rc-lp-open::after { display: none; }
 
 .rc-lp-step-head { display: flex; align-items: flex-start; gap: 12px; }
-.rc-lp-step-icon { flex-shrink: 0; width: 32px; height: 32px; color: var(--rc-teal); opacity: 0.9; }
+.rc-lp-step-icon { flex-shrink: 0; width: 32px; height: 32px; color: var(--rc-brown); opacity: 0.9; }
 @media (max-width: 419px) { .rc-lp-step-icon { display: none; } }
 
 .rc-lp-eyebrow {
@@ -664,7 +677,7 @@ ol.rc-lp-grid > .rc-lp-open::after { display: none; }
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 1.1px;
-  color: var(--rc-teal);
+  color: var(--rc-brown);
   font-variant-numeric: tabular-nums;
 }
 .rc-lp-step-when {
@@ -775,9 +788,9 @@ ol.rc-lp-grid > .rc-lp-open::after { display: none; }
   margin-top: 26px;
   padding: 40px 22px 42px;
   border-radius: 20px;
-  background: var(--rc-teal);
+  background: var(--rc-dark);
   text-align: center;
-  color: #fff;
+  color: var(--rc-paper);
   position: relative;
   overflow: hidden;
 }
@@ -789,16 +802,16 @@ ol.rc-lp-grid > .rc-lp-open::after { display: none; }
   pointer-events: none;
 }
 .rc-lp-final > * { position: relative; }
-.rc-lp-final .rc-lp-h2 { color: #fff; }
-.rc-lp-final .rc-lp-sec-lead { color: rgb(255 255 255 / 82%); }
-/* 틸 바닥 위에서는 흰 버튼이 대비가 가장 크다 */
+.rc-lp-final .rc-lp-h2 { color: var(--rc-paper); }
+.rc-lp-final .rc-lp-sec-lead { color: var(--rc-line-strong); }
+/* 짙은 바닥 위의 주 버튼 — brand 면 + on-brand 글자. hover 테두리는 바닥과 같은 dark 라 paper 로 */
 .rc-lp-final .rc-lp-cta.rc-btn-primary {
-  background: #fff;
-  border-color: #fff;
-  color: var(--rc-teal);
+  background: var(--rc-brand);
+  border-color: var(--rc-brand);
+  color: var(--rc-on-brand);
   margin-top: 20px;
 }
-.rc-lp-final .rc-lp-cta.rc-btn-primary:hover { background: #fff; color: var(--lp-teal-deep); }
+.rc-lp-final .rc-lp-cta.rc-btn-primary:hover { background: var(--rc-brand); border-color: var(--rc-paper); color: var(--rc-on-brand); }
 
 /* ══ 스크롤 진입 ══════════════════════════════════════════════
    .rc-lp-js 는 ScrollReveal 이 마운트될 때만 붙는다.
@@ -869,9 +882,9 @@ ol.rc-lp-grid > .rc-lp-open::after { display: none; }
 .rc-input:focus,
 .rc-select:focus,
 .rc-textarea:focus {
-  outline: 2px solid var(--rc-teal);
+  outline: 2px solid var(--rc-brown);
   outline-offset: 1px;
-  border-color: var(--rc-teal);
+  border-color: var(--rc-brown);
 }
 .rc-seg { display: flex; border: 1.5px solid var(--rc-ink); border-radius: 8px; overflow: hidden; width: fit-content; }
 .rc-seg button {
@@ -885,7 +898,7 @@ ol.rc-lp-grid > .rc-lp-open::after { display: none; }
   font-family: inherit;
   color: var(--rc-ink);
 }
-.rc-seg button.rc-on { background: var(--rc-ink); color: #fff; }
+.rc-seg button.rc-on { background: var(--rc-dark); color: var(--rc-paper); }
 
 .rc-tabs { display: flex; margin-bottom: 18px; border-bottom: 1.5px solid var(--rc-line-strong); overflow-x: auto; }
 .rc-tabs button {
@@ -902,7 +915,7 @@ ol.rc-lp-grid > .rc-lp-open::after { display: none; }
   margin-bottom: -1.5px;
   white-space: nowrap;
 }
-.rc-tabs button.rc-on { color: var(--rc-ink); border-bottom-color: var(--rc-teal); }
+.rc-tabs button.rc-on { color: var(--rc-ink); border-bottom-color: var(--rc-dark); }
 
 .rc-row { display: flex; gap: 8px; }
 .rc-row .rc-input { flex: 1; min-width: 0; }
@@ -1032,7 +1045,7 @@ ol.rc-lp-grid > .rc-lp-open::after { display: none; }
   width: 20px;
   height: 20px;
   margin-top: 2px; /* 첫 줄 텍스트의 시각적 중심에 맞춘다 */
-  accent-color: var(--rc-teal);
+  accent-color: var(--rc-brown);
   flex-shrink: 0;
   cursor: pointer;
 }
@@ -1095,7 +1108,7 @@ ol.rc-lp-grid > .rc-lp-open::after { display: none; }
 .rc-qbank summary::after { content: "▾"; margin-left: auto; color: var(--rc-ink-faint); transition: 0.15s; }
 .rc-qbank[open] summary::after { transform: rotate(180deg); }
 .rc-qbank-body { padding: 0 14px 10px; }
-.rc-qb-count { font-size: 11px; color: var(--rc-teal); font-weight: 700; }
+.rc-qb-count { font-size: 11px; color: var(--rc-brown); font-weight: 700; }
 
 /* ── 용어 설명 ──────────────────────────────────────────────── */
 /* rc-qbank 의 접기 UI를 그대로 쓴다. 같은 화면에서 여는 방식이 두 가지면 학습이 두 번 필요하다 */
@@ -1124,7 +1137,7 @@ ol.rc-lp-grid > .rc-lp-open::after { display: none; }
 .rc-q-item { padding: 12px 0; border-bottom: 1px solid var(--rc-line); }
 .rc-q-item:last-child { border-bottom: 0; }
 .rc-q-text { font-weight: 600; font-size: 13.5px; margin-bottom: 6px; display: flex; align-items: flex-start; gap: 6px; flex-wrap: wrap; }
-.rc-q-num { color: var(--rc-teal); font-weight: 800; flex-shrink: 0; }
+.rc-q-num { color: var(--rc-brown); font-weight: 800; flex-shrink: 0; }
 .rc-q-actions { display: flex; gap: 8px; font-size: 12px; margin-top: 4px; }
 .rc-q-actions button {
   display: inline-flex;
@@ -1201,7 +1214,7 @@ ol.rc-lp-grid > .rc-lp-open::after { display: none; }
   margin: 10px 0;
 }
 .rc-notice-warn { background: var(--rc-amber-soft); color: var(--rc-amber); }
-.rc-notice-info { background: var(--rc-blue-soft); color: var(--rc-blue); }
+.rc-notice-info { background: var(--rc-brown-soft); color: var(--rc-brown); }
 
 /*
   '필수' = 보증금·권리에 직결된다는 분류 표시. 판정이 아니다.
@@ -1273,7 +1286,7 @@ ol.rc-lp-grid > .rc-lp-open::after { display: none; }
 /* 칸이 투명하면 위 그림자가 표 내용 뒤로 비쳐 글자가 흐려진다. 칸마다 배경을 채운다.
    더 구체적인 규칙(.rc-miss / .rc-bad-cell / .rc-key-row / .rc-rowlabel)이 그대로 이긴다 */
 .rc-cmp td { background: var(--rc-surface); }
-.rc-cmp thead th { background: var(--rc-ink); color: #fff; font-size: 13.5px; }
+.rc-cmp thead th { background: var(--rc-dark); color: var(--rc-paper); font-size: 13.5px; }
 /* 머리행의 빈 첫 칸도 함께 고정한다 — 아래 행 제목만 고정하면 좌상단이 어긋나 보인다.
    z-index 는 행 제목(1)보다 높아야 가로·세로 어느 쪽으로 밀어도 위에 남는다 */
 .rc-cmp thead th:first-child { position: sticky; left: 0; z-index: 2; }
@@ -1448,8 +1461,8 @@ ol.rc-lp-grid > .rc-lp-open::after { display: none; }
 }
 
 /* 비교 ③ 금융에서 함께 봐야 하는 두 축 — 한쪽만 강조하면 다른 쪽이 과소평가된다 */
-.rc-cmp tr.rc-key-row td { background: var(--rc-teal-soft); }
-.rc-cmp tr.rc-key-row td.rc-rowlabel { color: var(--rc-teal); }
+.rc-cmp tr.rc-key-row td { background: var(--rc-brown-soft); }
+.rc-cmp tr.rc-key-row td.rc-rowlabel { color: var(--rc-ink); }
 
 /* ── 저장 표시 ──────────────────────────────────────────────── */
 /* 스크롤을 따라다니되 내용을 가리지 않는다. 빈 상태에도 자리를 지켜 화면이 밀리지 않는다 */
@@ -1472,7 +1485,7 @@ ol.rc-lp-grid > .rc-lp-open::after { display: none; }
   border-radius: 20px;
   padding: 3px 12px;
 }
-.rc-save-done { color: var(--rc-teal); background: var(--rc-teal-soft); border-color: var(--rc-teal-soft); }
+.rc-save-done { color: var(--rc-brown); background: var(--rc-brown-soft); border-color: var(--rc-brown-soft); }
 .rc-save-error { color: var(--rc-red); background: var(--rc-red-soft); border-color: var(--rc-red-soft); }
 
 /* ── 계산 가정·면책 묶음 ────────────────────────────────────── */

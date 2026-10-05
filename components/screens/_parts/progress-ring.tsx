@@ -9,8 +9,8 @@ export function ProgressRing({ percent }: { percent: number }) {
   const r = 21;
   const circumference = 2 * Math.PI * r;
   const offset = circumference * (1 - pct / 100);
-  const color =
-    pct === 100 ? 'var(--rc-teal-mid)' : pct >= 50 ? 'var(--rc-amber)' : 'var(--rc-line-strong)';
+  // 구간별 색을 두지 않는다 — amber 는 경고색이라 "절반 넘음"이 경고처럼 읽힌다
+  const color = 'var(--rc-brown)';
 
   return (
     <div

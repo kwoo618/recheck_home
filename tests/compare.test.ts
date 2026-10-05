@@ -300,9 +300,37 @@ describe('면적 (광고 ↔ 등기부 / 광고 ↔ 계약서 / 계약서 ↔ �
   it('반올림 표기(23㎡ ↔ 23.14㎡) → needs_review', () => {
     expect(run('area_exclusive', 'registry', 'ad', '23.14㎡', '23㎡')).toBe('needs_review');
   });
-  it('평 ↔ ㎡ → needs_review (환산 상수가 없어 비교하지 않는다)', () => {
-    expect(run('area_exclusive', 'registry', 'ad', '23.14㎡', '7평')).toBe('needs_review');
+  it('평 ↔ ㎡ → 환산해 맞으면 same, 아니면 needs_review (B안 — different 없음)', () => {
+    expect(run('area_exclusive', 'registry', 'ad', '23.14㎡', '7평')).toBe('same');
     expect(run('area_exclusive', 'registry', 'ad', '23.14㎡', '70평')).toBe('needs_review');
+  });
+  it('평 ↔ ㎡ 환산: 평 표기의 소수 자릿수로 반올림해 비교한다', () => {
+    expect(run('area_exclusive', 'registry', 'ad', '33.06㎡', '10평')).toBe('same');
+    expect(run('area_exclusive', 'registry', 'ad', '59.85㎡', '10평')).toBe('needs_review');
+    expect(run('area_exclusive', 'registry', 'ad', '59.85㎡', '18.1평')).toBe('same');
+    // 18.104625평 — 소수 둘째 자리로 적으면 18.10이어야 맞다
+    expect(run('area_exclusive', 'registry', 'ad', '59.85㎡', '18.10평')).toBe('same');
+    expect(run('area_exclusive', 'registry', 'ad', '59.85㎡', '18.11평')).toBe('needs_review');
+    // 200㎡ = 정확히 60.5평 — 사사오입 경계
+    expect(run('area_exclusive', 'registry', 'ad', '200㎡', '61평')).toBe('same');
+    expect(run('area_exclusive', 'registry', 'ad', '200㎡', '60평')).toBe('needs_review');
+  });
+  it('평 ↔ ㎡ 환산은 문서 순서와 무관하다', () => {
+    expect(run('area_exclusive', 'ad', 'contract', '10평', '33.06㎡')).toBe('same');
+    expect(run('area_exclusive', 'ad', 'contract', '10평', '59.85㎡')).toBe('needs_review');
+  });
+  it('평 ↔ ㎡ 조합은 어떤 값에서도 different를 내지 않는다 (R1 — 공급·전용 중 무엇을 적었는지 모른다)', () => {
+    for (const sqm of ['1㎡', '23.14㎡', '59.85㎡', '84.97㎡', '330.58㎡']) {
+      for (const py of ['1평', '7평', '10평', '18.1평', '25.7평', '100평']) {
+        expect(run('area_exclusive', 'registry', 'ad', sqm, py)).not.toBe('different');
+        expect(run('area_exclusive', 'ad', 'contract', py, sqm)).not.toBe('different');
+      }
+    }
+  });
+  it('병기 표기("33㎡(10평)")는 파싱되지 않아 원문이 같지 않으면 needs_review (현재 동작 고정)', () => {
+    expect(run('area_exclusive', 'registry', 'ad', '33.06㎡', '33㎡(10평)')).toBe('needs_review');
+    expect(run('area_exclusive', 'ad', 'contract', '33㎡(10평)', '10평')).toBe('needs_review');
+    expect(run('area_exclusive', 'ad', 'contract', '33㎡(10평)', '33㎡ (10평)')).toBe('same');
   });
   it('단위 없는 숫자 ↔ ㎡ → needs_review', () => {
     expect(run('area_exclusive', 'registry', 'ad', '23.14㎡', '23.14')).toBe('needs_review');
@@ -558,14 +586,14 @@ describe('compareDocuments — 저장된 문서 → 결과 행', () => {
     expect(area).toMatchObject({ valueA: '23.14㎡', valueB: '23.14 m²', status: 'same' });
   });
 
-  it('세 문서: 광고 월세 45만원 ↔ 계약서 사십만원 → different, 평 ↔ ㎡ → needs_review', () => {
+  it('세 문서: 광고 월세 45만원 ↔ 계약서 사십만원 → different, 평 ↔ ㎡ 환산 → same', () => {
     const rows = compareDocuments([AD, REGISTRY, CONTRACT], { dealType: '월세' });
     const find = (k: string, a: DocumentKind, b: DocumentKind) =>
       rows.find((r) => r.fieldKey === k && r.docA === a && r.docB === b);
     expect(find('rent', 'ad', 'contract')?.status).toBe('different');
     expect(find('deposit', 'ad', 'contract')?.status).toBe('same');
     expect(find('maintenance_fee', 'ad', 'contract')?.status).toBe('missing_not_found');
-    expect(find('area_exclusive', 'registry', 'ad')?.status).toBe('needs_review');
+    expect(find('area_exclusive', 'registry', 'ad')?.status).toBe('same');
     expect(find('use', 'ad', 'registry')?.status).toBe('different');
     expect(find('address_road', 'registry', 'ad')?.status).toBe('missing_not_found');
   });

@@ -7,8 +7,8 @@
  *
  * ★ 못 푸는 표기는 null이다. 추정해서 숫자로 만들지 않는다 (R8).
  *   null을 받은 쪽(compare.ts)은 different가 아니라 needs_review로 간다 — 오탐도 판정이다 (R1).
- * ★ ㎡ ↔ 평 환산은 하지 않는다. 환산 상수가 코드베이스에 없다(2026-09-29 확인).
- *   평 표기는 unit 'pyeong'으로만 알아보고, ㎡와는 비교하지 않는다.
+ * ★ ㎡ ↔ 평은 한쪽이 평, 다른 쪽이 ㎡일 때만 환산해 본다(2026-10-05 결정 B안 — INFRA 결정 로그).
+ *   맞으면 same, 아니면 needs_review. 이 조합은 different를 내지 않는다(sqmMatchesPyeong).
  * ★ AI·fetch·DB·랜덤·시계 금지.
  */
 
@@ -175,6 +175,46 @@ export function parseArea(raw: string | null): ParsedArea | null {
   const unitText = (m[3] ?? '').toLowerCase();
   const unit: AreaUnit = unitText === '' ? 'unknown' : unitText === '평' ? 'pyeong' : 'sqm';
   return { value: Number(m[1]), decimals: m[2]?.length ?? 0, unit };
+}
+
+/**
+ * 1평 = 400/121 ㎡ (≈ 3.3058㎡). 분수 그대로 둔다 — 소수로 끊으면 반올림 경계에서 결과가 바뀐다.
+ *
+ * 출처: 평은 법정 계량단위가 아니라서 법정 환산값이 없다. 그래서 단위 정의에서 도출한 값을 쓴다.
+ *   1평 = 6자 × 6자, 1자 = 10/33 m → 1평 = (60/33)² = 3600/1089 = 400/121 ㎡.
+ *   이 정의를 적은 법령 조문은 미확인이다 (R8 — 조문 번호를 지어 쓰지 않는다).
+ */
+export const PYEONG_IN_SQM = { num: 400, den: 121 } as const;
+
+/** 소수 자릿수 표기 → 정수 (84.97, 2 → 8497). 부동소수 오차를 피하려고 문자열을 거친다 */
+function scaled(value: number, decimals: number): bigint {
+  return BigInt(value.toFixed(decimals).replace('.', ''));
+}
+
+/** 10^d (tsconfig target ES2017 — bigint 리터럴·** 를 쓰지 않는다) */
+function pow10(d: number): bigint {
+  return BigInt(`1${'0'.repeat(d)}`);
+}
+
+/**
+ * ㎡ 값을 평으로 바꿔(× 121/400) **평 표기의 소수 자릿수**에 맞춰 반올림(사사오입)했을 때
+ * 평 값과 같은가. 정수 산술만 쓴다 — .5 경계에서 부동소수가 결과를 뒤집지 않게.
+ *
+ * 같지 않다고 해서 다른 값이라는 뜻은 아니다(공급·전용 등 어느 면적을 적었는지 모른다).
+ * 그래서 호출부는 false를 different가 아니라 needs_review로 보낸다 (R1).
+ */
+export function sqmMatchesPyeong(sqm: ParsedArea, pyeong: ParsedArea): boolean {
+  // sqm = S / 10^ds, pyeong = P / 10^dp
+  const S = scaled(sqm.value, sqm.decimals);
+  const P = scaled(pyeong.value, pyeong.decimals);
+  const tenDs = pow10(sqm.decimals);
+  const tenDp = pow10(pyeong.decimals);
+  const two = BigInt(2);
+  const num = BigInt(PYEONG_IN_SQM.den); // 121
+  const den = BigInt(PYEONG_IN_SQM.num); // 400
+  // round(S·121 / (400·10^ds) · 10^dp) = floor((2·S·121·10^dp + 400·10^ds) / (2·400·10^ds))
+  const rounded = (two * S * num * tenDp + den * tenDs) / (two * den * tenDs);
+  return rounded === P;
 }
 
 /** 소수 자릿수에 맞춰 반올림 (부동소수 오차를 피하려고 문자열로) */

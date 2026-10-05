@@ -9,6 +9,7 @@ import {
   parseNames,
   roundTo,
   splitUseItems,
+  sqmMatchesPyeong,
 } from './normalize';
 import { COMPARE_PAIRS, type ComparePair, type CompareType } from './pairs';
 
@@ -66,6 +67,11 @@ function compareAmount(a: string, b: string): ValueStatus {
 function compareArea(a: string, b: string): ValueStatus {
   const pa = parseArea(a);
   const pb = parseArea(b);
+  // 평 ↔ ㎡ — 환산해 맞으면 same, 아니면 needs_review. different는 내지 않는다 (2026-10-05 B안)
+  if (pa && pb && pa.unit !== pb.unit && pa.unit !== 'unknown' && pb.unit !== 'unknown') {
+    const [sqm, pyeong] = pa.unit === 'sqm' ? [pa, pb] : [pb, pa];
+    return sqmMatchesPyeong(sqm, pyeong) ? 'same' : 'needs_review';
+  }
   if (pa && pb && pa.unit === pb.unit && pa.unit !== 'unknown') {
     if (pa.value === pb.value) return 'same';
     // 자릿수가 다르면 덜 정밀한 쪽에 맞춰 반올림해 본다. 같아지면 반올림 표기일 수 있다

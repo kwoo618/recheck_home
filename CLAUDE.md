@@ -5,7 +5,7 @@ v2: 매물 광고·등기부등본·계약서 사이의 **다르게 적힌 곳�
 
 > **이 파일이 규칙의 단일 소스다.** 범위·사양은 `docs/V2-PLAN.md`, 기술 제약·실측값은 `docs/V2-TECH-REVIEW.md`, 진행·일정·열린 결정은 `docs/V2-STATUS.md`.
 > `docs/v1/`은 **기록**이다. 세션은 읽지 않는다. 충돌하면 이 파일과 V2-PLAN이 이긴다.
-> 갱신 2026-09-29
+> 갱신 2026-10-05
 
 ---
 
@@ -126,8 +126,8 @@ Next.js (App Router) + TypeScript + Tailwind / Neon PostgreSQL(ap-southeast-1) +
 
 - **목표**: 대구대 실배포 + 포트폴리오 완성도. 마감 없음, 단계 순서는 V2-STATUS §3
 - **완료**: v1 배포본 · v2 필수 기능 코드(`feat/v2`) · 마이그레이션 `0002` 운영·dev DB 적용 · E2E 10단계(`e2e:v2`, dev·prod 빌드) · CI(verify) · v1 베이스라인
-- **막힌 것**: 실제 등기부 PDF 미확보 — 텍스트 레이어 실측(V2-STATUS §4)·추출문 쪼개짐 확인이 여기에 걸려 있다
-- **다음**: 실제 등기부 §4 실측 → Vercel 프리뷰 URL로 실기기 확인 → main 머지(= 배포, 승인 필요). 순서는 V2-STATUS §1
+- **막힌 것**: 없음. 실제 등기부 실측(V2-STATUS §4)은 머지를 막지 않고 머지 뒤에도 열린 항목으로 남는다(강우 10/5)
+- **다음**: 프리뷰 `DATABASE_URL`을 Neon dev로 → 프리뷰 URL로 실기기 확인(PWA 설치·오프라인) → PR → CI → main 머지(= 배포, 승인) → main에서 `feat/design`. 순서는 V2-STATUS §1
 
 > 세션 시작 프롬프트 → `docs/WORKFLOW.md` §6
 

@@ -2,7 +2,7 @@
 
 > **이 문서의 용도**: 누가 무엇을 하고, 브랜치를 어떻게 쓰고, 한 작업이 어떤 순서로 끝나는지.
 > v1의 두 세션 worktree 운영 기록은 버렸다(2026-09-29 전면 교체). 규칙 자체는 `CLAUDE.md`.
-> 마지막 갱신: 2026-09-29
+> 마지막 갱신: 2026-10-05
 
 ---
 
@@ -11,7 +11,7 @@
 | 누구 | 하는 것 | 하지 않는 것 |
 |---|---|---|
 | **Claude Code** | 코드 · 테스트 · 문서 갱신 · 계획서와 자체 검토(`docs/REVIEW.md`) | 승인 · 머지 · 푸시 · 배포 · 실기기 확인 |
-| **claude.ai** (프로젝트 채팅) | 결정 정리 · 발표·포트폴리오 문안 · 디자인 논의 · 요청문 작성 | 코드 수정 |
+| **claude.ai** (프로젝트 채팅) | 결정 정리 · 발표·포트폴리오 문안 · 디자인 논의 · 요청문 작성 · Claude Code 보고 검토 · Claude Code에 붙여넣을 답 작성 | 코드 수정 |
 | **강우** | 승인 · 머지 · 푸시 · 실기기 확인 · 외부 콘솔 · 팀원 조율 | — |
 
 ---
@@ -19,7 +19,8 @@
 ## 2. 브랜치
 
 - **`main`은 배포 전용이다.** `main` 푸시가 곧 Vercel 배포다
-- 백엔드 **`feat/v2-api`** · 프론트 **`feat/v2-screens`**
+- 지금은 **`feat/v2` 단일 세션**이다(백엔드·프론트를 나누지 않는다). 머지 뒤 다음 작업은 main에서 딴 **`feat/design`**
+- 세션을 둘로 나눠 병렬로 돌릴 때만 브랜치와 담당 디렉터리를 나눈다
 - **항상 최신 `main`에서 딴다.** 오래된 브랜치를 되살리지 않는다
 - **머지 = 배포.** PR을 머지하는 순간 배포된다고 보고 판단한다
 - **문서 전용 커밋은 `main`에 직접.** 레포가 public이고 claude.ai 프로젝트에 GitHub 동기화가 걸려 있어 푸시하면 자동 반영된다. 코드가 한 줄이라도 섞이면 문서 전용이 아니다
@@ -34,11 +35,11 @@
  → 계획서 + docs/REVIEW.md 자체 검토 동봉
  → 강우 승인
  → 실행
- → npm run verify (화면이면 npm run shots)
+ → npm run verify (화면이면 npm run shots + npm run e2e:v2 — CLAUDE.md 완료 판정)
  → git diff --stat — 사람이 읽는다
  → 커밋 (강우 승인 후)
  → PR
- → CI 초록 (CI가 생기기 전까지는 로컬 verify 결과로 대신한다 — V2-STATUS 0단계)
+ → CI 초록
  → 머지 (= 배포)
  → docs/V2-STATUS.md 갱신
 ```
@@ -57,7 +58,7 @@
 [작업] V2-STATUS §3 ○단계 — (한 줄)
 [읽을 것] CLAUDE.md · docs/V2-PLAN.md §○ · docs/V2-TECH-REVIEW.md §○
 [범위] 할 것: … / 하지 않을 것: …
-[제약] 담당 디렉터리 … · 승인 필요 항목에 닿으면 멈춘다
+[제약] 브랜치 … · 승인 필요 항목에 닿으면 멈춘다 (담당 디렉터리는 병렬 세션일 때만)
 먼저 문서와 코드가 다른 곳을 보고하고, 계획과 docs/REVIEW.md 자체 검토를 보고해라.
 승인 후 실행한다. 커밋도 승인 후.
 ```
@@ -99,19 +100,11 @@ CLAUDE.md · docs/V2-STATUS.md 를 읽고 현재 단계와 열린 결정을 요�
 
 > 2026-09-29 `CLAUDE.md`에서 이동. 매 세션 자동으로 읽힐 이유가 없어 필요할 때 여기서 꺼내 쓴다.
 
-> 백엔드 `feat/v2-api` · 프론트 `feat/v2-screens` (둘 다 main에서 딴다 — `docs/WORKFLOW.md`). **Plan 모드로 시작한다.** 계획에는 `docs/REVIEW.md` 자체 검토를 붙인다.
+> 지금은 `feat/v2` 단일 세션, 머지 뒤에는 main에서 딴 `feat/design` (`docs/WORKFLOW.md` §2). **Plan 모드로 시작한다.** 계획에는 `docs/REVIEW.md` 자체 검토를 붙인다.
 
-**백엔드**
 ```
-씰룩홈즈 v2 백엔드 세션이다. CLAUDE.md · docs/V2-PLAN.md(§3 AI 지점, §4 기능 명세, §7 데이터 모델) · docs/V2-TECH-REVIEW.md(§5 서버 하드 리밋, §6 구조 지적)를 읽고
-R1~R11과 V2-PLAN §3·§4·§7을 요약해 보고한 뒤 시작하라. 담당은 db/ · lib/compare/ · lib/ai/ · lib/actions/ · app/api/ · docs/API-V2.md.
-오늘 할 것: [V2-STATUS §3 단계 항목을 여기에]
-```
-
-**프론트**
-```
-씰룩홈즈 v2 프론트 세션이다. CLAUDE.md · docs/V2-PLAN.md(§4 기능 명세) · docs/V2-TECH-REVIEW.md(§2 자산 예산, §4 오프라인 구조)를 읽고
-R1·R4·R7·R9·R10을 요약해 보고한 뒤 시작하라. 담당은 components/ · lib/client/ · public/ · app/**/page.tsx.
+씰룩홈즈 v2 세션이다. 브랜치는 [feat/v2 · feat/design]. CLAUDE.md · docs/V2-STATUS.md · docs/V2-PLAN.md(§3 AI 지점, §4 기능 명세, §7 데이터 모델) · docs/V2-TECH-REVIEW.md(§2 자산 예산, §4 오프라인 구조, §5 서버 하드 리밋, §6 구조 지적)를 읽고
+R1~R11과 V2-PLAN §3·§4·§7을 요약해 보고한 뒤 시작하라.
 오늘 할 것: [V2-STATUS §3 단계 항목을 여기에]
 ```
 

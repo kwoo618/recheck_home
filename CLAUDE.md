@@ -43,7 +43,7 @@ Next.js (App Router) + TypeScript + Tailwind / Neon PostgreSQL(ap-southeast-1) +
 - V2-PLAN §3 등록표에 **없는** AI 지점을 새로 추가할 때 (R3)
 - **원본을 서버에 저장해야 할 것 같을 때** (R9)
 - **온디바이스 자산 예산 2.0MB를 넘겨야 할 것 같을 때**
-- V2-PLAN 범위 밖 기능 · 상태 전이 변경 · 다른 세션 담당 디렉터리
+- V2-PLAN 범위 밖 기능 · 상태 전이 변경 · 다른 세션 담당 디렉터리(**병렬 세션일 때만** — 지금은 `feat/v2` 단일 세션이라 해당 없음)
 
 > 위험한 것은 여기 적는 것으로 끝내지 않는다. `.claude/settings.json`의 deny와 `.env`에서 실제로 막는다.
 

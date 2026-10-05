@@ -95,7 +95,6 @@ export function PropertyHeader({
             return (
               <span key={ph.key} className={`rc-ph rc-ph-locked ${state}`} title={LOCK_REASON[unlocked]}>
                 {label}
-                <span className="rc-lock-note">{LOCK_REASON[unlocked]}</span>
               </span>
             );
           }
@@ -109,6 +108,8 @@ export function PropertyHeader({
           문서
         </Link>
       </nav>
+      {/* 잠금 이유는 칸 안이 아니라 줄 아래 한 줄로 — 4칸 한 줄에 넣으면 칸이 접힌다 */}
+      {unlocked < PHASES.length && <p className="rc-lock-note">{LOCK_REASON[unlocked]}</p>}
     </div>
   );
 }

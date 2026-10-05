@@ -19,7 +19,8 @@ export default async function ComparePage() {
     <CompareClient
       properties={withoutAddressDetails(properties)}
       finance={finance}
-      map={<PropertyMapPanel properties={toMapProperties(properties)} height={320} />}
+      // key: 서버에서 만든 요소가 클라이언트 화면의 형제 목록 안에 들어가면 React 개발 모드가 key 경고를 낸다
+      map={<PropertyMapPanel key="map" properties={toMapProperties(properties)} height={320} />}
     />
   );
 }

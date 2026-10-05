@@ -1000,33 +1000,42 @@ ol.rc-lp-grid > .rc-lp-open::after { display: none; }
   overflow-wrap: anywhere;
 }
 .rc-detail-head .rc-meta { font-size: 12.5px; color: var(--rc-ink-soft); }
-.rc-phases { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+/*
+  같은 폭 4칸 한 줄 (A 방문 준비 · B 방문 기록 · C 계약 · 문서).
+  칸 안은 위 글자(A/B/C) · 아래 이름 두 줄로 쌓는다 — 390px 에서 칸 폭이 약 85px 라
+  가로로 늘어놓으면 "방문 준비 ✓"가 접힌다. 이름은 nowrap 이다.
+*/
+.rc-phases { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-bottom: 20px; }
 .rc-ph {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 7px;
+  justify-content: center;
+  gap: 1px;
   border: 1px solid var(--rc-line-strong);
   background: var(--rc-surface);
   border-radius: 10px;
-  padding: 7px 14px;
+  padding: 6px 4px;
   min-height: var(--rc-tap);
   font-size: 12.5px;
   font-weight: 600;
-  color: var(--rc-ink-faint);
+  line-height: 1.3;
+  color: var(--rc-ink-soft);
   text-decoration: none;
+  text-align: center;
+  white-space: nowrap;
 }
 .rc-ph .rc-pn { font-size: 10px; font-weight: 800; letter-spacing: 0.5px; }
-.rc-ph.rc-on { border-color: var(--rc-ink); background: var(--rc-ink); color: #fff; }
-.rc-ph.rc-done { color: var(--rc-teal); border-color: var(--rc-teal-soft); background: var(--rc-teal-soft); }
-/* 아직 갈 수 없는 국면 — 왜 잠겼는지 함께 적는다 */
+.rc-ph.rc-on { border-color: var(--rc-dark); background: var(--rc-dark); color: var(--rc-paper); }
+.rc-ph.rc-done { color: var(--rc-ink); border-color: var(--rc-brown-soft); background: var(--rc-brown-soft); }
+/* 아직 갈 수 없는 국면 — 왜 잠겼는지는 줄 아래 .rc-lock-note 한 줄로 */
 .rc-ph-locked {
   border-style: dashed;
   background: var(--rc-paper);
   color: var(--rc-ink-faint);
   cursor: default;
-  flex-wrap: wrap;
 }
-.rc-lock-note { font-size: 11px; font-weight: 500; }
+.rc-lock-note { font-size: 12px; font-weight: 500; color: var(--rc-ink-soft); margin: -12px 0 20px; }
 
 /* ── 체크·질문 아이템 ───────────────────────────────────────── */
 /*
@@ -1538,9 +1547,7 @@ ol.rc-lp-grid > .rc-lp-open::after { display: none; }
 
 /* 좁은 화면에서 국면 스텝이 두 줄로 접히지 않게 압축한다 */
 @media (max-width: 420px) {
-  .rc-phases { gap: 6px; }
-  .rc-ph { padding: 6px 9px; font-size: 12px; gap: 5px; }
-  .rc-lock-note { font-size: 10.5px; }
+  .rc-ph { font-size: 12px; }
   /*
     거래 유형이 4종(전세·월세·매매·사글세)이 되면서 .rc-seg 가 길어졌다.
     이 요소는 overflow:hidden 이고 flex-wrap 이 없어 넘치면 스크롤이 아니라 잘린다.

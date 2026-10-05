@@ -4,6 +4,7 @@ import { useState, type ReactNode } from 'react';
 import type { DealType, Heating, MgmtFeeMode } from '@/db/schema';
 import type { CreatePropertyInput } from '@/lib/actions/properties';
 import { distanceFromSchool, formatDistanceLabel } from '@/lib/geo';
+import { PREPAID_MONTHS_CHECK_NOTE, prepaidMonthsNeedsCheck } from './format';
 import { useDaumPostcode } from './use-daum-postcode';
 
 /**
@@ -317,6 +318,12 @@ export function PropertyFields({
               value={value.prepaidMonths}
               onChange={(e) => onChange({ prepaidMonths: e.target.value })}
             />
+            {/* 경고만 — 저장·계산은 막지 않는다 */}
+            {prepaidMonthsNeedsCheck(value.prepaidMonths) && (
+              <p className="rc-field-note" role="status">
+                {PREPAID_MONTHS_CHECK_NOTE}
+              </p>
+            )}
           </div>
           <div>
             <label className="rc-fl" htmlFor="rc-f-prepaid-total">

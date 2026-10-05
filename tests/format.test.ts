@@ -1,6 +1,13 @@
 // 가상 데이터
 import { describe, it, expect } from 'vitest';
-import { formatPrice, formatSpecLine } from '@/components/screens/_parts/format';
+import {
+  formatPrice,
+  formatSpecLine,
+  PREPAID_MONTHS_CHECK_NOTE,
+  PREPAID_MONTHS_CHECK_OVER,
+  prepaidMonthsNeedsCheck,
+} from '@/components/screens/_parts/format';
+import { containsBanned } from '@/lib/rules';
 
 /**
  * 인쇄 헤더(survey-sheet-print · safety-print)가 쓰는 한 줄 요약.
@@ -33,5 +40,21 @@ describe('formatPrice · formatSpecLine — 사글세 인쇄 헤더', () => {
 
   it('월 환산액은 헤더에 넣지 않는다 — 각주를 둘 수 없는 자리다', () => {
     expect(formatPrice({ dealType: '사글세', ...base })).not.toContain('환산');
+  });
+});
+
+describe('prepaidMonthsNeedsCheck — 선납 개월 수 경고 (경고만, 저장은 막지 않는다)', () => {
+  it('기준은 24개월 (법정 수치 아님 — 입력 오타 경고용)', () => {
+    expect(PREPAID_MONTHS_CHECK_OVER).toBe(24);
+  });
+  it.each(['', '  ', '0', '6', '24', 'abc'])('%j → 경고 없음', (raw) => {
+    expect(prepaidMonthsNeedsCheck(raw)).toBe(false);
+  });
+  it.each(['25', '36', '60', ' 30 '])('%j → 경고', (raw) => {
+    expect(prepaidMonthsNeedsCheck(raw)).toBe(true);
+  });
+  it('문구는 확인만 요청한다 — 판정 표현 없음 (R1)', () => {
+    expect(PREPAID_MONTHS_CHECK_NOTE).toBe('24개월을 넘었습니다. 맞는지 확인해 주세요.');
+    expect(containsBanned(PREPAID_MONTHS_CHECK_NOTE)).toBe(false);
   });
 });

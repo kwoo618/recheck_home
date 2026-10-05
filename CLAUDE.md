@@ -85,7 +85,7 @@ Next.js (App Router) + TypeScript + Tailwind / Neon PostgreSQL(ap-southeast-1) +
 - `tests/` 기존 테스트 — 실패하면 테스트를 고치지 말고 코드를 고친다. 의도적 변경이면 승인 필요
 - `screenshots/v1-baseline/` — 회귀 비교 기준. 0단계에서 촬영한 뒤 갱신 금지
 - `.env*` — 읽지도 쓰지도 않는다
-- **다른 세션 담당 디렉터리** — 백엔드는 `components/`·`lib/client/`, 프론트는 `db/`·`lib/actions/`·`app/api/`
+- **담당 디렉터리** — 세션을 둘로 나눠 병렬로 돌릴 때만 담당 디렉터리를 정한다. 지금은 `feat/v2` 단일 세션
 
 ---
 

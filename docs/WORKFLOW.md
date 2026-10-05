@@ -19,7 +19,7 @@
 ## 2. 브랜치
 
 - **`main`은 배포 전용이다.** `main` 푸시가 곧 Vercel 배포다
-- 지금은 **`feat/v2` 단일 세션**이다(백엔드·프론트를 나누지 않는다). 머지 뒤 다음 작업은 main에서 딴 **`feat/design`**
+- 지금은 **`feat/design` 단일 세션**이다(백엔드·프론트를 나누지 않는다). `feat/v2`는 main에 머지했다(10/5, PR #1)
 - 세션을 둘로 나눠 병렬로 돌릴 때만 브랜치와 담당 디렉터리를 나눈다
 - **항상 최신 `main`에서 딴다.** 오래된 브랜치를 되살리지 않는다
 - **머지 = 배포.** PR을 머지하는 순간 배포된다고 보고 판단한다
@@ -100,7 +100,7 @@ CLAUDE.md · docs/V2-STATUS.md 를 읽고 현재 단계와 열린 결정을 요�
 
 > 2026-09-29 `CLAUDE.md`에서 이동. 매 세션 자동으로 읽힐 이유가 없어 필요할 때 여기서 꺼내 쓴다.
 
-> 지금은 `feat/v2` 단일 세션, 머지 뒤에는 main에서 딴 `feat/design` (`docs/WORKFLOW.md` §2). **Plan 모드로 시작한다.** 계획에는 `docs/REVIEW.md` 자체 검토를 붙인다.
+> 지금은 main에서 딴 `feat/design` 단일 세션 (`docs/WORKFLOW.md` §2). **Plan 모드로 시작한다.** 계획에는 `docs/REVIEW.md` 자체 검토를 붙인다.
 
 ```
 씰룩홈즈 v2 세션이다. 브랜치는 [feat/v2 · feat/design]. CLAUDE.md · docs/V2-STATUS.md · docs/V2-PLAN.md(§3 AI 지점, §4 기능 명세, §7 데이터 모델) · docs/V2-TECH-REVIEW.md(§2 자산 예산, §4 오프라인 구조, §5 서버 하드 리밋, §6 구조 지적)를 읽고

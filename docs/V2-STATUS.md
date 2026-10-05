@@ -11,15 +11,14 @@
 ## 1. 한 줄
 
 목표는 **대구대 실배포 + 포트폴리오 완성도.** 공모전 출품은 포기했다(2026-09-29). 마감이 없으므로 일정은 날짜가 아니라 **단계 순서**다.
-v2 필수 기능 코드는 `feat/v2`에 있고, 마이그레이션 `0002`는 운영·dev DB 모두 적용됐다(9/30). 가상 등기부 PDF로 업로드→대조→조사지→안전 점검→오프라인 큐 E2E 10단계가 dev·prod 빌드 둘 다 통과했고(`npm run e2e:v2`, 9/30), 0단계 하네스(CI verify · v1 베이스라인)도 갖췄다. 결정 2건(평 환산 B안 · 선납 24개월 경고)은 10/5 반영했다(§6).
+v2 필수 기능 코드는 `feat/v2`에서 만들어 **main에 머지·운영 배포했다(10/5, PR #1)**. 마이그레이션 `0002`는 운영·dev DB 모두 적용됐다(9/30). 가상 등기부 PDF로 업로드→대조→조사지→안전 점검→오프라인 큐 E2E 10단계가 dev·prod 빌드 둘 다 통과했고(`npm run e2e:v2`, 9/30), 0단계 하네스(CI verify · v1 베이스라인)도 갖췄다. 결정 2건(평 환산 B안 · 선납 24개월 경고)은 10/5 반영했다(§6).
 **실제 등기부 실측(§4)은 머지를 막지 않는다**(강우 확인 10/5). 가상 PDF로만 통과한 상태이고, 머지 뒤에도 열린 항목으로 남는다(§4 · §7).
 
-머지까지 순서:
-1. Vercel 프리뷰의 `DATABASE_URL`을 Neon dev로 바꾼다 — 지금은 운영 DB를 가리킨다(§7). dev 브랜치는 10/5에 다시 만들었고 QA 시드 5건이 있으며 로컬 `.env.local`은 dev를 가리킨다(강우 확인 10/5)
-2. 프리뷰 URL로 실기기 확인 — PWA 설치 · 오프라인(§7)
-3. PR → CI(verify) → `feat/v2`를 main에 머지(= 배포, 승인)
+다음 순서:
+1. main에서 `feat/design`을 따고, 그 시점 `npm run shots`를 `screenshots/v2-baseline/`으로 찍는다
+2. `feat/design`에서 디자인(7단계)
 
-머지 뒤: main에서 `feat/design`을 따고, 그 시점 `npm run shots`를 새 베이스라인으로 찍는다.
+머지 전에 하지 못한 것: 실기기 확인(PWA 설치·오프라인)과 프리뷰 DB 확인 — 둘 다 §7에 열린 항목으로 남는다.
 
 ---
 
@@ -27,8 +26,8 @@ v2 필수 기능 코드는 `feat/v2`에 있고, 마이그레이션 `0002`는 운
 
 | 항목 | 상태 | 확인 |
 |---|---|---|
-| `main` 마지막 커밋 | `0e0c5bb` (2026-09-30, v1 화면 베이스라인). v2 코드는 main에 없고 `feat/v2`에만 있다 — 로컬 `feat/v2`(`dc40da5`)가 main보다 32커밋 앞(야간 S1~S8 · main 머지 포함), 뒤처진 커밋 0. 이 문서 정정 커밋은 세지 않은 값 | [러너 실측 — `git rev-list --left-right --count main...feat/v2` 10/5] |
-| 원격 브랜치 | `main` · `feat/screens`(v1) · `feat/v2`(`445a225`까지 푸시 — 로컬은 그 뒤 `ffa4eec`·`dc40da5` 2커밋 미푸시). `feat/v2-api` · `feat/v2-screens` 없음 | [러너 실측 — `git fetch` 후 `git branch -r` · `git rev-list --count origin/feat/v2..feat/v2` 10/5] |
+| `main` 마지막 커밋 | PR #1(`feat/v2`) 머지 커밋(10/5, `--merge` — squash 아님). 머지 커밋 해시는 이 문서 커밋 뒤에 생기므로 여기 적지 않는다 — `git log origin/main -1`로 확인. 머지 직전 `feat/v2`(`b0398c6`)는 `origin/main`(`0e0c5bb`)보다 33커밋 앞, 뒤처진 커밋 0. 이 문서 커밋은 세지 않은 값 | [러너 실측 — `git rev-list --left-right --count origin/main...feat/v2` 10/5] |
+| 원격 브랜치 | `main` · `feat/screens`(v1) · `feat/v2`(머지 뒤에도 지우지 않는다). 머지 직전 로컬 `feat/v2`의 미푸시 커밋 0(`b0398c6` = `origin/feat/v2`). `feat/v2-api` · `feat/v2-screens` 없음. `feat/design`은 머지 뒤 만든다 | [러너 실측 — `git fetch` 후 `git branch -r` · `git rev-list --count origin/feat/v2..feat/v2` 10/5] |
 | 로컬 브랜치 | `main`(= `origin/main`, 워크트리 `D:\projects
 echeck`) · `feat/v2`(워크트리 `D:\projects
 echeck-v2`). `feat/v2-api` · `feat/v2-screens`는 지웠다 | [코드 경로 — `git worktree list` 9/30] |
@@ -158,7 +157,8 @@ v1 문서를 `docs/v1/`로 옮기면서 아래 **코드 주석**이 옛 경로�
 | 390px 확인 화면 '매물 별칭' 넘침이 9/30 v2 촬영에서는 3건, 10/5 촬영에서는 0건. 그 사이 이 부분을 고친 커밋은 확인되지 않음. 측정 조건 차이(카카오 키 유무, 시드 데이터)일 수 있음 [추정]. **고쳐진 것으로 적지 않는다** | 같은 조건으로 재촬영 비교 (`npm run shots`) | 7단계 |
 | Gemini 무료 티어 입력 데이터 활용 정책 | 공식 문서 | 3단계 |
 | iOS Safari PWA 저장소 회수 동작 | 실기기 1대 | 6단계 |
-| **Vercel 프리뷰의 `DATABASE_URL`이 운영 DB를 가리킨다.** 머지 전에 Neon dev로 바꾼다 (강우 확인 10/5) | Vercel 프로젝트 환경 변수(Preview) | 머지 전 |
+| **프리뷰가 어느 DB를 쓰는지 미확인.** Vercel에 Preview(`feat/v2`) 전용 `DATABASE_URL`을 추가했으나, 프리뷰에서 등록한 매물이 dev DB에서 조회되지 않았다(강우 확인 10/5). 해결 전까지 프리뷰 주소에서 데이터를 만들지 않는다. `feat/design` 프리뷰에도 같은 문제가 있다. 담당 강우 | Vercel 프로젝트 환경 변수(Preview) · 브랜치 범위 | 7단계 |
+| **실기기 확인(PWA 설치·오프라인)은 머지 전에 하지 않았다.** 머지 뒤 운영 주소에서 강우가 확인한다 | 실기기 1대 · 운영 주소 | 6단계 |
 | prep 매물에서 `/record`·`/safety`를 URL로 직접 열면 머리글 A·B에 ✓가 붙는다(위치 기준 표시). 화면에서는 잠겨 있어 URL로만 재현된다. 문서 화면은 `ffa4eec`에서 상태 기준으로 고쳤다. 나머지는 디자인 단계에서 머리글을 손볼 때 같이 본다 | prep 매물로 두 URL 직접 열기 | 7단계 |
 | 와이파이는 붙어 있는데 인터넷이 안 되면 오프라인 표시가 안 뜬다(`navigator.onLine` 한계). 대기 건수는 보이므로 유실은 아님. 실기기에서 확인 후 개선 여부 결정 | 실기기 1대 | 6단계 |
 | (보류 경로) 촬영본 OCR 인식률·처리 시간 | 재개 시 V2-TECH-REVIEW §2-3 양식 | 나중 |

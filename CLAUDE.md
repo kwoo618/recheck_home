@@ -43,7 +43,7 @@ Next.js (App Router) + TypeScript + Tailwind / Neon PostgreSQL(ap-southeast-1) +
 - V2-PLAN §3 등록표에 **없는** AI 지점을 새로 추가할 때 (R3)
 - **원본을 서버에 저장해야 할 것 같을 때** (R9)
 - **온디바이스 자산 예산 2.0MB를 넘겨야 할 것 같을 때**
-- V2-PLAN 범위 밖 기능 · 상태 전이 변경 · 다른 세션 담당 디렉터리(**병렬 세션일 때만** — 지금은 `feat/v2` 단일 세션이라 해당 없음)
+- V2-PLAN 범위 밖 기능 · 상태 전이 변경 · 다른 세션 담당 디렉터리(**병렬 세션일 때만** — 지금은 `feat/design` 단일 세션이라 해당 없음)
 
 > 위험한 것은 여기 적는 것으로 끝내지 않는다. `.claude/settings.json`의 deny와 `.env`에서 실제로 막는다.
 
@@ -85,7 +85,7 @@ Next.js (App Router) + TypeScript + Tailwind / Neon PostgreSQL(ap-southeast-1) +
 - `tests/` 기존 테스트 — 실패하면 테스트를 고치지 말고 코드를 고친다. 의도적 변경이면 승인 필요
 - `screenshots/v1-baseline/` — 회귀 비교 기준. 0단계에서 촬영한 뒤 갱신 금지
 - `.env*` — 읽지도 쓰지도 않는다
-- **담당 디렉터리** — 세션을 둘로 나눠 병렬로 돌릴 때만 담당 디렉터리를 정한다. 지금은 `feat/v2` 단일 세션
+- **담당 디렉터리** — 세션을 둘로 나눠 병렬로 돌릴 때만 담당 디렉터리를 정한다. 지금은 `feat/design` 단일 세션
 
 ---
 
@@ -125,9 +125,9 @@ Next.js (App Router) + TypeScript + Tailwind / Neon PostgreSQL(ap-southeast-1) +
 <!-- 세션이 바뀌어도 이어지는 유일한 기억. 작업 끝날 때마다 갱신한다. 4줄을 넘기지 않는다. 자세한 추적은 docs/V2-STATUS.md -->
 
 - **목표**: 대구대 실배포 + 포트폴리오 완성도. 마감 없음, 단계 순서는 V2-STATUS §3
-- **완료**: v1 배포본 · v2 필수 기능 코드(`feat/v2`) · 마이그레이션 `0002` 운영·dev DB 적용 · E2E 10단계(`e2e:v2`, dev·prod 빌드) · CI(verify) · v1 베이스라인
-- **막힌 것**: 없음. 실제 등기부 실측(V2-STATUS §4)은 머지를 막지 않고 머지 뒤에도 열린 항목으로 남는다(강우 10/5)
-- **다음**: 프리뷰 `DATABASE_URL`을 Neon dev로 → 프리뷰 URL로 실기기 확인(PWA 설치·오프라인) → PR → CI → main 머지(= 배포, 승인) → main에서 `feat/design`. 순서는 V2-STATUS §1
+- **완료**: v1 배포본 · v2 필수 기능 코드 · v2 main 머지·운영 배포(10/5, PR #1) · 마이그레이션 `0002` 운영·dev DB 적용 · E2E 10단계(`e2e:v2`, dev·prod 빌드) · CI(verify) · v1 베이스라인
+- **막힌 것**: 없음. 실제 등기부 실측(V2-STATUS §4)·실기기 확인·프리뷰 DB 미확인(V2-STATUS §7)은 열린 항목으로 남는다(강우 10/5)
+- **다음**: `feat/design`에서 디자인. 순서는 V2-STATUS §1
 
 > 세션 시작 프롬프트 → `docs/WORKFLOW.md` §6
 

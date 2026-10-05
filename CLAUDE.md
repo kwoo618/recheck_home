@@ -22,7 +22,7 @@ Next.js (App Router) + TypeScript + Tailwind / Neon PostgreSQL(ap-southeast-1) +
 
 - `npm run verify` (= `npm run typecheck` → `npm run lint` → `npm run test`
   = `next typegen && tsc --noEmit` → `eslint` → `vitest run`)
-- 화면을 건드렸으면 `npm run shots` 후 `screenshots/v1-baseline/`과 비교
+- 화면을 건드렸으면 `npm run shots` 후 `screenshots/v2-baseline/`과 비교
 - 화면을 건드렸으면 `npm run e2e:v2` 통과 — 앱이 떠 있어야 한다(8단계 SW는 `next start`에서만, 절차는 `tests/e2e/README.md`).
   실행마다 지점 ④ 호출 1회가 생긴다. 실패하면 테스트를 약하게 고치지 말고 원인을 보고한다
 
@@ -83,7 +83,8 @@ Next.js (App Router) + TypeScript + Tailwind / Neon PostgreSQL(ap-southeast-1) +
 - `lib/rules.ts` · `finance.ts` · `geo.ts` — 값 변경은 승인 필요. 순수성(부수효과 없음)은 절대 깨지 않는다
 - `docs/v1/**` — **v1 기록.** 내용 수정 금지. "그때 왜 그랬나"의 근거다
 - `tests/` 기존 테스트 — 실패하면 테스트를 고치지 말고 코드를 고친다. 의도적 변경이면 승인 필요
-- `screenshots/v1-baseline/` — 회귀 비교 기준. 0단계에서 촬영한 뒤 갱신 금지
+- `screenshots/v2-baseline/` — 회귀 비교 기준. v2 머지 직후(10/5) 촬영한 뒤 갱신 금지
+- `screenshots/v1-baseline/` — v1 기록. 비교 기준은 아니지만 지우거나 갱신하지 않는다
 - `.env*` — 읽지도 쓰지도 않는다
 - **담당 디렉터리** — 세션을 둘로 나눠 병렬로 돌릴 때만 담당 디렉터리를 정한다. 지금은 `feat/design` 단일 세션
 
@@ -125,7 +126,7 @@ Next.js (App Router) + TypeScript + Tailwind / Neon PostgreSQL(ap-southeast-1) +
 <!-- 세션이 바뀌어도 이어지는 유일한 기억. 작업 끝날 때마다 갱신한다. 4줄을 넘기지 않는다. 자세한 추적은 docs/V2-STATUS.md -->
 
 - **목표**: 대구대 실배포 + 포트폴리오 완성도. 마감 없음, 단계 순서는 V2-STATUS §3
-- **완료**: v1 배포본 · v2 필수 기능 코드 · v2 main 머지·운영 배포(10/5, PR #1) · 마이그레이션 `0002` 운영·dev DB 적용 · E2E 10단계(`e2e:v2`, dev·prod 빌드) · CI(verify) · v1 베이스라인
+- **완료**: v1 배포본 · v2 필수 기능 코드 · v2 main 머지·운영 배포(10/5, PR #1) · 마이그레이션 `0002` 운영·dev DB 적용 · E2E 10단계(`e2e:v2`, dev·prod 빌드) · CI(verify) · v2 베이스라인(v1은 기록)
 - **막힌 것**: 없음. 실제 등기부 실측(V2-STATUS §4)·실기기 확인·프리뷰 DB 미확인(V2-STATUS §7)은 열린 항목으로 남는다(강우 10/5)
 - **다음**: `feat/design`에서 디자인. 순서는 V2-STATUS §1
 

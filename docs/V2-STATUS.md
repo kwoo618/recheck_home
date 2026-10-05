@@ -15,7 +15,7 @@ v2 필수 기능 코드는 `feat/v2`에서 만들어 **main에 머지·운영 �
 **실제 등기부 실측(§4)은 머지를 막지 않는다**(강우 확인 10/5). 가상 PDF로만 통과한 상태이고, 머지 뒤에도 열린 항목으로 남는다(§4 · §7).
 
 다음 순서:
-1. main에서 `feat/design`을 따고, 그 시점 `npm run shots`를 `screenshots/v2-baseline/`으로 찍는다
+1. ~~main에서 `feat/design`을 따고 `screenshots/v2-baseline/`을 찍는다~~ — 완료(10/5, §2)
 2. `feat/design`에서 디자인(7단계)
 
 머지 전에 하지 못한 것: 실기기 확인(PWA 설치·오프라인)과 프리뷰 DB 확인 — 둘 다 §7에 열린 항목으로 남는다.
@@ -42,7 +42,8 @@ echeck-v2`). `feat/v2-api` · `feat/v2-screens`는 지웠다 | [코드 경로 �
 | `.claude/settings.json` | 9/9부터 로컬에만 있었고 `.gitignore`의 `.claude/`로 **미추적**이었다 → 2026-09-29 추적 전환 | [코드 경로+커밋 — 이번 커밋] |
 | `.claude/settings.local.json` | 없음 (개인 설정 없음). 생기면 무시 대상 | [코드 경로+커밋 — 이번 커밋] |
 | CI (`.github/workflows`) | `verify.yml` — push와 main 대상 PR마다 `npm ci` → `npm run verify` (Node 22, 비밀키 없음). `e2e:v2` · `qa:shoot`는 DB·AI·지도 키가 필요해 넣지 않는다. GitHub에서 실제 실행은 푸시 후 확인 | [코드 경로 — 클린 클론 verify 9/30] |
-| `screenshots/v1-baseline/` | 있음 (main `0e0c5bb`, 이름 교체 전 · 카카오 키 없이 촬영). 화면 13종 × 3뷰포트 + 인쇄 2종 + `console-errors.md`. v2 shots는 커밋하지 않는다 — 디자인이 바뀔 때 새 베이스라인을 찍는다 | [코드 경로+커밋 0e0c5bb] |
+| `screenshots/v2-baseline/` | **회귀 비교 기준.** `feat/design`(= main `beceed7`, PR #1 머지 커밋)에서 촬영. v1과 같은 절차 — prod 빌드(`next build` → `next start -p 3000`) · `npm run shots` · dev DB의 기존 QA 시드 5건(이번에 `qa:seed`는 돌리지 않음 — 시드 존재는 강우 확인 10/5에 기댐) · 카카오 키 있음(지도 타일 찍힘). 화면 13종 × 3뷰포트 + 인쇄 2종(pdf·png) + `console-errors.md` = 44개. 실패 0 · 가로 넘침 0 · 콘솔 3건(`11-not-found` 404 리소스 × 3뷰포트). **콘솔 수집은 prod 빌드 기준이라 React 개발 경고(비교 화면 key 경고 등)는 잡히지 않는다** — "경고 없음"이 아니다 | [러너 실측 — `npm run shots` at `beceed7` 10/5] |
+| `screenshots/v1-baseline/` | **기록.** 비교 기준은 v2-baseline으로 넘어갔다. 지우거나 갱신하지 않는다 (main `0e0c5bb`, 이름 교체 전 · 카카오 키 없이 촬영). 화면 13종 × 3뷰포트 + 인쇄 2종 + `console-errors.md` | [코드 경로+커밋 0e0c5bb] |
 | `npm run verify` 정의 | `next typegen && tsc --noEmit` → `eslint` → `vitest run`. CLAUDE.md와 일치. 10/5 기준 lint 경고 0 · 테스트 12파일 530건 통과 | [러너 실측 — `npm run verify` at `dc40da5`] |
 | 서비스명 | **Sealook Homes(씰룩홈즈)** 로 교체(1단계, 표시명만). 남은 옛 이름: `.claude/settings.json` `$comment`(쓰기 권한 없음) · `docs/PORTFOLIO-NOTES.md:1`(deny 대상) · `tests/e2e/gen-icon.mts:25`(아이콘 팀원 대기) · INFRA 결정 로그(과거 기록) | [코드 경로 — 1단계 커밋] |
 | `docs/PRD-V2.md` | 없음. 참조를 전부 지웠다. 사양은 `V2-PLAN.md` §4가 담당. 필요해지면 그때 만든다 | [코드 경로+커밋 — 이번 커밋] |

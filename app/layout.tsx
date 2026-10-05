@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { OfflineSync } from "./_lib/offline-sync";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,7 +35,7 @@ const siteUrl =
       ? `https://${process.env.VERCEL_URL}`
       : "https://recheck-home.vercel.app";
 
-const title = "리:체크 — 계약 전 2차 검증";
+const title = "Sealook Homes(씰룩홈즈) — 계약 전 2차 검증";
 const description =
   "찾은 집을, 계약 전에 다시 확인하세요. 부동산 앱이나 중개사무소에서 찾아온 매물의 확인 항목을 규칙으로 정리해 드립니다. 매물을 추천하지 않습니다.";
 
@@ -42,11 +43,14 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title,
   description,
-  applicationName: "리:체크",
+  applicationName: "Sealook Homes",
+  // PWA (V2-PLAN §4-4). 아이콘은 app/icon.png 임시 사용 — 팀원 아이콘 대기
+  manifest: "/manifest.json",
+  appleWebApp: { capable: true, title: "씰룩홈즈", statusBarStyle: "default" },
   openGraph: {
     type: "website",
     locale: "ko_KR",
-    siteName: "리:체크",
+    siteName: "Sealook Homes",
     title,
     description,
     url: siteUrl,
@@ -62,6 +66,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  themeColor: "#f6f5f1",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -70,7 +75,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="ko"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        <OfflineSync />
+      </body>
     </html>
   );
 }

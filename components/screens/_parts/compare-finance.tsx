@@ -3,14 +3,13 @@
 import { useState } from 'react';
 import type { FinanceProfile, QuestionSource } from '@/db/schema';
 import {
-  CONVERSION_NOTICE,
   FINANCE_ASSUMPTIONS,
-  FINANCE_DISCLAIMER,
-  calcConversion,
   calcFinance,
   calcPrepaid,
+  calcRentConversion,
   negotiationQuestion,
 } from '@/lib/finance';
+import { FINANCE_DISCLAIMER, RENT_CONVERSION_NOTICE } from '@/lib/ai/disclaimer';
 import type { ActionResult, PropertyDTO } from '@/lib/types';
 import { SourceBadge } from './source-badge';
 import { PREPAID_MONTHLY_NOTE, formatPrepaidMonthly } from './format';
@@ -18,14 +17,14 @@ import { GlossaryPanel } from './glossary-panel';
 import { GLOSSARY_BY_SCREEN } from './glossary';
 
 /**
- * 비교 ③ 금융·현금흐름 + 보증금↔월세 전환 계산기 (PRD §6)
+ * 비교 ③ 금융·현금흐름 + 전월세전환 계산기 (PRD §6)
  *
  * ★ 계산은 lib/finance.ts 의 순수 함수만 쓴다. 화면에서 다시 계산하지 않는다.
  *   프로토타입은 월 주거비에서 관리비를 빠뜨렸다(rent + 이자). 계약·PRD §6.1 은
  *   월세 + 관리비 + 월이자다.
- * ★ 전환율에는 기본값을 넣지 않는다. 화면에 숫자가 미리 떠 있으면 사용자는 그것을
+ * ★ 전월세전환율에는 기본값을 넣지 않는다. 화면에 숫자가 미리 떠 있으면 사용자는 그것을
  *   "서비스가 알려준 기준"으로 받아들이는데, 그 순간 서비스가 기준을 제시한 것이 된다.
- * ★ FINANCE_DISCLAIMER · FINANCE_ASSUMPTIONS · CONVERSION_NOTICE 는 상시 노출한다.
+ * ★ FINANCE_DISCLAIMER · FINANCE_ASSUMPTIONS · RENT_CONVERSION_NOTICE 는 상시 노출한다.
  *   계산 결과가 있을 때만 띄우지 않는다.
  */
 export type CompareFinanceProps = {
@@ -130,7 +129,7 @@ export function CompareFinance({
   // calcFinance 가 prepaid_separate 를 돌려주는 매물 — 대출·이자 대신 선납 계산을 보여준다
   const prepaidProperties = properties.filter((p) => p.dealType === '사글세');
 
-  /* ── 전환 계산 ─────────────────────────────────────────────── */
+  /* ── 전월세전환 계산 ───────────────────────────────────────── */
   const cvProperty = properties.find((p) => p.id === cvPropertyId);
   const monthlyProperties = properties.filter((p) => p.dealType === '월세');
   /*
@@ -142,7 +141,7 @@ export function CompareFinance({
   const hasRate = profile.rate !== undefined;
   const conversion =
     cvProperty && cvRate.trim() !== '' && targetRent.trim() !== ''
-      ? calcConversion(
+      ? calcRentConversion(
           cvProperty.price,
           Number(targetRent),
           Number(cvRate),
@@ -297,17 +296,17 @@ export function CompareFinance({
         <p className="rc-disclaimer">{FINANCE_DISCLAIMER}</p>
       </div>
 
-      {/* ── 보증금 ↔ 월세 전환 ───────────────────────────────── */}
+      {/* ── 전월세전환 ───────────────────────────────────────── */}
       <div className="rc-subsection">
         <h3 className="rc-subsection-title">
-          보증금↔월세 전환 참고 계산 <SourceBadge kind="rule" />
+          전월세전환 참고 계산 <SourceBadge kind="rule" />
         </h3>
 
         {/*
           영역 맨 위에 둔다 — 계산 결과를 보기 전에 읽어야 하는 말이라서다.
           이 계산기는 "이 금액으로 계약할 수 있다"를 말하지 않는다. 전환은 임대인이 받아들여야
           성립하고, 숫자는 그 협상의 출발점일 뿐이다. 결과 유무와 무관하게 항상 보인다 —
-          아래 CONVERSION_NOTICE(법정 전환율에 강제력이 없다는 사실)와 짝이다.
+          아래 RENT_CONVERSION_NOTICE(법정 전월세전환율에 강제력이 없다는 사실)와 짝이다.
           ※ 발표 후로 미룬 전환 계산기 개편이 오면 이 문구부터 다시 볼 것.
         */}
         <p className="rc-notice">
@@ -316,7 +315,7 @@ export function CompareFinance({
         </p>
 
         {monthlyProperties.length === 0 ? (
-          <p className="rc-notice">월세 매물이 없어 전환 계산을 쓸 수 없어요.</p>
+          <p className="rc-notice">월세 매물이 없어 전월세전환 계산을 쓸 수 없어요.</p>
         ) : (
           <>
             <div className="rc-fgrid">
@@ -340,7 +339,7 @@ export function CompareFinance({
                   onChange={(e) => { setTargetRent(e.target.value); setAdded(null); }} />
               </div>
               <div>
-                <label className="rc-fl" htmlFor="rc-cv-rate">전환율 (연 %)</label>
+                <label className="rc-fl" htmlFor="rc-cv-rate">전월세전환율 (연 %)</label>
                 <input id="rc-cv-rate" className="rc-input" type="number" inputMode="decimal"
                   min="0" step="0.1"
                   value={cvRate} placeholder="직접 입력"
@@ -349,13 +348,13 @@ export function CompareFinance({
             </div>
 
             {cvRate.trim() === '' ? (
-              <p className="rc-notice">전환율을 입력하면 참고 계산이 표시됩니다.</p>
+              <p className="rc-notice">전월세전환율을 입력하면 참고 계산이 표시됩니다.</p>
             ) : conversion === null ? (
               <p className="rc-notice">목표 월세를 입력하면 참고 계산이 표시됩니다.</p>
             ) : !conversion.ok ? (
               <p className="rc-notice">
                 {conversion.reason === 'invalid_rate'
-                  ? '전환율은 0보다 큰 값이어야 해요.'
+                  ? '전월세전환율은 0보다 큰 값이어야 해요.'
                   : '목표 월세는 현재 월세보다 낮아야 해요.'}
               </p>
             ) : (
@@ -366,7 +365,7 @@ export function CompareFinance({
                   {cvProperty!.deposit.toLocaleString()}만 → {conversion.newDeposit.toLocaleString()}만)
                   수준이 참고 기준이에요.{' '}
                   {/* 사용자가 넣은 값을 다시 보여준다. 값의 타당성은 판정하지 않는다 (R1·R8) */}
-                  <b>전환율 {cvRate}% 기준</b>
+                  <b>전월세전환율 {cvRate}% 기준</b>
                   <br />
                   월세 {conversion.rentReduction}만 감소
                   {hasRate && (
@@ -412,9 +411,9 @@ export function CompareFinance({
 
         {/* 계산 결과 여부와 무관하게 항상 노출 (PRD §11 리스크) */}
         <div className="rc-disclosure">
-          <p className="rc-disclosure-title">전환율 안내</p>
+          <p className="rc-disclosure-title">전월세전환율 안내</p>
           <ul>
-            <li>{CONVERSION_NOTICE}</li>
+            <li>{RENT_CONVERSION_NOTICE}</li>
           </ul>
         </div>
 

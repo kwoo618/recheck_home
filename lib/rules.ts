@@ -1,4 +1,6 @@
-import type { DealType, Heating } from '@/db/schema';
+import type { DealType, DocumentKind, Heating } from '@/db/schema';
+import { josa } from '@/lib/compare/text';
+import type { DocumentFieldKey } from '@/lib/documents/fields';
 
 /**
  * 결정론 규칙 모듈 (PRD v2.1 §5)
@@ -137,6 +139,17 @@ export function fallbackQuestions(concern: string): string[] {
   return QUESTION_BANK['계약 조건'].slice(0, 3);
 }
 
+/**
+ * 문서 불일치 → 질문 폴백 템플릿 (V2-PLAN §4-2 · API-V2 §5-1)
+ *   "{field}가 {docA}와 {docB}에서 다릅니다. 어느 쪽이 맞는지 확인해 주세요."
+ * 값(성명·금액)은 넣지 않는다 — 필드 이름과 문서 이름만. 조사는 받침에 맞춘다.
+ * 같은 문서 안 비교(한글 ↔ 숫자 금액)면 "{docA}의 두 표기에서".
+ */
+export function discrepancyFallbackQuestion(field: string, docA: string, docB: string): string {
+  const where = docA === docB ? `${docA}의 두 표기에서` : `${josa(docA, '과/와')} ${docB}에서`;
+  return `${josa(field, '이/가')} ${where} 다릅니다. 어느 쪽이 맞는지 확인해 주세요.`;
+}
+
 /* ══════════════════════════════════════════════════════════════
    3. 계약 전 안전 점검 — 서류·권리 (국면 C)
    방 상태가 아니라 '내 보증금과 권리'를 지키는 단계.
@@ -223,6 +236,166 @@ export const SAFETY_RULES: SafetyRule[] = [
 
 export function selectSafetyRules(c: RuleContext): SafetyRule[] {
   return SAFETY_RULES.filter((r) => r.cond(c));
+}
+
+/* ══════════════════════════════════════════════════════════════
+   3-2. 계약서 확인 항목 (V2-PLAN §4-6) — 안전 점검 화면의 계약서 섹션
+   대조 결과와 별개로, 계약서에 무엇이 적혀 있는지 **존재·확인 여부만** 묻는다.
+
+   ★ 제목은 V2-PLAN §4-6 표의 문장 그대로다. 다듬지 않는다 (도메인 팀원 검수 대기).
+   ★ 계약금 비율·잔금 적정성은 계산하지도 표시하지도 않는다 (R8).
+   ★ 자동 채움은 "대조 결과·추출 값을 옆에 보여 주는 것"까지다. 체크는 사용자만 한다 —
+     대조 결과가 same이라고 서비스가 대신 "확인함"을 찍으면 그것이 판정이다 (R1).
+   ★ id는 safety_checks JSONB 키다. 바꾸면 저장된 체크가 고아가 된다.
+   ══════════════════════════════════════════════════════════════ */
+
+/** 특약 키워드 후보 묶음 */
+export type SpecialTermsGroup = 'insurance' | 'rights_change' | 'restoration';
+
+/** 자동 채움 출처 — 체크를 대신하지 않는다 */
+export type ContractCheckLink =
+  /** 대조 결과 행(lib/compare/pairs 의 fieldKey·docA·docB)을 옆에 보여 준다 */
+  | { kind: 'compare'; pairs: readonly { fieldKey: DocumentFieldKey; docA: DocumentKind; docB: DocumentKind }[] }
+  /** 계약서 추출 필드가 비었는지·무엇이 적혔는지 보여 준다 */
+  | { kind: 'fields'; keys: readonly DocumentFieldKey[] }
+  /** 특약 원문에서 키워드 후보를 찾는다 */
+  | { kind: 'terms'; group: SpecialTermsGroup }
+  | { kind: 'none' };
+
+export type ContractCheckRule = {
+  id: string;
+  /** V2-PLAN §4-6 "항목" 열 그대로 */
+  title: string;
+  link: ContractCheckLink;
+  /** V2-PLAN §4-6 "사용자 확인" 열 그대로. "—"이면 null */
+  userCheck: string | null;
+  /** check 체크 하나 · agent-docs 서류 3종 각각 체크 · choice 확인함/못함/해당 없음 */
+  input: 'check' | 'agent-docs' | 'choice';
+};
+
+export const CONTRACT_CHECK_RULES: readonly ContractCheckRule[] = [
+  { id: 'k-subject', input: 'check', userCheck: null,
+    title: '목적물 표시(소재지·면적·용도)가 등기부 표제부와 같은가',
+    link: { kind: 'compare', pairs: [
+      { fieldKey: 'address_road', docA: 'registry', docB: 'contract' },
+      { fieldKey: 'address_jibun', docA: 'registry', docB: 'contract' },
+      { fieldKey: 'building_name', docA: 'registry', docB: 'contract' },
+      { fieldKey: 'area_exclusive', docA: 'registry', docB: 'contract' },
+    ] } },
+  { id: 'k-deposit-text', input: 'check', userCheck: '빈칸 없이 채워졌는지',
+    title: '보증금이 한글·숫자로 나란히 적혀 있고 두 표기가 같은가',
+    link: { kind: 'compare', pairs: [{ fieldKey: 'deposit_text_kr', docA: 'contract', docB: 'contract' }] } },
+  { id: 'k-rent', input: 'check', userCheck: null,
+    title: '월세 금액·지급일·지급 방법이 적혀 있는가',
+    link: { kind: 'fields', keys: ['rent', 'rent_due_day', 'rent_method'] } },
+  { id: 'k-account', input: 'check', userCheck: '실제 이체 시 재확인',
+    title: '계약금 입금 계좌 예금주가 등기부 소유자와 같은가',
+    link: { kind: 'compare', pairs: [{ fieldKey: 'account_holder', docA: 'contract', docB: 'registry' }] } },
+  { id: 'k-balance-date', input: 'check', userCheck: '이사 날짜 입력 후 비교 (사용자 입력)',
+    title: '잔금일이 이사(입주) 날짜와 같은가',
+    link: { kind: 'fields', keys: ['balance_date'] } },
+  { id: 'k-lease-term', input: 'check', userCheck: null,
+    title: '임대차 기간 시작·종료일이 적혀 있는가',
+    link: { kind: 'fields', keys: ['lease_start', 'lease_end'] } },
+  { id: 'k-lessor', input: 'check', userCheck: '신분증 대조 여부',
+    title: '임대인 성명이 등기부 소유자와 같은가 · 신분증으로 대조했는가',
+    link: { kind: 'compare', pairs: [{ fieldKey: 'lessor_name', docA: 'registry', docB: 'contract' }] } },
+  { id: 'k-agent-docs', input: 'agent-docs', userCheck: '3종 각각 체크',
+    title: '대리인 계약이면 위임장 · 인감증명서 · 소유자 신분증 사본 3종을 확인했는가',
+    link: { kind: 'none' } },
+  { id: 'k-terms-insure', input: 'check', userCheck: '사용자 확인',
+    title: '특약에 보증보험 가입 조항이 있는가',
+    link: { kind: 'terms', group: 'insurance' } },
+  { id: 'k-terms-rights', input: 'check', userCheck: '사용자 확인',
+    title: '특약에 잔금일까지 권리 변동 시 해제 조항이 있는가',
+    link: { kind: 'terms', group: 'rights_change' } },
+  { id: 'k-terms-restore', input: 'check', userCheck: '사용자 확인',
+    title: '특약에 원상복구 범위(통상 마모 제외) 조항이 있는가',
+    link: { kind: 'terms', group: 'restoration' } },
+  /* 거래 유형별 적용 여부가 미확인이라 조건 분기 없이 "해당 없음"을 둔다 (V2-PLAN §4-6 · V2-STATUS §6) */
+  { id: 'k-insure-avail', input: 'choice', userCheck: '확인함 / 못함 / 해당 없음',
+    title: '보증보험 가입 가능 여부를 확인했는가',
+    link: { kind: 'none' } },
+];
+
+/** 대리인 계약 서류 3종 — 각각 safety_checks 키 */
+export const AGENT_DOCUMENTS = [
+  { id: 'k-agent-proxy', label: '위임장' },
+  { id: 'k-agent-seal', label: '인감증명서' },
+  { id: 'k-agent-owner-id', label: '소유자 신분증 사본' },
+] as const;
+
+/**
+ * 보증보험 확인 선택지. 저장 키는 `${ruleId}:${id}` — 셋 중 하나만 남는다 (lib/actions/checks.setCheckChoice).
+ * CheckMap 이 boolean 맵이라 선택값을 키로 둔다. 스키마를 바꾸지 않기 위해서다.
+ */
+export const CONTRACT_CHOICES = [
+  { id: 'done', label: '확인함' },
+  { id: 'unable', label: '못함' },
+  { id: 'na', label: '해당 없음' },
+] as const;
+
+export type ContractChoiceId = (typeof CONTRACT_CHOICES)[number]['id'];
+
+export function contractChoiceKey(ruleId: string, choice: ContractChoiceId): string {
+  return `${ruleId}:${choice}`;
+}
+
+/** 저장된 선택. 없으면 null */
+export function readContractChoice(checks: Record<string, boolean>, ruleId: string): ContractChoiceId | null {
+  return CONTRACT_CHOICES.find((c) => checks[contractChoiceKey(ruleId, c.id)])?.id ?? null;
+}
+
+/** safety_checks 에 체크(boolean)로 저장되는 계약서 항목 키 — 서버 검증용 */
+export const CONTRACT_CHECK_KEYS: readonly string[] = [
+  ...CONTRACT_CHECK_RULES.filter((r) => r.input === 'check').map((r) => r.id),
+  ...AGENT_DOCUMENTS.map((d) => d.id),
+];
+
+/**
+ * 화면에 보일 항목. 대리인 서류 3종은 계약서 추출 필드 agent_flag 가 "true"일 때만 (V2-PLAN §4-6).
+ * 그 밖의 항목은 조건 없이 전부 — 빠지는 조건 자체가 판정이 될 수 있다.
+ */
+export function selectContractChecks(agentFlag: boolean): ContractCheckRule[] {
+  return CONTRACT_CHECK_RULES.filter((r) => r.input !== 'agent-docs' || agentFlag);
+}
+
+/**
+ * 특약 키워드 후보 (V2-PLAN §4-6). 결정론 문자열 매칭 — 공백을 지우고 비교한다.
+ *
+ * ★ 찾았다고 조항이 "있다"는 뜻이 아니다. 화면은 "이 문구가 특약에 보입니다 / 보이지 않습니다 —
+ *   확인하세요"까지만 말한다. 키워드가 없어도 다른 말로 적혀 있을 수 있다.
+ * ★ 목록은 도메인 팀원 검수 대기. 공백만 다른 표기는 하나만 둔다(매칭이 공백을 지운다).
+ */
+export const SPECIAL_TERMS_KEYWORDS: Record<SpecialTermsGroup, readonly string[]> = {
+  insurance: ['보증보험', '반환보증', 'HUG', 'SGI'],
+  rights_change: ['권리 변동', '근저당', '저당권', '담보', '압류', '소유권 이전', '해제'],
+  restoration: ['원상복구', '원상회복', '통상 마모', '통상의 마모', '자연 마모', '통상 손모'],
+};
+
+export type SpecialTermsMatch =
+  /** 특약 원문이 없다 — 찾아보지 못했다 */
+  | { status: 'no_text' }
+  | { status: 'seen'; keywords: string[] }
+  | { status: 'not_seen' };
+
+function compactTerms(s: string): string {
+  return s.normalize('NFKC').replace(/\s+/g, '').toLowerCase();
+}
+
+export function matchSpecialTerms(text: string | null, group: SpecialTermsGroup): SpecialTermsMatch {
+  if (text === null || text.trim() === '') return { status: 'no_text' };
+  const hay = compactTerms(text);
+  const keywords = SPECIAL_TERMS_KEYWORDS[group].filter((k) => hay.includes(compactTerms(k)));
+  return keywords.length > 0 ? { status: 'seen', keywords } : { status: 'not_seen' };
+}
+
+/** 화면 문구 — 있음·없음을 말하지 않는다 */
+export function specialTermsSentence(m: SpecialTermsMatch, group: SpecialTermsGroup): string {
+  const quote = (ks: readonly string[]) => ks.map((k) => `'${k}'`).join(', ');
+  if (m.status === 'no_text') return '저장된 특약 원문이 없어 찾아보지 못했습니다 — 계약서에서 직접 확인하세요.';
+  if (m.status === 'seen') return `이 문구가 특약에 보입니다: ${quote(m.keywords)} — 확인하세요.`;
+  return `이 문구가 특약에 보이지 않습니다: ${quote(SPECIAL_TERMS_KEYWORDS[group])} — 확인하세요.`;
 }
 
 /* ══════════════════════════════════════════════════════════════

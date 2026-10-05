@@ -66,7 +66,7 @@ docs/qa/console-errors.md            콘솔 에러·경고 보고서   ← 커�
 
 ```
 1) npm run qa:shoot          ← shots/·pdf/ 를 비우고 다시 채운다
-2) 랜딩 4장 수동 촬영         ← docs/SCREENSHOTS.md 참조
+2) 랜딩 4장 수동 촬영         ← docs/v1/SCREENSHOTS.md 참조
 3) /admin 2장 수동 촬영       ← docs/qa/admin/ (러너가 건드리지 않는 경로)
 ```
 
@@ -78,6 +78,25 @@ docs/qa/console-errors.md            콘솔 에러·경고 보고서   ← 커�
 ```bash
 npm run qa:clean   # QA 세션의 매물만 삭제
 ```
+
+---
+
+## v2 흐름 E2E — `npm run e2e:v2` (여기만 단언한다)
+
+`v2-flow.mts`는 위 원칙의 예외다. 문서 업로드 → 대조 → 조사지 → 안전 점검 → 오프라인 큐를 **실제로 조작하고 단언한다.**
+단계별 통과/실패는 `docs/qa/e2e-v2/report.md`(커밋), 실패 사진·픽스처 PDF·추출 텍스트는 같은 폴더(.gitignore).
+
+- 지점 ④(Gemini)를 실행마다 1회 부른다. AI 값은 "채워졌는가 · 깨진 문자 없는가"만 본다
+- 8단계(Service Worker 오프라인 이동)는 **`next start`에서만** 통과한다 — dev는 SW를 등록하지 않는다
+  ```bash
+  npx next build
+  node --env-file=.env.local node_modules/next/dist/bin/next start -p 3001
+  QA_BASE_URL=http://localhost:3001 npm run e2e:v2
+  ```
+  3001이면 카카오 지도가 401로 거부되지만 이 흐름은 지도를 쓰지 않는다
+- Playwright 오프라인 에뮬레이션은 **이미 열린 문서**에만 `navigator.onLine=false`를 준다.
+  오프라인으로 새로 연 문서는 `onLine=true`이고 복귀 때 `online` 이벤트도 없다. 8단계 순서는 이 제약에 맞춰져 있다
+- 모든 러너는 `--import ./tests/e2e/_register-alias.mts`로 `@/` 별칭을 푼다 (lib/rules.ts가 `@/`를 값으로 임포트한다)
 
 ---
 
@@ -162,7 +181,7 @@ SELECT u.id, count(p.id) FROM users u LEFT JOIN properties p ON p.user_id=u.id G
 전환 계산기가 빈 값 상태로 어떻게 보이는지도 확인 대상이다.
 
 질문 문구는 `lib/rules.ts`의 `QUESTION_BANK`와 **글자 단위로 같아야 한다.**
-`toggleBankQuestion`이 문자열 자체를 매칭 키로 쓰기 때문이다 (`docs/HANDOFF-BACK.md` §5-⑪).
+`toggleBankQuestion`이 문자열 자체를 매칭 키로 쓰기 때문이다 (`docs/v1/HANDOFF-BACK.md` §5-⑪).
 
 ---
 

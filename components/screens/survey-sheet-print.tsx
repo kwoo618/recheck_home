@@ -14,8 +14,15 @@ import { usePrintDocument } from './_parts/use-print-document';
  * ★ 결과 칸은 비워서 인쇄한다. 현장에서 손으로 적어오는 종이다. (R5 — 체크는 방문 후)
  * ★ 주소와 거리는 넣되 상세주소(동/호수)는 넣지 않는다. (R7)
  */
-export function SurveySheetPrint({ property: p }: { property: PropertyDTO }) {
-  // 출력일과 PDF 저장 파일명(리체크_조사지_{매물명}_{날짜})을 인쇄 시점에 만든다
+export function SurveySheetPrint({
+  property: p,
+  diffQuestions = [],
+}: {
+  property: PropertyDTO;
+  /** 문서에서 확인된 차이 → 질문 문장. 값(성명·금액)은 들어 있지 않다 (R7) */
+  diffQuestions?: string[];
+}) {
+  // 출력일과 PDF 저장 파일명(SealookHomes_조사지_{매물명}_{날짜})을 인쇄 시점에 만든다
   const printedAt = usePrintDocument('조사지', p.name);
 
   return (
@@ -26,7 +33,7 @@ export function SurveySheetPrint({ property: p }: { property: PropertyDTO }) {
         {p.address && <> · {p.address}</>}
         <br />
         {formatDistanceLabel(p.distanceFromSchool)}
-        {printedAt && <> · 리:체크 출력 {printedAt}</>}
+        {printedAt && <> · 씰룩홈즈 출력 {printedAt}</>}
       </p>
 
       {/*
@@ -95,8 +102,32 @@ export function SurveySheetPrint({ property: p }: { property: PropertyDTO }) {
         </tbody>
       </table>
 
+      {diffQuestions.length > 0 && (
+        <>
+          <h2>문서에서 확인된 차이</h2>
+          <table>
+            <thead>
+              <tr>
+                <th style={{ width: '55%' }}>질문</th>
+                <th>받은 답변</th>
+              </tr>
+            </thead>
+            <tbody>
+              {diffQuestions.map((q, i) => (
+                <tr key={`${i}-${q}`}>
+                  <td>
+                    D{i + 1}. {q}
+                  </td>
+                  <td className="rc-blank" />
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+
       <p className="rc-foot">
-        ※ 이 조사지는 확인을 돕는 참고 자료이며, 계약 판단은 본인의 몫입니다. 다녀온 뒤 리:체크에
+        ※ 이 조사지는 확인을 돕는 참고 자료이며, 계약 판단은 본인의 몫입니다. 다녀온 뒤 씰룩홈즈에
         결과를 입력하면 매물 비교에 활용됩니다.
       </p>
     </div>

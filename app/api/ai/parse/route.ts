@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { generate, logAi } from '@/lib/ai/gemini';
 import { normalizeParsed, parseJsonDetailed, RECOVERY_MARK, type ParsedProperty } from '@/lib/ai/normalize';
-import { PARSE_SYSTEM, wrapUserInput } from '@/lib/ai/prompts';
+import { buildParseSystem, wrapUserInput } from '@/lib/ai/prompts';
 import { readSessionId } from '@/lib/session';
 
 /**
@@ -46,14 +46,20 @@ export async function POST(request: Request) {
 
   const clipped = input.slice(0, MAX_INPUT_LENGTH);
 
+  // 연도는 여기서 넣는다 — 프롬프트 모듈은 순수 상수라 시계를 읽지 않는다.
+  // 서버는 UTC라 한국 기준 연도를 따로 구한다 (1월 1일 0~9시 오차 방지).
+  const year = Number(
+    new Intl.DateTimeFormat('en', { year: 'numeric', timeZone: 'Asia/Seoul' }).format(new Date()),
+  );
+
   const result = await generate({
-    system: PARSE_SYSTEM,
+    system: buildParseSystem(year),
     user: wrapUserInput('매물설명', clipped),
     json: true,
   });
 
   if (!result.ok) {
-    await logAi('parse', clipped, `실패: ${result.reason}`, result.reason === 'banned');
+    await logAi('listing_structure', clipped, `실패: ${result.reason}`, result.reason === 'banned');
     // 폴백은 프론트가 그린다 — 수기 입력 탭으로 전환.
     return fail('구조화에 실패했습니다. 직접 입력해주세요.');
   }
@@ -63,7 +69,7 @@ export async function POST(request: Request) {
 
   // 괄호를 보충해 살려낸 경우 표시를 남긴다 — 얼마나 자주 나는지 알아야 한다.
   await logAi(
-    'parse',
+    'listing_structure',
     clipped,
     parsed.recovered ? `${RECOVERY_MARK}\n${result.text}` : result.text,
     false,

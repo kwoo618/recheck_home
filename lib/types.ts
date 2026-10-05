@@ -5,6 +5,11 @@ import type {
   VisitResult,
   QuestionSource,
   CheckMap,
+  DocumentKind,
+  OcrSource,
+  FieldBbox,
+  DiscrepancyStatus,
+  MgmtFeeMode,
 } from '@/db/schema';
 
 /**
@@ -65,6 +70,11 @@ export type PropertyDTO = {
    */
   prepaidMonths: number | null;
   prepaidTotal: number | null;
+  /**
+   * 관리비 부과 방식 (v2 — docs/API-V2.md §5-2). 지금은 사글세 등록 화면에서만 묻는다.
+   * `null` = 아직 묻지 않음, `'모름'` = 사용자가 모른다고 답함 — 둘은 다르다.
+   */
+  mgmtFeeMode: MgmtFeeMode | null;
 
   area: number;
   age: number;
@@ -92,3 +102,42 @@ export type PropertyDTO = {
 export type ActionResult<T = void> =
   | { ok: true; data: T }
   | { ok: false; error: string };
+
+/* ── v2 문서 (docs/API-V2.md §3) ─────────────────────────────── */
+
+/** 확인 화면 [저장] 때 보내는 필드 한 칸. 원문·이미지는 보내지 않는다 (R9) */
+export type DocumentFieldInput = {
+  fieldKey: string;
+  /** ★ R8: 못 찾았거나 비워 두면 null. 빈 문자열로 저장하지 않는다 */
+  value: string | null;
+  /** 페이지 대비 비율 좌표(0~1, 왼쪽 위 원점). 없으면 null → 화면은 "위치 추정" */
+  bbox: FieldBbox | null;
+  confidence: number | null;
+  /** 확인 화면에서 사용자가 값을 바꿨는가 */
+  editedByUser: boolean;
+};
+
+/** 대조 결과 한 행 (docs/API-V2.md §4). status는 lib/compare 순수 함수만 정한다 */
+export type DiscrepancyDTO = {
+  id: string;
+  fieldKey: string;
+  docA: DocumentKind;
+  /** 같은 문서 안 비교(deposit_text_kr ↔ deposit)면 docA와 같다 */
+  docB: DocumentKind;
+  /** 원문 표기 그대로 */
+  valueA: string | null;
+  valueB: string | null;
+  status: DiscrepancyStatus;
+};
+
+/** 조사지 "문서에서 확인된 차이"용 — 값(성명·금액)을 뺀 대조 행. 조사지는 인쇄된다 */
+export type DocumentDiffRow = Omit<DiscrepancyDTO, 'valueA' | 'valueB'>;
+
+/** 매물의 문서 한 건 + 필드. 원본은 없다 — 원본은 기기(IndexedDB)에만 있다 */
+export type DocumentDTO = {
+  id: string;
+  kind: DocumentKind;
+  ocrSource: OcrSource;
+  createdAt: string;
+  fields: (DocumentFieldInput & { id: string })[];
+};

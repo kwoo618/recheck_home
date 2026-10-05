@@ -61,6 +61,7 @@ function toFormValue(p: PropertyDTO): PropertyFormValue {
     */
     prepaidMonths: p.prepaidMonths === null ? '' : String(p.prepaidMonths),
     prepaidTotal: p.prepaidTotal === null ? '' : String(p.prepaidTotal),
+    mgmtFeeMode: p.mgmtFeeMode,
     area: p.area ? String(p.area) : '',
     age: String(p.age ?? ''),
     heating: p.heating,

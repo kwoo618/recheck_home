@@ -1,11 +1,11 @@
-# 미쁜집 (구 리:체크) v2
+# Sealook Homes(씰룩홈즈) v2
 
 계약 전 부동산 2차 검증 웹 서비스. 직방·다방에서 찾아온 매물을 **계약 전에 2차 검증**하도록 돕는다. 추천하지 않는다. 확인을 돕는다.
 v2: 매물 광고·등기부등본·계약서 사이의 **다르게 적힌 곳을 찾아** 보여준다. 그 차이가 무엇을 뜻하는지는 말하지 않는다.
 
 > **이 파일이 규칙의 단일 소스다.** 범위·사양은 `docs/V2-PLAN.md`, 기술 제약·실측값은 `docs/V2-TECH-REVIEW.md`, 진행·일정·열린 결정은 `docs/V2-STATUS.md`.
 > `docs/v1/`은 **기록**이다. 세션은 읽지 않는다. 충돌하면 이 파일과 V2-PLAN이 이긴다.
-> 갱신 2026-09-29
+> 갱신 2026-10-05
 
 ---
 
@@ -22,7 +22,9 @@ Next.js (App Router) + TypeScript + Tailwind / Neon PostgreSQL(ap-southeast-1) +
 
 - `npm run verify` (= `npm run typecheck` → `npm run lint` → `npm run test`
   = `next typegen && tsc --noEmit` → `eslint` → `vitest run`)
-- 화면을 건드렸으면 `npm run shots` 후 `screenshots/v1-baseline/`과 비교 (베이스라인 미촬영 — V2-STATUS 0단계)
+- 화면을 건드렸으면 `npm run shots` 후 `screenshots/v1-baseline/`과 비교
+- 화면을 건드렸으면 `npm run e2e:v2` 통과 — 앱이 떠 있어야 한다(8단계 SW는 `next start`에서만, 절차는 `tests/e2e/README.md`).
+  실행마다 지점 ④ 호출 1회가 생긴다. 실패하면 테스트를 약하게 고치지 말고 원인을 보고한다
 
 실패하면 스스로 고치고 재실행한다. **2회 실패 시 멈추고 보고한다.** 추측으로 통과시키지 않는다.
 
@@ -41,7 +43,7 @@ Next.js (App Router) + TypeScript + Tailwind / Neon PostgreSQL(ap-southeast-1) +
 - V2-PLAN §3 등록표에 **없는** AI 지점을 새로 추가할 때 (R3)
 - **원본을 서버에 저장해야 할 것 같을 때** (R9)
 - **온디바이스 자산 예산 2.0MB를 넘겨야 할 것 같을 때**
-- V2-PLAN 범위 밖 기능 · 상태 전이 변경 · 다른 세션 담당 디렉터리
+- V2-PLAN 범위 밖 기능 · 상태 전이 변경 · 다른 세션 담당 디렉터리(**병렬 세션일 때만** — 지금은 `feat/design` 단일 세션이라 해당 없음)
 
 > 위험한 것은 여기 적는 것으로 끝내지 않는다. `.claude/settings.json`의 deny와 `.env`에서 실제로 막는다.
 
@@ -83,7 +85,7 @@ Next.js (App Router) + TypeScript + Tailwind / Neon PostgreSQL(ap-southeast-1) +
 - `tests/` 기존 테스트 — 실패하면 테스트를 고치지 말고 코드를 고친다. 의도적 변경이면 승인 필요
 - `screenshots/v1-baseline/` — 회귀 비교 기준. 0단계에서 촬영한 뒤 갱신 금지
 - `.env*` — 읽지도 쓰지도 않는다
-- **다른 세션 담당 디렉터리** — 백엔드는 `components/`·`lib/client/`, 프론트는 `db/`·`lib/actions/`·`app/api/`
+- **담당 디렉터리** — 세션을 둘로 나눠 병렬로 돌릴 때만 담당 디렉터리를 정한다. 지금은 `feat/design` 단일 세션
 
 ---
 
@@ -123,9 +125,9 @@ Next.js (App Router) + TypeScript + Tailwind / Neon PostgreSQL(ap-southeast-1) +
 <!-- 세션이 바뀌어도 이어지는 유일한 기억. 작업 끝날 때마다 갱신한다. 4줄을 넘기지 않는다. 자세한 추적은 docs/V2-STATUS.md -->
 
 - **목표**: 대구대 실배포 + 포트폴리오 완성도. 마감 없음, 단계 순서는 V2-STATUS §3
-- **완료**: v1 배포본 · 범위 확정(V2-PLAN) · 규칙 정리 · 문서 정리(9/29). v2 코딩 0일
-- **막힌 것**: 등기부 PDF·계약서 샘플 미확보 · CI 없음 · `screenshots/v1-baseline/` 없음
-- **다음**: 0단계 하네스 (CI · 베이스라인 · 로컬 브랜치 재생성) → 1단계 이름 교체
+- **완료**: v1 배포본 · v2 필수 기능 코드 · v2 main 머지·운영 배포(10/5, PR #1) · 마이그레이션 `0002` 운영·dev DB 적용 · E2E 10단계(`e2e:v2`, dev·prod 빌드) · CI(verify) · v1 베이스라인
+- **막힌 것**: 없음. 실제 등기부 실측(V2-STATUS §4)·실기기 확인·프리뷰 DB 미확인(V2-STATUS §7)은 열린 항목으로 남는다(강우 10/5)
+- **다음**: `feat/design`에서 디자인. 순서는 V2-STATUS §1
 
 > 세션 시작 프롬프트 → `docs/WORKFLOW.md` §6
 

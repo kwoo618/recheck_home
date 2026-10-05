@@ -1,0 +1,38 @@
+# verify — 타입 · 린트 · 유닛 테스트 (CLAUDE.md "완료 판정"의 npm run verify)
+#
+# ★ 비밀키를 넣지 않는다. verify는 env 없이 통과한다 — .env.local 없는 클린 클론에서
+#   npm ci → npm run verify 통과를 확인했다(2026-09-30). 여기에 secrets를 붙이지 말 것.
+#
+# ★ e2e:v2 · qa:shoot 는 넣지 않는다.
+#   · e2e:v2 는 실제 DB(DATABASE_URL — Neon)에 매물을 만들고 지우며, 지점 ④(GEMINI_API_KEY)를 실제로 부른다.
+#     CI에 키를 두면 R6(비밀키는 서버에만)의 범위가 넓어지고, 실행마다 DB 쓰기·AI 호출이 생긴다.
+#   · qa:shoot 는 카카오 JS 키가 localhost:3000·배포 도메인에만 등록돼 CI에서 지도를 볼 수 없다
+#     (tests/e2e/README.md "CI에 올리지 않는다").
+#   둘 다 로컬에서 돌린다. 절차는 tests/e2e/README.md.
+
+name: verify
+
+on:
+  push:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run verify

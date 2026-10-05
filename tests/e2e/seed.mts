@@ -160,7 +160,7 @@ const VISIT_RESULTS: Record<string, { result: schema.VisitResult; memo: string }
 /* ── 질문 (문구는 lib/rules.ts의 QUESTION_BANK와 글자 단위로 같아야 한다) ──
    toggleBankQuestion이 문자열 자체를 매칭 키로 쓰기 때문이다.
    여기서 한 글자라도 어긋나면 화면의 체크박스가 해제된 것처럼 보인다.
-   (docs/HANDOFF-BACK.md §5-⑪)
+   (docs/v1/HANDOFF-BACK.md §5-⑪)
    ─────────────────────────────────────────────────────────────── */
 type SeedQuestion = { text: string; source: schema.QuestionSource; answer: string; noAnswer: boolean };
 

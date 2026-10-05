@@ -49,10 +49,28 @@ export const getSessionUserId = cache(async (): Promise<string> => {
     }
   }
 
-  await db.insert(users).values({ id }).onConflictDoNothing();
+  // ★ DB 실패를 삼키지 않는다 (docs/v1/V1-OUT-OF-SCOPE §4-2).
+  //   여기서 id만 돌려주면 "세션은 있는데 데이터가 없는" 상태가 되어 빈 목록이 뜨고,
+  //   사용자는 매물이 사라졌다고 오해한다. 이름 붙은 오류로 바꿔 올리고 app/error.tsx가 받는다.
+  try {
+    await db.insert(users).values({ id }).onConflictDoNothing();
+  } catch (cause) {
+    throw new SessionStoreUnavailableError(cause);
+  }
 
   return id;
 });
+
+/**
+ * 세션 저장소(DB)에 닿지 못했다.
+ * 운영 빌드에서는 오류 메시지가 클라이언트로 가지 않는다(digest만 간다) — 화면은 이 이름에 기대지 않는다.
+ */
+export class SessionStoreUnavailableError extends Error {
+  constructor(cause: unknown) {
+    super('세션 저장소에 연결하지 못했습니다.', { cause });
+    this.name = 'SessionStoreUnavailableError';
+  }
+}
 
 /** 금융 프로필 조회 — 사용자당 1개 (PRD §8.4 getFinance) */
 export async function getFinanceProfile(): Promise<FinanceProfile> {

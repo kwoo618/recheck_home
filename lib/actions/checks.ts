@@ -5,7 +5,16 @@ import { eq } from 'drizzle-orm';
 
 import { db } from '@/db';
 import { properties, users, type CheckMap, type FinanceProfile } from '@/db/schema';
-import { SAFETY_RULES, CONTRACT_DAY, AFTER_STEPS } from '@/lib/rules';
+import {
+  SAFETY_RULES,
+  CONTRACT_DAY,
+  AFTER_STEPS,
+  CONTRACT_CHECK_KEYS,
+  CONTRACT_CHECK_RULES,
+  CONTRACT_CHOICES,
+  contractChoiceKey,
+  type ContractChoiceId,
+} from '@/lib/rules';
 import { getSessionUserId, getFinanceProfile } from '@/lib/session';
 import type { ActionResult } from '@/lib/types';
 import { NOT_FOUND, findOwnedProperty, toAmount, toRate } from './_shared';
@@ -24,7 +33,8 @@ export type CheckGroup = 'safety' | 'contract' | 'after';
 
 /** 그룹별 허용 규칙 id 집합 — 조건(cond)과 무관하게 "존재하는 id"인지만 본다 */
 const VALID_RULE_IDS: Record<CheckGroup, Set<string>> = {
-  safety: new Set(SAFETY_RULES.map((r) => r.id)),
+  // 계약서 확인 항목(V2-PLAN §4-6)도 안전 점검 화면의 체크라 같은 safety_checks에 둔다
+  safety: new Set([...SAFETY_RULES.map((r) => r.id), ...CONTRACT_CHECK_KEYS]),
   contract: new Set(CONTRACT_DAY.map((c) => c.id)),
   after: new Set(AFTER_STEPS.flatMap((g) => g.items.map((i) => i.id))),
 };
@@ -90,6 +100,42 @@ export async function toggleCheck(
     .update(properties)
     .set(patchFor(group, next))
     .where(eq(properties.id, propertyId));
+
+  revalidatePath('/');
+  revalidatePath(`/property/${propertyId}`);
+
+  return { ok: true, data: undefined };
+}
+
+/**
+ * 셋 중 하나를 고르는 계약서 항목(보증보험 확인: 확인함 / 못함 / 해당 없음).
+ *
+ * safety_checks 는 boolean 맵이라 `${ruleId}:${choice}` 키 하나만 true로 남기고 나머지는 지운다.
+ * choice=null 이면 선택을 비운다. 스키마를 바꾸지 않기 위한 저장 방식이다.
+ */
+export async function setCheckChoice(
+  propertyId: string,
+  ruleId: string,
+  choice: ContractChoiceId | null,
+): Promise<ActionResult<void>> {
+  const rule = CONTRACT_CHECK_RULES.find((r) => r.id === ruleId && r.input === 'choice');
+  if (!rule) return { ok: false, error: `선택형 점검 항목이 아닙니다: ${ruleId}` };
+  if (choice !== null && !CONTRACT_CHOICES.some((c) => c.id === choice)) {
+    return { ok: false, error: '알 수 없는 선택입니다.' };
+  }
+
+  try {
+    const property = await findOwnedProperty(propertyId);
+    if (!property) return { ok: false, error: NOT_FOUND };
+
+    const next: CheckMap = { ...property.safetyChecks };
+    for (const c of CONTRACT_CHOICES) delete next[contractChoiceKey(ruleId, c.id)];
+    if (choice !== null) next[contractChoiceKey(ruleId, choice)] = true;
+
+    await db.update(properties).set(patchFor('safety', next)).where(eq(properties.id, propertyId));
+  } catch {
+    return { ok: false, error: '지금 저장할 수 없어요. 잠시 후 다시 시도해 주세요.' };
+  }
 
   revalidatePath('/');
   revalidatePath(`/property/${propertyId}`);

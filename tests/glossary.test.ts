@@ -83,7 +83,7 @@ describe('화면에 나가는 확정 문구 — 조용히 바뀌지 않게 고�
   /**
    * 컴포넌트 소스에서 문자열을 직접 확인한다.
    * 이 파일은 .ts 라 JSX 를 렌더할 수 없고, 렌더 테스트는 임시로 만들었다가 지우기 때문에
-   * (docs/HANDOFF-FRONT.md §5) 확정 문구가 커밋에 남는 단언 없이 방치되고 있었다.
+   * (docs/v1/HANDOFF-FRONT.md §5) 확정 문구가 커밋에 남는 단언 없이 방치되고 있었다.
    */
   const read = (p: string) => readFileSync(p, 'utf8');
 

@@ -15,7 +15,7 @@ import type { HrefFor } from './nav';
  *
  * ★ 2026-08-12 시각 개편 — 확정본 문구는 아래 한 곳만 바뀌었다.
  *   히어로 리드의 '직방·다방·중개사에서' → '부동산 앱이나 중개사무소에서' (상표 리스크, 승인됨).
- *   근거·판단은 docs/LANDING-REDESIGN.md 에 있다. 되돌리기 전에 그 문서를 볼 것.
+ *   근거·판단은 docs/v1/LANDING-REDESIGN.md 에 있다. 되돌리기 전에 그 문서를 볼 것.
  *   PhaseRail / 검수 마크 / 점선 종점 / 다크 블록은 각각 '2차 검증'·'의사결정 지원'을
  *   글이 아니라 형태로 말하려고 넣은 것이다. 장식이 아니다.
  *
@@ -74,14 +74,14 @@ function Underline() {
  */
 function PhaseRail() {
   return (
-    <ol className="rc-lp-rail" aria-label="집 구하기 단계 중 리:체크의 위치">
+    <ol className="rc-lp-rail" aria-label="집 구하기 단계 중 씰룩홈즈의 위치">
       <li className="rc-lp-rail-item rc-lp-rail-done">
         <span className="rc-lp-rail-n">01 · 찾기</span>
         <span className="rc-lp-rail-label">부동산 앱 · 중개사무소</span>
       </li>
       <li className="rc-lp-rail-item rc-lp-rail-now" aria-current="step">
         <span className="rc-lp-rail-n">02 · 확인 — 지금 여기</span>
-        <span className="rc-lp-rail-label">리:체크</span>
+        <span className="rc-lp-rail-label">씰룩홈즈</span>
       </li>
       <li className="rc-lp-rail-item rc-lp-rail-next">
         <span className="rc-lp-rail-n">03 · 계약</span>
@@ -137,7 +137,7 @@ const LIMITS = [
     서비스명을 쓰지 않는다 — 히어로 리드·레일 01 과 같은 이유(상표 리스크)다.
     이 문장은 발표 논지 ②의 주 사진(landing-*-limits.png)에 그대로 찍히는 자리라 특히 중요하다.
   */
-  { n: '01', title: '매물을 찾아주지 않습니다', body: '집은 이미 부동산 앱이나 중개사무소에서 찾으셨습니다. 리:체크는 그다음부터 시작합니다.' },
+  { n: '01', title: '매물을 찾아주지 않습니다', body: '집은 이미 부동산 앱이나 중개사무소에서 찾으셨습니다. 씰룩홈즈는 그다음부터 시작합니다.' },
   { n: '02', title: '판단을 대신하지 않습니다', body: '비교표는 여러 매물의 기록을 나란히 보여줄 뿐, 순서를 정하지 않습니다. 결정은 사용자가 합니다.' },
   { n: '03', title: '금액은 참고용입니다', body: '월 부담액은 입력한 값으로 계산한 추정치입니다. 실제 계약 조건과 다를 수 있습니다.' },
 ] as const;

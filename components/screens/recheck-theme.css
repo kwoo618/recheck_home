@@ -1,6 +1,6 @@
 /* ══════════════════════════════════════════════════════════════
-   리:체크 화면 테마
-   docs/recheck-prototype-v4.html 의 :root 변수와 컴포넌트 스타일을 그대로 옮긴 것.
+   Sealook Homes(씰룩홈즈) 화면 테마
+   docs/v1/recheck-prototype-v4.html 의 :root 변수와 컴포넌트 스타일을 그대로 옮긴 것.
 
    ★ Tailwind 테마(app/globals.css 의 @theme)에 등록하지 않고 순수 CSS 변수로 둔다.
      app/ 은 백엔드 세션이 라우트를 작업 중이라 globals.css 충돌 위험이 있다.
@@ -104,6 +104,23 @@
 }
 .rc-logo .rc-logo-re { color: var(--rc-teal); }
 .rc-tagline { font-size: 12.5px; color: var(--rc-ink-soft); }
+
+/* 헤더 연결 상태·대기 건수 (_parts/network-status) — 칩 모양은 저장 표시(rc-save-chip)를 그대로 쓴다 */
+.rc-net-status {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.rc-net-status .rc-save-chip {
+  min-height: var(--rc-tap);
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+.rc-net-offline { color: var(--rc-amber); background: var(--rc-amber-soft); border-color: var(--rc-amber-soft); }
+.rc-net-retry { cursor: pointer; font-family: inherit; }
 
 .rc-back {
   font-size: 13px;
@@ -359,7 +376,7 @@
    ★ 360px 우선. 장식은 720px 이상에서만 얹는다.
    ★ 모션은 진입 1회뿐이다. prefers-reduced-motion 에서 전부 꺼진다.
 
-   근거·판단은 docs/LANDING-REDESIGN.md 에 있다. 되돌리기 전에 그 문서를 볼 것.
+   근거·판단은 docs/v1/LANDING-REDESIGN.md 에 있다. 되돌리기 전에 그 문서를 볼 것.
    ══════════════════════════════════════════════════════════════ */
 
 .rc-lp {

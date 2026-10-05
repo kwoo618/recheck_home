@@ -1,0 +1,3 @@
+# pdfjs-dist 배포 파일을 바이트 그대로 둔다 — 줄바꿈 변환(autocrlf)을 하면
+# node_modules 원본과 달라져 tests/documents.test.ts의 동일성 검사가 깨진다.
+public/pdfjs/** -text

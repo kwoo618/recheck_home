@@ -1,0 +1,19 @@
+{
+  "name": "Sealook Homes",
+  "short_name": "씰룩홈즈",
+  "description": "찾은 집을, 계약 전에 다시 확인하세요.",
+  "lang": "ko",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f6f5f1",
+  "theme_color": "#f6f5f1",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

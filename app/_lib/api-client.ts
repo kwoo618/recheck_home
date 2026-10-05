@@ -79,3 +79,14 @@ export async function askQuestions(
 
   return { ok: Boolean(json?.ok), questions: json?.questions ?? [] };
 }
+
+/**
+ * 문서 불일치 한 행 → 확인 질문 (docs/API-V2.md §5-1). 값은 서버가 모델에 보내지 않는다.
+ * ok=false여도 템플릿 한 문장이 오면 questions에 있다. 비어 있으면 화면은 규칙 템플릿을 그대로 둔다.
+ */
+export async function askDiscrepancyQuestions(
+  discrepancyId: string,
+): Promise<{ ok: boolean; questions: string[] }> {
+  const json = await postJson<{ ok: boolean; questions?: string[] }>('/api/ai/questions', { discrepancyId });
+  return { ok: Boolean(json?.ok), questions: json?.questions ?? [] };
+}

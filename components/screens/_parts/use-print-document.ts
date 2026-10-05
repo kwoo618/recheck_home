@@ -11,7 +11,7 @@ import { flushSync } from 'react-dom';
  *    flushSync 로 즉시 반영하지 않으면 첫 인쇄물에 날짜가 빠질 수 있다.
  *
  * ② 저장 파일명 — 브라우저는 PDF 기본 파일명으로 document.title 을 쓴다.
- *    그대로 두면 모든 출력물이 "리:체크 — 계약 전 2차 검증"이 되어, 매물 두 개의
+ *    그대로 두면 모든 출력물이 "Sealook Homes(씰룩홈즈) — 계약 전 2차 검증"이 되어, 매물 두 개의
  *    조사지를 뽑으면 어느 쪽인지 파일만 보고 구분할 수 없다.
  *    beforeprint 에서 바꾸고 afterprint 에서 되돌린다.
  *
@@ -52,7 +52,7 @@ export function usePrintDocument(kind: string, subject: string): string {
       const now = new Date();
       flushSync(() => setPrintedAt(now.toLocaleDateString('ko-KR')));
       previousTitle.current = document.title;
-      document.title = sanitizeFileName(`리체크_${kind}_${subject}_${fileStamp(now)}`);
+      document.title = sanitizeFileName(`SealookHomes_${kind}_${subject}_${fileStamp(now)}`);
     };
     const after = () => {
       // 되돌리지 않으면 인쇄 후에도 탭 제목이 파일명인 채로 남는다

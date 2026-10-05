@@ -34,6 +34,25 @@ export const PREPAID_MONTHLY_NOTE =
   '선납 총액을 개월 수로 나눈 값입니다. 매달 내는 금액이 아닙니다.';
 
 /**
+ * 선납 개월 수 확인 경고 기준 — 이 값을 **넘으면** 입력 아래에 경고만 띄운다. 저장·계산은 막지 않는다.
+ *
+ * ★ 법정 수치가 아니다. 입력 오타(예: 6을 60으로)를 알아채게 하려는 경고용 상수다.
+ *   도메인 팀원 확인 후 바꿀 수 있다. (2026-10-05 강우 결정 — INFRA 결정 로그)
+ */
+export const PREPAID_MONTHS_CHECK_OVER = 24;
+
+/** 선납 개월 수 경고 문구 — 판정하지 않고 확인만 요청한다 */
+export const PREPAID_MONTHS_CHECK_NOTE = `${PREPAID_MONTHS_CHECK_OVER}개월을 넘었습니다. 맞는지 확인해 주세요.`;
+
+/** 입력 중인 선납 개월 수(문자열)가 경고 기준을 넘었는가. 빈 값·숫자가 아닌 값은 false */
+export function prepaidMonthsNeedsCheck(raw: string): boolean {
+  const s = raw.trim();
+  if (s === '') return false;
+  const n = Number(s);
+  return Number.isFinite(n) && n > PREPAID_MONTHS_CHECK_OVER;
+}
+
+/**
  * 월 환산액 표기 — 기간을 반드시 붙인다.
  * "50만"만 적으면 6개월 계약과 12개월 계약이 같아 보인다. 총액이 다르다는 사실이 숨는다.
  */

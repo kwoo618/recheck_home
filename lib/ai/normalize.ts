@@ -1,4 +1,4 @@
-import type { DealType, Heating } from '@/db/schema';
+import type { DealType, Heating, MgmtFeeMode } from '@/db/schema';
 import { containsBanned } from '@/lib/rules';
 
 /**
@@ -176,10 +176,14 @@ function extractBalanced(text: string): string | null {
 export type ParsedProperty = {
   name?: string;
   address?: string;
+  /** 동·호수. 저장만 하고 지도 핀·PDF·공유에는 그리지 않는다 (R7) */
+  addressDetail?: string;
   dealType?: DealType;
   price?: number;
   deposit?: number;
   mgmtFee?: number;
+  /** '모름'은 받지 않는다 — 사용자가 고르는 답이지 모델이 채울 값이 아니다 (schema 주석: 둘을 섞지 않는다) */
+  mgmtFeeMode?: Exclude<MgmtFeeMode, '모름'>;
   area?: number;
   age?: number;
   heating?: Heating;
@@ -220,8 +224,13 @@ export function normalizeParsed(raw: unknown): ParsedProperty {
   const address = text(r.address, 200);
   if (address && !containsBanned(address)) out.address = address;
 
+  // 형식(○동 ○호 등)은 강제하지 않는다 — 표기가 제각각이라 틀리게 거르는 편이 더 나쁘다. 길이만 막는다
+  const addressDetail = text(r.addressDetail, 60);
+  if (addressDetail && !containsBanned(addressDetail)) out.addressDetail = addressDetail;
+
   if (DEAL_TYPES.includes(r.dealType as DealType)) out.dealType = r.dealType as DealType;
   if (HEATINGS.includes(r.heating as Heating)) out.heating = r.heating as Heating;
+  if (r.mgmtFeeMode === '포함' || r.mgmtFeeMode === '매월 별도') out.mgmtFeeMode = r.mgmtFeeMode;
 
   const price = amount(r.price, LIMITS.price);
   if (price !== undefined) out.price = Math.round(price);

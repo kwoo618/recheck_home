@@ -15,7 +15,7 @@
  * 캐시 대상·전략을 바꿀 때 VERSION을 올린다. activate에서 옛 버전 캐시를 지운다.
  */
 
-const VERSION = 'v1';
+const VERSION = 'v2';
 const SHELL_CACHE = `sealook-shell-${VERSION}`;
 const STATIC_CACHE = `sealook-static-${VERSION}`;
 const CURRENT = [SHELL_CACHE, STATIC_CACHE];

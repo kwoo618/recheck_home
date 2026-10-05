@@ -95,28 +95,33 @@
   .rc-wrap { padding: 0 20px 80px; }
 }
 
+/* 머리글 — 화면 전체 폭의 짙은 바. 안쪽 폭은 .rc-wrap 과 같은 940px·좌우 여백을 따른다 */
 .rc-top {
+  background: var(--rc-dark);
+  margin-bottom: 20px;
+}
+.rc-top-in {
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 8px 16px;
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 20px 0 14px;
-  border-bottom: 1.5px solid var(--rc-ink);
-  margin-bottom: 20px;
   flex-wrap: wrap;
 }
+@media (min-width: 640px) {
+  .rc-top-in { padding: 8px 20px; }
+}
 .rc-logo {
-  font-size: 21px;
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  color: var(--rc-ink);
   text-decoration: none;
-  /* 모든 화면에 있는 홈 링크다. 글자 높이(약 34px)만으로는 44px 규약에 못 미친다 */
+  /* 모든 화면에 있는 홈 링크다. 로고 높이 44px 가 곧 터치 타깃이다 */
   display: inline-flex;
   align-items: center;
   min-height: var(--rc-tap);
 }
+.rc-logo img { display: block; height: 44px; width: auto; }
 .rc-logo .rc-logo-re { color: var(--rc-teal); }
-.rc-tagline { font-size: 12.5px; color: var(--rc-ink-soft); }
+.rc-tagline { font-size: 12.5px; color: var(--rc-line-strong); }
 
 /* 헤더 연결 상태·대기 건수 (_parts/network-status) — 칩 모양은 저장 표시(rc-save-chip)를 그대로 쓴다 */
 .rc-net-status {

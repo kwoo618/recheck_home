@@ -38,14 +38,14 @@ echeck-v2`). `feat/v2-api` · `feat/v2-screens`는 지웠다 | [코드 경로 �
 | `docs/API-V2.md` | 있음 (야간 S2 최초 작성). 이후 변경은 승인 | [코드 경로 — 야간 S2 커밋] |
 | 마이그레이션 `drizzle/0002_steep_warlock.sql` | **운영 DB에 적용됨** — 9/30 14:42 `db:migrate` 후 information_schema로 `documents` · `document_fields` · `discrepancies` 존재 조회. dev 브랜치는 10/5에 다시 만들었다(강우 확인 10/5). 새 dev의 적용 근거는 10/5 `e2e:v2` 통과 — `documents` · `document_fields` · `discrepancies` 저장·조회·삭제 동작. 그 e2e가 dev DB에 붙어 돌았다는 것은 "로컬 `.env.local`은 dev를 가리킨다(강우 확인 10/5)"에 기댄다. information_schema 직접 조회는 아니다. 내용: CREATE TABLE 3 · ADD COLUMN(nullable) 2 · FK 3 · INDEX 3. DROP · ALTER TYPE · 기존 컬럼 NOT NULL 없음 | 운영: [러너 실측 — 강우 9/30 14:42 조회] · dev: [러너 실측 — e2e:v2 10/5, ffa4eec·dc40da5] |
 | `public/tessdata/` | 없음 — Tesseract 보류로 **만들지 않는다** | [코드 경로+커밋 f2d3ed1] |
-| `public/manifest.json` · `sw.js` | 있음 (야간 S6). SW 직접 작성 — 캐시는 `/offline` 셸·그 청크·manifest·아이콘만. API·RSC·매물 HTML·원본은 캐시 안 함. 아이콘은 `app/icon.png`(512) 임시 | [코드 경로 — 야간 S6 커밋] · 설치·오프라인 동작은 실기기 미확인 |
+| `public/manifest.json` · `sw.js` | 있음 (야간 S6). SW 직접 작성 — 캐시는 `/offline` 셸·그 청크·manifest·아이콘만. API·RSC·매물 HTML·원본은 캐시 안 함. 아이콘은 로고 원본(`brand/`, 배포 안 됨)에서 `npm run icon:gen`으로 만든다 — `app/icon.png` 512 · `public/icon-192.png` · `public/icon-maskable-512.png` · `app/apple-icon.png` 180. 머리글 로고는 정적 import라 `/offline` 셸 HTML에 경로가 실려(`preload`) 정적 캐시에 함께 담긴다. `VERSION` v2 (10/5 디자인 1차) | [코드 경로 — 야간 S6 커밋 · 디자인 1차 커밋 2] · 오프라인 머리글 로고 표시 [러너 실측 — next start 3001, 오프라인 `/offline` 로고 naturalWidth 320, 10/5] · 설치·오프라인 동작은 실기기 미확인 |
 | `.claude/settings.json` | 9/9부터 로컬에만 있었고 `.gitignore`의 `.claude/`로 **미추적**이었다 → 2026-09-29 추적 전환 | [코드 경로+커밋 — 이번 커밋] |
 | `.claude/settings.local.json` | 없음 (개인 설정 없음). 생기면 무시 대상 | [코드 경로+커밋 — 이번 커밋] |
 | CI (`.github/workflows`) | `verify.yml` — push와 main 대상 PR마다 `npm ci` → `npm run verify` (Node 22, 비밀키 없음). `e2e:v2` · `qa:shoot`는 DB·AI·지도 키가 필요해 넣지 않는다. GitHub에서 실제 실행은 푸시 후 확인 | [코드 경로 — 클린 클론 verify 9/30] |
 | `screenshots/v2-baseline/` | **회귀 비교 기준.** `feat/design`(= main `beceed7`, PR #1 머지 커밋)에서 촬영. v1과 같은 절차 — prod 빌드(`next build` → `next start -p 3000`) · `npm run shots` · dev DB의 기존 QA 시드 5건(이번에 `qa:seed`는 돌리지 않음 — 시드 존재는 강우 확인 10/5에 기댐) · 카카오 키 있음(지도 타일 찍힘). 화면 13종 × 3뷰포트 + 인쇄 2종(pdf·png) + `console-errors.md` = 44개. 실패 0 · 가로 넘침 0 · 콘솔 3건(`11-not-found` 404 리소스 × 3뷰포트). **콘솔 수집은 prod 빌드 기준이라 React 개발 경고(비교 화면 key 경고 등)는 잡히지 않는다** — "경고 없음"이 아니다 | [러너 실측 — `npm run shots` at `beceed7` 10/5] |
 | `screenshots/v1-baseline/` | **기록.** 비교 기준은 v2-baseline으로 넘어갔다. 지우거나 갱신하지 않는다 (main `0e0c5bb`, 이름 교체 전 · 카카오 키 없이 촬영). 화면 13종 × 3뷰포트 + 인쇄 2종 + `console-errors.md` | [코드 경로+커밋 0e0c5bb] |
 | `npm run verify` 정의 | `next typegen && tsc --noEmit` → `eslint` → `vitest run`. CLAUDE.md와 일치. 10/5 기준 lint 경고 0 · 테스트 12파일 530건 통과 | [러너 실측 — `npm run verify` at `dc40da5`] |
-| 서비스명 | **Sealook Homes(씰룩홈즈)** 로 교체(1단계, 표시명만). 남은 옛 이름: `.claude/settings.json` `$comment`(쓰기 권한 없음) · `docs/PORTFOLIO-NOTES.md:1`(deny 대상) · `tests/e2e/gen-icon.mts:25`(아이콘 팀원 대기) · INFRA 결정 로그(과거 기록) | [코드 경로 — 1단계 커밋] |
+| 서비스명 | **Sealook Homes(씰룩홈즈)** 로 교체(1단계, 표시명만). 남은 옛 이름: `.claude/settings.json` `$comment`(쓰기 권한 없음) · `docs/PORTFOLIO-NOTES.md:1`(deny 대상) · INFRA 결정 로그(과거 기록) | [코드 경로 — 1단계 커밋] |
 | `docs/PRD-V2.md` | 없음. 참조를 전부 지웠다. 사양은 `V2-PLAN.md` §4가 담당. 필요해지면 그때 만든다 | [코드 경로+커밋 — 이번 커밋] |
 
 ### 끊긴 경로 참조 — 1단계(이름 교체)에서 고쳤다
@@ -107,7 +107,7 @@ v1 문서를 `docs/v1/`로 옮기면서 아래 **코드 주석**이 옛 경로�
 | **실제 불일치 사례 매물** | 도메인 팀원 | 4단계 | 미확보 |
 | 계약서 12항목 문구 검수 | 도메인 팀원 | 5단계 전 | 미확보 |
 | iOS 실기기 1대 (PWA 저장소 확인) | 강우 | 6단계 | 미확보 |
-| PWA 아이콘 | 강우 | 6단계 | 미확보 |
+| PWA 아이콘 | 강우 | 6단계 | 반영 — `brand/` 원본(로고 2종·집 아이콘)에서 생성 (디자인 1차, 10/5). 실기기 설치 아이콘·마스크 잘림은 미확인 |
 | 디자인 레퍼런스 | 강우 | 7단계 | 준비됨 — 로고·워드마크·웹페이지, 강우가 준비 (강우 확인 10/5) |
 | 새 서비스명 상표·도메인 중복 확인 | 팀 | 1단계 전 | 미확인 |
 | 도메인 바꾸면 카카오 콘솔(앱 1540296)·Vercel 도메인 등록 | 강우 | 1단계 | — |

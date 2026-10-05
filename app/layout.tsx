@@ -44,7 +44,7 @@ export const metadata: Metadata = {
   title,
   description,
   applicationName: "Sealook Homes",
-  // PWA (V2-PLAN §4-4). 아이콘은 app/icon.png 임시 사용 — 팀원 아이콘 대기
+  // PWA (V2-PLAN §4-4). 아이콘은 brand/ 원본에서 npm run icon:gen 으로 만든다
   manifest: "/manifest.json",
   appleWebApp: { capable: true, title: "씰룩홈즈", statusBarStyle: "default" },
   openGraph: {
@@ -66,7 +66,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#f6f5f1",
+  themeColor: "#1C1A17", // 머리글 바(--rc-dark)와 같은 색 — manifest theme_color 와 맞춘다
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

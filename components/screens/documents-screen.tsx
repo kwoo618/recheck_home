@@ -401,6 +401,12 @@ export function DocumentsScreen({
               {kind === 'contract' && '표준 임대차계약서 PDF(초안·본계약 모두)를 올려 주세요.'}
               {kind === 'ad' && '광고 캡처를 보관하고, 광고 문구는 붙여넣거나 직접 입력해 주세요.'}
             </p>
+            {kind === 'registry' && (
+              <p className="rc-card-sub">
+                현재 유효사항으로 발급한 등기부를 올려주세요. 말소사항 포함본은 지워진 기록까지 함께 읽힐 수
+                있습니다.
+              </p>
+            )}
 
             {files.length > 0 && (
               <ul className="rc-field-note">

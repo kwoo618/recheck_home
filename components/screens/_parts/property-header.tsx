@@ -15,6 +15,7 @@ import type { HrefFor, ScreenRoute } from './nav';
  *   이 서비스가 막으려는 행동이다. 서버도 canTransition 으로 거부하므로,
  *   화면에서 미리 막아 "눌렀는데 실패하는" 경험을 없앤다.
  * ★ 상세주소(addressDetail)는 여기 렌더하지 않는다. (R7)
+ * ★ 문서는 국면이 아니라 잠그지 않는다. 문서 화면에서는 위치가 아니라 매물 상태로 ✓를 붙인다.
  */
 const PHASES: { key: 'A' | 'B' | 'C'; name: string; route: ScreenRoute }[] = [
   { key: 'A', name: '방문 준비', route: 'confirm' },
@@ -60,6 +61,9 @@ export function PropertyHeader({
 }) {
   const current = PHASE_INDEX[phase] ?? 0;
   const unlocked = unlockedPhases(p.status);
+  // 문서 화면은 누구에게나 열려 있다 — 위치(i < current)로 ✓를 붙이면 하지 않은 국면에 ✓가 붙는다
+  const onDocuments = phase === 'documents';
+  const isDone = (i: number) => (onDocuments ? i < unlocked - 1 : i < current);
 
   return (
     <div className="rc-screen-only">
@@ -78,12 +82,12 @@ export function PropertyHeader({
 
       <nav className="rc-phases" aria-label="진행 단계">
         {PHASES.map((ph, i) => {
-          const state = i === current ? 'rc-on' : i < current ? 'rc-done' : '';
+          const state = !onDocuments && i === current ? 'rc-on' : isDone(i) ? 'rc-done' : '';
           const label = (
             <>
               <span className="rc-pn">{ph.key}</span>
               {ph.name}
-              {i < current && ' ✓'}
+              {isDone(i) && ' ✓'}
             </>
           );
 
@@ -101,6 +105,9 @@ export function PropertyHeader({
             </Link>
           );
         })}
+        <Link href={hrefFor('documents', p.id)} className={`rc-ph ${onDocuments ? 'rc-on' : ''}`}>
+          문서
+        </Link>
       </nav>
     </div>
   );
